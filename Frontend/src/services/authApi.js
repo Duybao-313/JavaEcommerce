@@ -58,6 +58,18 @@ export function clearAuth() {
   localStorage.removeItem('splitgo_refresh_token')
 }
 
+export function getAuthSession() {
+  const token = getStoredToken()
+  if (!token) return null
+
+  const auth = getStoredAuth() || {}
+  return {
+    ...auth,
+    token,
+    user: auth.user || auth.a || auth,
+  }
+}
+
 export async function login(payload) {
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
@@ -148,6 +160,12 @@ export async function authFetch(input, init = {}) {
     ...init,
     headers: nextHeaders,
   })
+}
+
+export async function getCurrentUserDetail() {
+  const response = await authFetch(`${API_BASE}/auth/userdetail`)
+  const apiResponse = await parseResponse(response)
+  return apiResponse?.data || null
 }
 
 

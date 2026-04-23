@@ -35,6 +35,26 @@ public class ApplicationInitConfig {
                         .build();
                 userRepository.save(user);
             }
+            if (userRepository.findByUsername("user").isEmpty()) {
+
+                User user = User.builder()
+                        .username("user")
+                        .email("user@user.com")
+                        .password(passwordEncoder.encode("user"))
+                        .role(Role.ROLE_USER)
+                        .build();
+                userRepository.save(user);
+            }
+            if (userRepository.findByUsername("seller").isEmpty()) {
+
+                User user = User.builder()
+                        .username("seller")
+                        .email("seller@seller.com")
+                        .password(passwordEncoder.encode("seller"))
+                        .role(Role.ROLE_SELLER)
+                        .build();
+                userRepository.save(user);
+            }
         };
     }
 }

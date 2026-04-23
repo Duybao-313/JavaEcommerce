@@ -1,7 +1,9 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { Link } from 'react-router-dom'
 import ProductSection from '../components/ProductSection'
+import AuthUserBadge from '../components/AuthUserBadge'
+import { getAuthSession } from '../services/authApi'
 
 const skills = [
   {
@@ -56,6 +58,7 @@ const fadeUpItem = {
 }
 
 function LandingPage() {
+  const [session, setSession] = useState(() => getAuthSession())
   const heroRef = useRef(null)
   const prefersReducedMotion = useReducedMotion()
   const { scrollYProgress } = useScroll({
@@ -74,6 +77,16 @@ function LandingPage() {
     [0, prefersReducedMotion ? 0 : 14],
   )
 
+  useEffect(() => {
+    const sync = () => setSession(getAuthSession())
+    window.addEventListener('storage', sync)
+    window.addEventListener('focus', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('focus', sync)
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)]">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-8">
@@ -83,16 +96,13 @@ function LandingPage() {
           <Link to="/products" className="hover:text-zinc-900">Sản phẩm</Link>
           <a href="#features" className="hover:text-zinc-900">Lợi ích</a>
           <a href="#contact" className="hover:text-zinc-900">Liên hệ</a>
-          <Link to="/login" className="hover:text-zinc-900">Đăng nhập</Link>
+          {session?.token ? (
+            <Link to="/me" className="hover:text-zinc-900">Tài khoản</Link>
+          ) : (
+            <Link to="/login" className="hover:text-zinc-900">Đăng nhập</Link>
+          )}
         </nav>
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="hidden rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 md:inline-flex">
-            Đăng nhập
-          </Link>
-          <Link to="/products" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
-            Mua ngay
-          </Link>
-        </div>
+        <AuthUserBadge session={session} />
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-20">
