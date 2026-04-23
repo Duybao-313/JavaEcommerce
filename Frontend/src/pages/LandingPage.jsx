@@ -83,10 +83,16 @@ function LandingPage() {
           <Link to="/products" className="hover:text-zinc-900">Sản phẩm</Link>
           <a href="#features" className="hover:text-zinc-900">Lợi ích</a>
           <a href="#contact" className="hover:text-zinc-900">Liên hệ</a>
+          <Link to="/login" className="hover:text-zinc-900">Đăng nhập</Link>
         </nav>
-        <Link to="/products" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
-          Mua ngay
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/login" className="hidden rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 md:inline-flex">
+            Đăng nhập
+          </Link>
+          <Link to="/products" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
+            Mua ngay
+          </Link>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-20">
@@ -110,6 +116,9 @@ function LandingPage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/products" className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-700">
                 Khám phá sản phẩm
+              </Link>
+              <Link to="/register" className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-800 hover:border-zinc-900">
+                Đăng ký
               </Link>
               <a href="#contact" className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-800 hover:border-zinc-900">
                 Xem ưu đãi

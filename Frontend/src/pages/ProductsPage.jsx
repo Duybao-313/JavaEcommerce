@@ -10,9 +10,14 @@ function ProductsPage() {
           <p className="text-xl font-semibold tracking-tight text-zinc-900">SplitGo</p>
           <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Trang sản phẩm</p>
         </div>
-        <Link to="/" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
-          Về trang chủ
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/login" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
+            Đăng nhập
+          </Link>
+          <Link to="/" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
+            Về trang chủ
+          </Link>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-20">

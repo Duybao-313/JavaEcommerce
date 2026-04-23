@@ -22,8 +22,8 @@ function normalizeAuthData(payload) {
   }
 
   const token = data.token || data.accessToken || data.jwt || null
-  const refreshToken = data.refreshToken || null
-  const user = data.user || data.profile || data
+  const refreshToken = data.refreshToken || data.token || data.jwt || null
+  const user = data.user || data.a || data.profile || data
 
   return {
     ...data,
@@ -31,6 +31,31 @@ function normalizeAuthData(payload) {
     refreshToken,
     user,
   }
+}
+
+export function getStoredAuth() {
+  const raw = localStorage.getItem('splitgo_auth')
+  if (!raw) return null
+
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+export function getStoredToken() {
+  return localStorage.getItem('splitgo_token') || ''
+}
+
+export function getStoredRefreshToken() {
+  return localStorage.getItem('splitgo_refresh_token') || getStoredToken()
+}
+
+export function clearAuth() {
+  localStorage.removeItem('splitgo_auth')
+  localStorage.removeItem('splitgo_token')
+  localStorage.removeItem('splitgo_refresh_token')
 }
 
 export async function login(payload) {
@@ -69,10 +94,61 @@ export function persistAuthResult(payload) {
 
   if (authData.token) {
     localStorage.setItem('splitgo_token', authData.token)
-  }
-
-  if (authData.refreshToken) {
-    localStorage.setItem('splitgo_refresh_token', authData.refreshToken)
+    localStorage.setItem('splitgo_refresh_token', authData.refreshToken || authData.token)
   }
 }
+
+export async function refreshAuthToken(token = getStoredRefreshToken()) {
+  if (!token) {
+    throw new Error('Không có token để làm mới')
+  }
+
+  const response = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  })
+
+  const apiResponse = await parseResponse(response)
+  const normalized = {
+    ...apiResponse,
+    data: normalizeAuthData(apiResponse),
+  }
+
+  persistAuthResult(normalized)
+  return normalized
+}
+
+export async function authFetch(input, init = {}) {
+  const headers = new Headers(init.headers || {})
+  const token = getStoredToken()
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  const response = await fetch(input, {
+    ...init,
+    headers,
+  })
+
+  if (response.status !== 401) {
+    return response
+  }
+
+  const refreshed = await refreshAuthToken()
+  const nextHeaders = new Headers(init.headers || {})
+  const nextToken = refreshed?.data?.token || getStoredToken()
+
+  if (nextToken) {
+    nextHeaders.set('Authorization', `Bearer ${nextToken}`)
+  }
+
+  return fetch(input, {
+    ...init,
+    headers: nextHeaders,
+  })
+}
+
+
 

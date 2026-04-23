@@ -34,6 +34,23 @@ Da bo sung cac module backend:
 - `POST /orders/checkout`, `GET /orders/my` (buyer)
 - `GET /seller/orders`, `PATCH /seller/orders/{orderId}/status` (seller)
 
+### Auth / JWT
+- `POST /auth/register`: gửi `username`, `password`, `fullName`, `email`
+  - ví dụ: `Duybao / 123456 / duybao / duybao122123@gmail.com`
+- `POST /auth/login`: gửi `username`, `password`
+  - ví dụ: `admin / admin`
+- `POST /auth/refresh`: gửi `token` là JWT đã lưu trước đó
+
+### Phản hồi auth
+- Login trả về `jwt`, `role`, `a` (thông tin user)
+- Refresh trả về `token` và `expiryDate`
+- Frontend nên lưu JWT vào localStorage và dùng lại token đó để refresh khi hết hạn
+
+### Tài khoản mẫu để test
+- `admin / admin` → `ROLE_ADMIN`
+- `user / user` → `ROLE_USER`
+- `seller / seller` → `ROLE_SELLER`
+
 ### Test nhanh
 Chay test voi H2 in-memory:
 - `./mvnw test`

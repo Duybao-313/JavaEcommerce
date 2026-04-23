@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { register, persistAuthResult } from '../services/authApi'
+import { registerDemoAccounts } from '../constants/demoAccounts'
 
 const initialState = {
   username: 'Duybao',
@@ -18,6 +19,15 @@ function RegisterPage() {
   const handleChange = (event) => {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const fillDemoAccount = (account) => {
+    setForm({
+      username: account.username,
+      password: account.password,
+      fullName: account.fullName,
+      email: account.email,
+    })
   }
 
   const handleSubmit = async (event) => {
@@ -59,9 +69,20 @@ function RegisterPage() {
             Đăng ký để theo dõi đơn hàng, nhận ưu đãi riêng và mua sắm nhanh hơn.
           </p>
 
-          <div className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-sm leading-relaxed text-zinc-200">
-            <p className="font-semibold text-zinc-100">Dữ liệu mẫu theo backend</p>
-            <p className="mt-2 font-mono text-xs">{`{ username: "Duybao", password: "123456", fullName: "duybao", email: "duybao122123@gmail.com" }`}</p>
+          <div className="mt-8 space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Mẫu điền nhanh</p>
+            {registerDemoAccounts.map((account) => (
+              <button
+                key={account.label}
+                type="button"
+                onClick={() => fillDemoAccount(account)}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-left text-sm text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">{account.label}</p>
+                <p className="mt-2 font-semibold">{account.username}</p>
+                <p className="text-zinc-400">{account.fullName} • {account.email}</p>
+              </button>
+            ))}
           </div>
 
           <div className="mt-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5 text-sm leading-relaxed text-zinc-200">
@@ -161,4 +182,5 @@ function RegisterPage() {
 }
 
 export default RegisterPage
+
 

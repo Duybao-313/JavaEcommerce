@@ -2,11 +2,11 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { login, persistAuthResult } from '../services/authApi'
+import { loginDemoAccounts } from '../constants/demoAccounts'
 
 const initialState = {
   username: 'admin',
   password: 'admin',
-  email: 'duybao1213@gmail.com',
 }
 
 function LoginPage() {
@@ -19,6 +19,13 @@ function LoginPage() {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
+  const fillDemoAccount = (account) => {
+    setForm({
+      username: account.username,
+      password: account.password,
+    })
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
@@ -26,7 +33,6 @@ function LoginPage() {
     const payload = {
       username: form.username.trim(),
       password: form.password,
-      email: form.email.trim(),
     }
 
     const request = login(payload)
@@ -74,22 +80,6 @@ function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-700" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="duybao1213@gmail.com"
-                className="w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-900"
-                required
-              />
-            </div>
-
-            <div>
               <label className="mb-2 block text-sm font-medium text-zinc-700" htmlFor="password">
                 Mật khẩu
               </label>
@@ -125,16 +115,29 @@ function LoginPage() {
         </section>
 
         <aside className="rounded-3xl border border-zinc-200 bg-zinc-950 p-8 text-zinc-100 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Tài khoản mẫu</p>
-          <div className="mt-5 space-y-4 text-sm leading-relaxed text-zinc-200">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-              <p className="text-zinc-400">Đăng nhập</p>
-              <p className="mt-2 font-mono text-xs">{`{ username: "admin", password: "admin", email: "duybao1213@gmail.com" }`}</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-              <p className="text-zinc-400">Hiển thị thông báo</p>
-              <p className="mt-2">Thành công và lỗi sẽ xuất hiện bằng toast nổi ở góc màn hình.</p>
-            </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Tài khoản có sẵn</p>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+            Nhấn vào từng nút để tự điền thông tin đăng nhập cho các vai trò mẫu.
+          </p>
+
+          <div className="mt-5 grid gap-3">
+            {loginDemoAccounts.map((account) => (
+              <button
+                key={account.label}
+                type="button"
+                onClick={() => fillDemoAccount(account)}
+                className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-left text-sm text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">{account.label}</p>
+                <p className="mt-2 font-semibold">{account.username}</p>
+                <p className="text-zinc-400">Mật khẩu: {account.password}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-relaxed text-zinc-200">
+            <p className="text-zinc-400">JWT & refresh</p>
+            <p className="mt-2">Đăng nhập sẽ lưu JWT và tự thử làm mới token khi gọi API bảo vệ.</p>
           </div>
         </aside>
       </div>
@@ -143,4 +146,5 @@ function LoginPage() {
 }
 
 export default LoginPage
+
 
