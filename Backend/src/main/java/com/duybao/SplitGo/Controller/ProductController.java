@@ -1,0 +1,90 @@
+package com.duybao.SplitGo.Controller;
+
+import com.duybao.SplitGo.DTO.Response.ApiResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
+import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
+import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
+import com.duybao.SplitGo.Model.User;
+import com.duybao.SplitGo.Service.CatalogService;
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/products")
+public class ProductController {
+    private final CatalogService catalogService;
+
+    @GetMapping
+    public ApiResponse<List<ProductResponse>> getProducts() {
+        return ApiResponse.<List<ProductResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách sản phẩm thành công")
+                .data(catalogService.getPublicProducts())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<ProductResponse> getProductById(@PathVariable Long id) {
+        return ApiResponse.<ProductResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy chi tiết sản phẩm thành công")
+                .data(catalogService.getProductDetail(id))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<ProductResponse> createProduct(
+            @AuthenticationPrincipal User user, @RequestBody @Valid CreateProductRequest request) {
+        return ApiResponse.<ProductResponse>builder()
+                .success(true)
+                .code(201)
+                .message("Tạo sản phẩm thành công")
+                .data(catalogService.createProduct(request, user.getId()))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<ProductResponse> updateProduct(
+            @AuthenticationPrincipal User user, @PathVariable Long id, @RequestBody @Valid UpdateProductRequest request) {
+        return ApiResponse.<ProductResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Cập nhật sản phẩm thành công")
+                .data(catalogService.updateProduct(id, request, user.getId()))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<Void> deleteProduct(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        catalogService.deleteProduct(id, user.getId());
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .code(200)
+                .message("Ẩn sản phẩm thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+}
+

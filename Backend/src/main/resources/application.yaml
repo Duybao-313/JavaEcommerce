@@ -1,0 +1,19 @@
+
+spring:
+  application:
+   name: SplitGo
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/ecommerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC }
+    username: ${DBMS_USERNAME:root}
+    password: ${DBMS_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+
+jwt:
+  secret: "q9v8G3s2r4Yt1KfVb6s9X2mQp7L0uH8nZ5yR0wVxC1aB7dE4fG6hJkL9mN0oPqR2sT3uVwXyZ+AbCdEfGhIjKlMBaoBaoBao"
+  token-duration: 6000
+  refresh-duration: 60000

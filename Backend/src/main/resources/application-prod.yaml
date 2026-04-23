@@ -1,0 +1,33 @@
+
+spring:
+  application:
+   name: SplitGo
+  datasource:
+    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      format_sql: true
+      dialect: org.hibernate.dialect.MySQLDialect
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.hibernate.type.descriptor.sql: TRACE
+    org.springframework.jdbc.core: DEBUG
+    org.springframework.jdbc.support: DEBUG
+    org.springframework.transaction: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
+    org.springframework.security: DEBUG
+
+jwt:
+  secret: "q9v8G3s2r4Yt1KfVb6s9X2mQp7L0uH8nZ5yR0wVxC1aB7dE4fG6hJkL9mN0oPqR2sT3uVwXyZ+AbCdEfGhIjKlMBaoBaoBao"
+  token-duration: 6000
+  refresh-duration: 60000
