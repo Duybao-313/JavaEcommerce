@@ -55,6 +55,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .stock(request.getStock())
+                .imageUrl(request.getImageUrl())
                 .status(ProductStatus.ACTIVE)
                 .seller(seller)
                 .category(resolveCategory(request.getCategoryId(), request.getCategoryName()))
