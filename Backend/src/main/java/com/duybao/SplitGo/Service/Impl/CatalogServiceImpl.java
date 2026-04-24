@@ -52,11 +52,6 @@ public class CatalogServiceImpl implements CatalogService {
         return toProductResponse(product);
     }
 
-    @Override
-    @Transactional
-    public ProductResponse createProduct(CreateProductRequest request, Long sellerId) {
-        return createProduct(request, sellerId, null);
-    }
 
     @Override
     @Transactional
@@ -142,6 +137,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .imageUrl(product.getImageUrl())
                 .stock(product.getStock())
                 .status(product.getStatus())
                 .sellerId(product.getSeller().getId())

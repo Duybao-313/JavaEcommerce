@@ -53,18 +53,7 @@ public class ProductController {
                 .build();
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('SELLER')")
-    public ApiResponse<ProductResponse> createProduct(
-            @AuthenticationPrincipal User user, @RequestBody @Valid CreateProductRequest request) {
-        return ApiResponse.<ProductResponse>builder()
-                .success(true)
-                .code(201)
-                .message("Tạo sản phẩm thành công")
-                .data(catalogService.createProduct(request, user.getId()))
-                .timestamp(LocalDateTime.now())
-                .build();
-    }
+
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('SELLER')")

@@ -60,3 +60,18 @@ export function getAuthSession() {
   }
 }
 
+export function hasRole(session, roleName) {
+  const target = String(roleName || '').toUpperCase().replace(/^ROLE_/, '')
+  if (!target) return false
+
+  const current = String(session?.role || session?.user?.role || '')
+    .toUpperCase()
+    .replace(/^ROLE_/, '')
+
+  return current === target
+}
+
+export function isSellerSession(session) {
+  return hasRole(session, 'SELLER')
+}
+
