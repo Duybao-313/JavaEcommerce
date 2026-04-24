@@ -1,9 +1,40 @@
 import { parseApiResponse, request } from './apiClient'
 import {
+  clearAuth,
   getStoredRefreshToken,
   getStoredToken,
   persistAuthResult,
 } from './sessionService'
+
+let refreshPromise = null
+
+async function shouldTryRefresh(response) {
+  if (response.status === 401) return true
+  if (response.status !== 403) return false
+
+  const payload = await response.clone().json().catch(() => null)
+  const message = String(payload?.message || '').toLowerCase()
+  const code = Number(payload?.code)
+
+  const tokenHint =
+    message.includes('token') ||
+    message.includes('expired') ||
+    message.includes('unauth') ||
+    code === 401 ||
+    code === 403
+
+  return tokenHint
+}
+
+async function refreshTokenSingleFlight() {
+  if (!refreshPromise) {
+    refreshPromise = refreshAuthToken().finally(() => {
+      refreshPromise = null
+    })
+  }
+
+  return refreshPromise
+}
 
 function normalizeAuthData(payload) {
   const data = payload?.data ?? null
@@ -86,27 +117,41 @@ export async function authFetch(path, init = {}) {
     headers,
   })
 
-  if (response.status !== 401) {
+  const canRefresh = await shouldTryRefresh(response)
+  if (!canRefresh) {
     return response
   }
 
-  const refreshed = await refreshAuthToken()
-  const nextHeaders = new Headers(init.headers || {})
-  const nextToken = refreshed?.data?.token || getStoredToken()
+  try {
+    const refreshed = await refreshTokenSingleFlight()
+    const nextHeaders = new Headers(init.headers || {})
+    const nextToken = refreshed?.data?.token || getStoredToken()
 
-  if (nextToken) {
-    nextHeaders.set('Authorization', `Bearer ${nextToken}`)
+    if (nextToken) {
+      nextHeaders.set('Authorization', `Bearer ${nextToken}`)
+    }
+
+    return request(path, {
+      ...init,
+      headers: nextHeaders,
+    })
+  } catch (error) {
+    clearAuth()
+    throw error
   }
-
-  return request(path, {
-    ...init,
-    headers: nextHeaders,
-  })
 }
 
 export async function getCurrentUserDetail() {
-  const response = await authFetch('/auth/userdetail')
-  const apiResponse = await parseApiResponse(response)
-  return apiResponse?.data || null
+  try {
+    const response = await authFetch('/auth/userdetail')
+    const apiResponse = await parseApiResponse(response)
+    return apiResponse?.data || null
+  } catch (firstError) {
+    await refreshTokenSingleFlight()
+
+    const retried = await authFetch('/auth/userdetail')
+    const retryPayload = await parseApiResponse(retried)
+    return retryPayload?.data || null
+  }
 }
 

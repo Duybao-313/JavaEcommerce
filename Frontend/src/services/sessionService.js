@@ -30,7 +30,16 @@ export function clearAuth() {
 export function persistAuthResult(payload) {
   if (!payload?.data) return
 
-  const authData = payload.data
+  const previous = getStoredAuth() || {}
+  const authData = {
+    ...previous,
+    ...payload.data,
+  }
+
+  if (!authData.user && previous.user) {
+    authData.user = previous.user
+  }
+
   localStorage.setItem(AUTH_KEY, JSON.stringify(authData))
 
   if (authData.token) {
