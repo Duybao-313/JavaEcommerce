@@ -166,3 +166,16 @@ export async function updateCurrentUser(payload) {
   return apiResponse?.data || null
 }
 
+export async function uploadUserAvatar(file) {
+  const formData = new FormData()
+  formData.append('avatar', file)
+
+  const response = await authFetch('/auth/avatar', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const apiResponse = await parseApiResponse(response)
+  return apiResponse?.data || null
+}
+

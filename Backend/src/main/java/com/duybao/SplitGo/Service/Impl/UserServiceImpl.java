@@ -15,9 +15,11 @@ import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Mappers.UserMapper;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Repository.UserRepository;
+import com.duybao.SplitGo.Service.FileUploadService;
 import com.duybao.SplitGo.Service.UserService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
 @Service
@@ -27,6 +29,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final SecurityConfigV2 securityConfig;
+    private final FileUploadService fileUploadService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @Override
@@ -54,6 +57,16 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         userMapper.update(userRequest, userStore);
+        userStore.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(userStore);
+        return userMapper.toDTO(userStore);
+    }
+
+    @Override
+    public UserDTO updateAvatar(Long id, MultipartFile file) {
+        User userStore = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String avatarUrl = fileUploadService.uploadUserAvatar(file);
+        userStore.setAvatarUrl(avatarUrl);
         userStore.setUpdatedAt(LocalDateTime.now());
         userRepository.save(userStore);
         return userMapper.toDTO(userStore);

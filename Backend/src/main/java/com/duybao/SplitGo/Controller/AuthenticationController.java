@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.AuthResponse;
@@ -102,6 +104,17 @@ public class AuthenticationController {
         return ApiResponse.<Void>builder()
                 .success(res)
                 .message("Đổi mật khẩu thành công")
+                .build();
+    }
+
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ApiResponse<UserDTO> updateAvatar(
+            @AuthenticationPrincipal User user, @RequestPart("avatar") MultipartFile avatar) {
+        return ApiResponse.<UserDTO>builder()
+                .success(true)
+                .message("Cập nhật avatar thành công")
+                .data(userService.updateAvatar(user.getId(), avatar))
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 }

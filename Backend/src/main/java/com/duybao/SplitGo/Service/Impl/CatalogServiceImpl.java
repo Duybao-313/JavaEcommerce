@@ -13,21 +13,28 @@ import com.duybao.SplitGo.Repository.CategoryRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.CatalogService;
+import com.duybao.SplitGo.Service.FileUploadService;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CatalogServiceImpl implements CatalogService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final FileUploadService fileUploadService;
 
     public CatalogServiceImpl(
-            ProductRepository productRepository, CategoryRepository categoryRepository, UserRepository userRepository) {
+            ProductRepository productRepository,
+            CategoryRepository categoryRepository,
+            UserRepository userRepository,
+            FileUploadService fileUploadService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.fileUploadService = fileUploadService;
     }
 
     @Override
@@ -48,14 +55,24 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request, Long sellerId) {
+        return createProduct(request, sellerId, null);
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse createProduct(CreateProductRequest request, Long sellerId, MultipartFile imageFile) {
         User seller = userRepository.findById(sellerId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String imageUrl = request.getImageUrl();
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imageUrl = fileUploadService.uploadProductImage(imageFile);
+        }
 
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .stock(request.getStock())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .status(ProductStatus.ACTIVE)
                 .seller(seller)
                 .category(resolveCategory(request.getCategoryId(), request.getCategoryName()))

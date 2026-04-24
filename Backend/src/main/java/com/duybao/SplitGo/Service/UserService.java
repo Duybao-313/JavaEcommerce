@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.duybao.SplitGo.DTO.Response.User.UserDTO;
 import com.duybao.SplitGo.DTO.request.UpdateUserRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
     public List<UserDTO> getAllUser();
@@ -11,5 +12,6 @@ public interface UserService {
     public UserDTO getUser(Long id);
 
     public UserDTO updateUser(Long id, UpdateUserRequest userRequest);
-    //    public void setAvatar(MultipartFile file,Long id);
+
+    public UserDTO updateAvatar(Long id, MultipartFile file);
 }
