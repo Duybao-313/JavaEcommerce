@@ -18,6 +18,7 @@ import com.duybao.SplitGo.Mappers.UserMapper;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Service.AuthenticationService;
 import com.duybao.SplitGo.Service.JwtService;
+import com.duybao.SplitGo.Service.UserService;
 import com.nimbusds.jose.JOSEException;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+    private final UserService userService;
 
     @PostMapping("/register")
     public ApiResponse<RegisterResponse> register(@Valid @RequestBody UserRegisterRequest a) {
@@ -59,6 +61,18 @@ public class AuthenticationController {
                 .data(authenticationService.getUser(customUserDetail.getId()))
                 .success(true)
                 .message("Lấy thông tin người dùng")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PutMapping("/userdetail")
+    public ApiResponse<UserDTO> updateCurrentUser(
+            @AuthenticationPrincipal User customUserDetail, @Valid @RequestBody UpdateUserRequest request) {
+
+        return ApiResponse.<UserDTO>builder()
+                .data(userService.updateUser(customUserDetail.getId(), request))
+                .success(true)
+                .message("Cập nhật thông tin người dùng thành công")
                 .timestamp(LocalDateTime.now())
                 .build();
     }

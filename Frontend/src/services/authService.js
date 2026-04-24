@@ -155,3 +155,14 @@ export async function getCurrentUserDetail() {
   }
 }
 
+export async function updateCurrentUser(payload) {
+  const response = await authFetch('/auth/userdetail', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const apiResponse = await parseApiResponse(response)
+  return apiResponse?.data || null
+}
+
