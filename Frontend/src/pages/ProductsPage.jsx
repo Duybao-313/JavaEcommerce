@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthUserBadge from '../components/AuthUserBadge'
 import ProductSection from '../components/ProductSection'
-import { getAuthSession } from '../services/authApi'
+import { getAuthSession } from '../services/sessionService'
 
 function ProductsPage() {
   const [session, setSession] = useState(() => getAuthSession())

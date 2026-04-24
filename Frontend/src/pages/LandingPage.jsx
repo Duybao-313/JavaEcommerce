@@ -3,7 +3,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { Link } from 'react-router-dom'
 import ProductSection from '../components/ProductSection'
 import AuthUserBadge from '../components/AuthUserBadge'
-import { getAuthSession } from '../services/authApi'
+import { getAuthSession } from '../services/sessionService'
 
 const skills = [
   {

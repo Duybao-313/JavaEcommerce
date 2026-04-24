@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { clearAuth, getAuthSession, getCurrentUserDetail } from '../services/authApi'
+import { getCurrentUserDetail } from '../services/authService'
+import { clearAuth, getAuthSession } from '../services/sessionService'
 
 function getInitials(name) {
   if (!name) return 'U'

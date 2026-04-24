@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getProductDetail, addToCart, getAuthSession } from '../services/authApi'
+import { getProductDetail } from '../services/productService'
+import { addToCart } from '../services/cartService'
+import { getAuthSession } from '../services/sessionService'
 
 function formatPrice(value) {
   return new Intl.NumberFormat('vi-VN', {
@@ -28,10 +30,23 @@ function ProductDetailPage() {
       setError('')
 
       try {
-        const data = await getProductDetail(productId)
-        if (!data) {
-          throw new Error('Không thể tải thông tin sản phẩm')
+        if (!productId) {
+          throw new Error('Product ID khong hop le')
         }
+        const data = await getProductDetail(productId)
+
+        if (!data) {
+          throw new Error('Khong nhan duoc du lieu san pham tu API')
+        }
+
+        if (typeof data !== 'object') {
+          throw new Error(`Du lieu san pham khong hop le: ${typeof data}`)
+        }
+
+        if (!data.id) {
+          throw new Error('San pham khong co ID')
+        }
+
         setProduct(data)
         setQuantity(1)
       } catch (err) {
@@ -41,9 +56,7 @@ function ProductDetailPage() {
       }
     }
 
-    if (productId) {
-      loadProduct()
-    }
+    loadProduct()
   }, [productId])
 
   const handleQuantityChange = (newQuantity) => {
@@ -90,8 +103,11 @@ function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+            <p className="text-sm font-semibold text-red-700">Lỗi khi tải sản phẩm:</p>
+            <p className="mt-2 text-sm text-red-600 whitespace-pre-wrap break-words">{error}</p>
+            <p className="mt-3 text-xs text-red-600">Product ID: {productId}</p>
+            <p className="mt-1 text-xs text-red-600">API URL: http://localhost:8080/products/{productId}</p>
             <Link
               to="/products"
               className="mt-4 inline-block rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-700 hover:border-red-500"

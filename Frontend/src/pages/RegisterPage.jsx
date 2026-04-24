@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { register, persistAuthResult } from '../services/authApi'
+import { register } from '../services/authService'
+import { persistAuthResult } from '../services/sessionService'
 import { registerDemoAccounts } from '../constants/demoAccounts'
 
 const initialState = {

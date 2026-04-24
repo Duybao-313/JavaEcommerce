@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
+import { getProducts } from '../services/productService'
 
 const listVariants = {
   hidden: {},
@@ -33,7 +35,7 @@ function ProductSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const apiUrl = useMemo(() => '/api/products', [])
+  const apiUrl = useMemo(() => 'http://localhost:8080/products', [])
 
   useEffect(() => {
     let cancelled = false
@@ -43,17 +45,7 @@ function ProductSection() {
       setError('')
 
       try {
-        const response = await fetch(apiUrl)
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        const payload = await response.json()
-        const items = Array.isArray(payload?.data) ? payload.data : []
-
-        if (!payload?.success) {
-          throw new Error(payload?.message || 'Không thể lấy danh sách sản phẩm')
-        }
+        const items = await getProducts()
 
         if (!cancelled) {
           setProducts(items)
@@ -151,11 +143,14 @@ function ProductSection() {
                 </div>
 
                 <div className="mt-5 flex items-center justify-between">
-                  <p className="text-xl font-semibold text-zinc-900">{formatPrice(product.price)}</p>
-                  <button className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700">
-                    Mua ngay
-                  </button>
-                </div>
+                   <p className="text-xl font-semibold text-zinc-900">{formatPrice(product.price)}</p>
+                   <Link
+                     to={`/products/${product.id}`}
+                     className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700"
+                   >
+                     Xem chi tiết
+                   </Link>
+                 </div>
               </div>
             </motion.article>
           ))}
