@@ -159,45 +159,7 @@ function LandingPage() {
           </motion.div>
         </motion.section>
 
-        <section id="skills" className="mt-14 rounded-3xl border border-zinc-200 bg-white p-8 md:p-10">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Thư viện năng lực</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">Bộ công cụ vận hành shop ecommerce</h2>
-            </div>
-            <a href="#contact" className="text-sm font-semibold text-zinc-600 hover:text-zinc-900">Nhận tư vấn chi tiết &rarr;</a>
-          </div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="mt-6 divide-y divide-zinc-200 rounded-2xl border border-zinc-200"
-          >
-            {skills.map((item) => (
-              <motion.div
-                key={item.title}
-                variants={fadeUpItem}
-                className="grid gap-3 px-5 py-5 transition hover:bg-zinc-50 md:grid-cols-[1.2fr_0.6fr_0.3fr] md:items-center"
-              >
-                <div>
-                  <p className="text-lg font-semibold text-zinc-900">{item.title}</p>
-                  <p className="mt-1 text-sm text-zinc-600">{item.summary}</p>
-                </div>
-                <div className="flex items-center gap-2 md:justify-end">
-                  <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
-                    {item.type}
-                  </span>
-                  <span className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-500">{item.size}</span>
-                </div>
-                <button className="rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-700 hover:border-zinc-900 hover:text-zinc-900 md:justify-self-end">
-                  Xem
-                </button>
-              </motion.div>
-            ))}
-          </motion.div>
-        </section>
+      
 
         <ProductSection />
 

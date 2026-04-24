@@ -1,3 +1,6 @@
+// API Base URL
+// Dev: '/api' routes through vite proxy to http://localhost:8080
+// The vite proxy rewrites /api prefix to target backend
 const API_BASE = '/api'
 
 async function parseResponse(response) {
@@ -11,6 +14,7 @@ async function parseResponse(response) {
     throw new Error(payload.message || 'Yêu cầu không thành công')
   }
 
+  // Payload format: { success, code, message, data, timestamp }
   return payload
 }
 
@@ -165,7 +169,58 @@ export async function authFetch(input, init = {}) {
 export async function getCurrentUserDetail() {
   const response = await authFetch(`${API_BASE}/auth/userdetail`)
   const apiResponse = await parseResponse(response)
+  // Response: { success, code, message, data: UserDetail, timestamp }
   return apiResponse?.data || null
+}
+
+export async function addToCart(productId, quantity) {
+  const response = await authFetch(`${API_BASE}/cart/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity }),
+  })
+  const apiResponse = await parseResponse(response)
+  // Response: { success, code, message, data: CartResponse, timestamp }
+  return apiResponse?.data || null
+}
+
+export async function getCart() {
+  const response = await authFetch(`${API_BASE}/cart`)
+  const apiResponse = await parseResponse(response)
+  // Response: { success, code, message, data: CartResponse, timestamp }
+  return apiResponse?.data || null
+}
+
+export async function updateCartItem(cartItemId, quantity) {
+  const response = await authFetch(`${API_BASE}/cart/items/${cartItemId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  })
+  const apiResponse = await parseResponse(response)
+  // Response: { success, code, message, data: CartResponse, timestamp }
+  return apiResponse?.data || null
+}
+
+export async function removeFromCart(cartItemId) {
+  const response = await authFetch(`${API_BASE}/cart/items/${cartItemId}`, {
+    method: 'DELETE',
+  })
+  const apiResponse = await parseResponse(response)
+  // Response: { success, code, message, data: CartResponse, timestamp }
+  return apiResponse?.data || null
+}
+
+export async function getProductDetail(productId) {
+  const response = await fetch(`${API_BASE}/products/${productId}`)
+  const apiResponse = await parseResponse(response)
+  
+  // Response format: { success, code, message, data: ProductResponse, timestamp }
+  // Extract product data from wrapper
+  if (apiResponse?.data && typeof apiResponse.data === 'object') {
+    return apiResponse.data
+  }
+  return null
 }
 
 
