@@ -26,6 +26,11 @@ function ProductsPage() {
         </div>
         <div className="flex items-center gap-3">
           {isSellerSession(session) && (
+            <Link to="/products/mine" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
+              Các sản phẩm đã tạo
+            </Link>
+          )}
+          {isSellerSession(session) && (
             <Link to="/products/create" className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700">
               Tạo sản phẩm
             </Link>

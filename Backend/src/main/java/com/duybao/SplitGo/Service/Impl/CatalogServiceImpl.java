@@ -45,6 +45,13 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    public List<ProductResponse> getProductsBySellerId(Long sellerId) {
+        return productRepository.findBySellerIdOrderByCreatedAtDesc(sellerId).stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository

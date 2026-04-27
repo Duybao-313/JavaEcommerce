@@ -13,6 +13,12 @@ export async function getProductDetail(productId) {
   return payload?.data || null
 }
 
+export async function getProductsBySeller(sellerId) {
+  const response = await authFetch(`/products/seller/${sellerId}`)
+  const payload = await parseApiResponse(response)
+  return Array.isArray(payload?.data) ? payload.data : []
+}
+
 export async function createProductWithImage(payload, imageFile) {
   const formData = new FormData()
   formData.append('name', payload?.name || '')
@@ -36,6 +42,24 @@ export async function createProductWithImage(payload, imageFile) {
   const response = await authFetch('/products', {
     method: 'POST',
     body: formData,
+  })
+  const apiPayload = await parseApiResponse(response)
+  return apiPayload?.data || null
+}
+
+export async function updateSellerProduct(productId, payload) {
+  const response = await authFetch(`/products/${productId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const apiPayload = await parseApiResponse(response)
+  return apiPayload?.data || null
+}
+
+export async function deleteSellerProduct(productId) {
+  const response = await authFetch(`/products/${productId}`, {
+    method: 'DELETE',
   })
   const apiPayload = await parseApiResponse(response)
   return apiPayload?.data || null

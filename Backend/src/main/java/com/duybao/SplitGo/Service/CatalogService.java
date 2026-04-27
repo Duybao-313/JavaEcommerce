@@ -9,6 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
 public interface CatalogService {
     List<ProductResponse> getPublicProducts();
 
+    List<ProductResponse> getProductsBySellerId(Long sellerId);
+
     ProductResponse getProductDetail(Long productId);
 
 

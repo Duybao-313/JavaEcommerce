@@ -4,6 +4,8 @@ import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
+import com.duybao.SplitGo.Exception.AppException;
+import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Service.CatalogService;
 import jakarta.validation.Valid;
@@ -38,6 +40,23 @@ public class ProductController {
                 .code(200)
                 .message("Lấy danh sách sản phẩm thành công")
                 .data(catalogService.getPublicProducts())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/seller/{sellerId}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<List<ProductResponse>> getProductsBySeller(
+            @AuthenticationPrincipal User user, @PathVariable Long sellerId) {
+        if (!user.getId().equals(sellerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        return ApiResponse.<List<ProductResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách sản phẩm của seller thành công")
+                .data(catalogService.getProductsBySellerId(sellerId))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
