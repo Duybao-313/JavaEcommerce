@@ -107,6 +107,8 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(lineTotal);
 
             product.setStock(product.getStock() - cartItem.getQuantity());
+            long currentSold = product.getSoldCount() == null ? 0L : product.getSoldCount();
+            product.setSoldCount(currentSold + cartItem.getQuantity());
             productRepository.save(product);
         }
 

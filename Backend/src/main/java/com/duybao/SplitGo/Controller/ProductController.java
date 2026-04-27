@@ -102,6 +102,21 @@ public class ProductController {
                 .build();
     }
 
+    @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<ProductResponse> updateProductImage(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestPart("image") MultipartFile image) {
+        return ApiResponse.<ProductResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Cập nhật ảnh sản phẩm thành công")
+                .data(catalogService.updateProductImage(id, user.getId(), image))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<Void> deleteProduct(@AuthenticationPrincipal User user, @PathVariable Long id) {

@@ -50,6 +50,9 @@ public class Product {
     private Long viewCount;
 
     @Column(nullable = false)
+    private Long soldCount;
+
+    @Column(nullable = false)
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -84,6 +87,9 @@ public class Product {
         }
         if (viewCount == null) {
             viewCount = 0L;
+        }
+        if (soldCount == null) {
+            soldCount = 0L;
         }
     }
 

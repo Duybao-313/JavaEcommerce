@@ -121,6 +121,22 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
+    public ProductResponse updateProductImage(Long productId, Long sellerId, MultipartFile imageFile) {
+        Product product = productRepository
+                .findByIdAndSellerId(productId, sellerId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        String imageUrl = fileUploadService.uploadProductImage(imageFile);
+        product.setImageUrl(imageUrl);
+        return toProductResponse(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional
     public void deleteProduct(Long productId, Long sellerId) {
         Product product = productRepository
                 .findByIdAndSellerId(productId, sellerId)
@@ -151,6 +167,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .imageUrl(product.getImageUrl())
                 .stock(product.getStock())
                 .viewCount(product.getViewCount() == null ? 0L : product.getViewCount())
+                .soldCount(product.getSoldCount() == null ? 0L : product.getSoldCount())
                 .status(product.getStatus())
                 .sellerId(product.getSeller().getId())
                 .sellerUsername(product.getSeller().getUsername())

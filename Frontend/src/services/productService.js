@@ -65,3 +65,15 @@ export async function deleteSellerProduct(productId) {
   return apiPayload?.data || null
 }
 
+export async function updateSellerProductImage(productId, imageFile) {
+  const formData = new FormData()
+  formData.append('image', imageFile)
+
+  const response = await authFetch(`/products/${productId}/image`, {
+    method: 'PUT',
+    body: formData,
+  })
+  const apiPayload = await parseApiResponse(response)
+  return apiPayload?.data || null
+}
+

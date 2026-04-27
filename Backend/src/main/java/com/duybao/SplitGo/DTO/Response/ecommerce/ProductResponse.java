@@ -16,6 +16,7 @@ public class ProductResponse {
     private BigDecimal price;
     private Integer stock;
     private Long viewCount;
+    private Long soldCount;
     private ProductStatus status;
     private Long sellerId;
     private String sellerUsername;

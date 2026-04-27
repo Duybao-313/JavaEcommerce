@@ -18,6 +18,8 @@ public interface CatalogService {
 
     ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long sellerId);
 
+    ProductResponse updateProductImage(Long productId, Long sellerId, MultipartFile imageFile);
+
     void deleteProduct(Long productId, Long sellerId);
 }
 
