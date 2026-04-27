@@ -335,6 +335,10 @@ function ProductSection() {
                   <p>ID: <span className="font-medium text-zinc-900">#{product.id}</span></p>
                 </div>
 
+                <p className="mt-2 text-sm text-zinc-600">
+                  Lượt xem: <span className="font-medium text-zinc-900">{Number(product?.viewCount || 0).toLocaleString('vi-VN')}</span>
+                </p>
+
                 <div className="mt-5 flex items-center justify-between">
                    <p className="text-xl font-semibold text-zinc-900">{formatPrice(product.price)}</p>
                    <Link

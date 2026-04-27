@@ -15,6 +15,7 @@ public class ProductResponse {
     private String imageUrl;
     private BigDecimal price;
     private Integer stock;
+    private Long viewCount;
     private ProductStatus status;
     private Long sellerId;
     private String sellerUsername;

@@ -16,4 +16,4 @@ spring:
 jwt:
   secret: "q9v8G3s2r4Yt1KfVb6s9X2mQp7L0uH8nZ5yR0wVxC1aB7dE4fG6hJkL9mN0oPqR2sT3uVwXyZ+AbCdEfGhIjKlMBaoBaoBao"
   token-duration: 6000
-  refresh-duration: 60000
+  refresh-duration: 600000

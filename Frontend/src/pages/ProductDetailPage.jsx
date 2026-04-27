@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getProductDetail } from '../services/productService'
+import { getProductDetail, getProducts } from '../services/productService'
 import { addToCart } from '../services/cartService'
 import { getAuthSession } from '../services/sessionService'
 
@@ -21,6 +21,7 @@ function ProductDetailPage() {
   const [error, setError] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
+  const [relatedProducts, setRelatedProducts] = useState([])
 
   const session = getAuthSession()
 
@@ -49,8 +50,20 @@ function ProductDetailPage() {
 
         setProduct(data)
         setQuantity(1)
+
+        const allProducts = await getProducts()
+        const sameCategory = allProducts
+          .filter((item) => item?.id !== data.id && item?.categoryId === data?.categoryId)
+          .sort((a, b) => {
+            const byViews = Number(b?.viewCount || 0) - Number(a?.viewCount || 0)
+            if (byViews !== 0) return byViews
+            return Number(b?.id || 0) - Number(a?.id || 0)
+          })
+
+        setRelatedProducts(sameCategory)
       } catch (err) {
         setError(err?.message || 'Đã có lỗi khi tải sản phẩm')
+        setRelatedProducts([])
       } finally {
         setLoading(false)
       }
@@ -200,6 +213,10 @@ function ProductDetailPage() {
                 <span className="text-sm text-zinc-600">ID Sản phẩm:</span>
                 <span className="font-medium text-zinc-900">#{product.id}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-600">Lượt xem:</span>
+                <span className="font-medium text-zinc-900">{Number(product.viewCount || 0).toLocaleString('vi-VN')}</span>
+              </div>
             </div>
 
             {/* Price */}
@@ -259,6 +276,42 @@ function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {relatedProducts.length > 0 && (
+          <section className="mt-10 rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">Sản phẩm liên quan</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Cùng danh mục, ưu tiên lượt xem cao
+              </p>
+            </div>
+
+            <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+              {relatedProducts.map((item) => (
+                <article
+                  key={item.id}
+                  className="min-w-[240px] rounded-2xl border border-zinc-200 bg-zinc-50 p-4 md:min-w-[280px] lg:min-w-[calc((100%-3rem)/4)]"
+                >
+                  <Link to={`/products/${item.id}`} className="block">
+                    <div className="h-36 overflow-hidden rounded-xl bg-zinc-100">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500">
+                          Chưa có ảnh
+                        </div>
+                      )}
+                    </div>
+
+                    <h3 className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-900">{item.name}</h3>
+                    <p className="mt-1 text-sm font-semibold text-zinc-900">{formatPrice(item.price)}</p>
+                    <p className="mt-1 text-xs text-zinc-600">Lượt xem: {Number(item.viewCount || 0).toLocaleString('vi-VN')}</p>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )

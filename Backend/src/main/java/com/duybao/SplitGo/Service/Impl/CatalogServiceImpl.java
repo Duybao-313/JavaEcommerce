@@ -45,10 +45,14 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    @Transactional
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository
                 .findById(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        Long currentViews = product.getViewCount() == null ? 0L : product.getViewCount();
+        product.setViewCount(currentViews + 1);
+        productRepository.save(product);
         return toProductResponse(product);
     }
 
@@ -139,6 +143,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .price(product.getPrice())
                 .imageUrl(product.getImageUrl())
                 .stock(product.getStock())
+                .viewCount(product.getViewCount() == null ? 0L : product.getViewCount())
                 .status(product.getStatus())
                 .sellerId(product.getSeller().getId())
                 .sellerUsername(product.getSeller().getUsername())

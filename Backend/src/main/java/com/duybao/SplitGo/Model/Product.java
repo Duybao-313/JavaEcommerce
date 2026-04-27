@@ -47,6 +47,9 @@ public class Product {
     private Integer stock;
 
     @Column(nullable = false)
+    private Long viewCount;
+
+    @Column(nullable = false)
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -78,6 +81,9 @@ public class Product {
         }
         if (status == null) {
             status = ProductStatus.ACTIVE;
+        }
+        if (viewCount == null) {
+            viewCount = 0L;
         }
     }
 
