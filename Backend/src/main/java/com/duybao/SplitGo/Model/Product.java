@@ -73,6 +73,9 @@ public class Product {
     @Column(precision = 19, scale = 2)
     private BigDecimal salePrice;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal weight;
+
 
 
     @Column(length = 100)

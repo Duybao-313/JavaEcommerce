@@ -53,7 +53,15 @@ public enum ErrorCode {
     CART_ITEM_NOT_FOUND(2004, "Không tìm thấy mục trong giỏ", HttpStatus.NOT_FOUND),
     ORDER_NOT_FOUND(2005, "Không tìm thấy đơn hàng", HttpStatus.NOT_FOUND),
     FORBIDDEN_RESOURCE(2006, "Bạn không có quyền truy cập tài nguyên này", HttpStatus.FORBIDDEN),
-    INVALID_ORDER_STATUS_TRANSITION(2007, "Không thể cập nhật trạng thái đơn hàng", HttpStatus.BAD_REQUEST);
+    INVALID_ORDER_STATUS_TRANSITION(2007, "Không thể cập nhật trạng thái đơn hàng", HttpStatus.BAD_REQUEST),
+    REVIEW_NOT_FOUND(2008, "Không tìm thấy đánh giá", HttpStatus.NOT_FOUND),
+    REVIEW_ALREADY_EXISTS(2009, "Bạn đã đánh giá sản phẩm này", HttpStatus.BAD_REQUEST),
+    WISHLIST_NOT_FOUND(2010, "Không tìm thấy mục yêu thích", HttpStatus.NOT_FOUND),
+    WISHLIST_ITEM_EXISTS(2011, "Sản phẩm đã có trong danh sách yêu thích", HttpStatus.BAD_REQUEST),
+    ADDRESS_NOT_FOUND(2012, "Không tìm thấy địa chỉ", HttpStatus.NOT_FOUND),
+    SHIPPING_NOT_FOUND(2013, "Không tìm thấy thông tin vận chuyển", HttpStatus.NOT_FOUND),
+    SHIPPING_ALREADY_EXISTS(2014, "Thông tin vận chuyển đã tồn tại", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
 
     private final int code;
     private final String message;

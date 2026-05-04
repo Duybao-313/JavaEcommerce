@@ -15,6 +15,16 @@ public class CreateProductRequest {
     private String description;
     private String imageUrl;
 
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal salePrice;
+
+    @DecimalMin(value = "0.0", inclusive = true)
+    private BigDecimal weight;
+
+    private String sku;
+
+    private Boolean isFeatured;
+
     @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal price;

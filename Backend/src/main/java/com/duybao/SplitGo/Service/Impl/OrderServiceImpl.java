@@ -70,8 +70,9 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .buyer(buyer)
                 .status(OrderStatus.PENDING)
-                .paymentMethod(PaymentMethod.COD)
+                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD)
                 .shippingAddress(request.getShippingAddress())
+                .note(request.getNote())
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 

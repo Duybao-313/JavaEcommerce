@@ -52,9 +52,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO updateUser(Long id, UpdateUserRequest userRequest) {
         User userStore = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        var existingUserByEmail = userRepository.findByEmail(userRequest.getEmail());
-        if (existingUserByEmail.isPresent() && !existingUserByEmail.get().getId().equals(userStore.getId())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        if (userRequest.getEmail() != null) {
+            var existingUserByEmail = userRepository.findByEmail(userRequest.getEmail());
+            if (existingUserByEmail.isPresent() && !existingUserByEmail.get().getId().equals(userStore.getId())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
         userMapper.update(userRequest, userStore);
         userStore.setUpdatedAt(LocalDateTime.now());

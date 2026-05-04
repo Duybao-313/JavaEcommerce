@@ -77,6 +77,11 @@ public class CatalogServiceImpl implements CatalogService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
+                .salePrice(request.getSalePrice())
+                .weight(request.getWeight())
+                .sku(request.getSku())
+                .isFeatured(request.getIsFeatured() != null && request.getIsFeatured())
+                .slug(slugify(request.getName()))
                 .stock(request.getStock())
                 .imageUrl(imageUrl)
                 .status(ProductStatus.ACTIVE)
@@ -103,11 +108,26 @@ public class CatalogServiceImpl implements CatalogService {
         if (request.getPrice() != null) {
             product.setPrice(request.getPrice());
         }
+        if (request.getSalePrice() != null) {
+            product.setSalePrice(request.getSalePrice());
+        }
+        if (request.getWeight() != null) {
+            product.setWeight(request.getWeight());
+        }
+        if (request.getSku() != null) {
+            product.setSku(request.getSku());
+        }
+        if (request.getIsFeatured() != null) {
+            product.setIsFeatured(request.getIsFeatured());
+        }
         if (request.getStock() != null) {
             product.setStock(request.getStock());
         }
         if (request.getStatus() != null) {
             product.setStatus(request.getStatus());
+        }
+        if (request.getName() != null && !request.getName().isBlank()) {
+            product.setSlug(slugify(request.getName()));
         }
         if (request.getCategoryId() != null) {
             Category category = categoryRepository
@@ -176,6 +196,17 @@ public class CatalogServiceImpl implements CatalogService {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
+    }
+
+    private String slugify(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.trim()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-");
     }
 }
 

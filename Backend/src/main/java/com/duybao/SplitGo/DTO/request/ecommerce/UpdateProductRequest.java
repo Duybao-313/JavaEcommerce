@@ -14,6 +14,16 @@ public class UpdateProductRequest {
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal price;
 
+    @DecimalMin("0.0")
+    private BigDecimal salePrice;
+
+    @DecimalMin("0.0")
+    private BigDecimal weight;
+
+    private String sku;
+
+    private Boolean isFeatured;
+
     @Min(0)
     private Integer stock;
 
