@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -93,7 +92,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
     public UserDTO getUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userMapper.toDTO(user);

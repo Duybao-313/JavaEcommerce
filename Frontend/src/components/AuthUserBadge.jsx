@@ -1,13 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-
-function getInitials(name) {
-  if (!name) return 'U'
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return 'U'
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase()
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
-}
+import { Facehash } from 'facehash'
+import { getFacehashProps } from '../utils/facehashTheme'
 
 function AuthUserBadge({ session }) {
   if (!session?.token) {
@@ -26,15 +20,19 @@ function AuthUserBadge({ session }) {
   const user = session.user || {}
   const displayName = user.fullName || user.username || 'Tài khoản'
   const avatarUrl = user.avatarUrl
-  const initials = getInitials(displayName)
+  const facehashProps = getFacehashProps(displayName)
 
   return (
     <Link to="/me" className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 hover:border-zinc-900">
       {avatarUrl ? (
         <img src={avatarUrl} alt={displayName} className="h-7 w-7 rounded-full object-cover" />
       ) : (
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
-          {initials}
+        <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-zinc-100">
+          <Facehash
+            {...facehashProps}
+            size="100%"
+            className="rounded-full"
+          />
         </span>
       )}
       <span className="max-w-[120px] truncate">{displayName}</span>
@@ -43,4 +41,3 @@ function AuthUserBadge({ session }) {
 }
 
 export default AuthUserBadge
-

@@ -1,0 +1,162 @@
+import React from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import {
+  clearAuth,
+  getAuthSession,
+  isSellerSession,
+} from "../services/sessionService";
+
+const navItems = [
+  {
+    label: "Dashboard",
+    to: "/seller/dashboard",
+  },
+  {
+    label: "Sản phẩm của tôi",
+    to: "/seller/products",
+  },
+  {
+    label: "Tạo sản phẩm",
+    to: "/seller/products/create",
+  },
+  {
+    label: "Lịch sử đơn bán",
+    to: "/seller/orders",
+  },
+];
+
+function SellerDashboardHome() {
+  return (
+    <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+        Seller Overview
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
+        Dashboard người bán
+      </h1>
+      <p className="mt-3 text-sm text-zinc-600">
+        Chào mừng bạn đến khu vực seller. Tại đây bạn có thể quản lý sản phẩm,
+        theo dõi đơn hàng và vận hành gian hàng của mình.
+      </p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+            Sản phẩm
+          </p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900">
+            Quản lý danh mục bán
+          </p>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+            Đơn hàng
+          </p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900">
+            Theo dõi lịch sử đơn bán
+          </p>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+            Hiệu suất
+          </p>
+          <p className="mt-2 text-lg font-semibold text-zinc-900">
+            Phân tích hoạt động shop
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SellerOrdersHistoryPage() {
+  return (
+    <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+        Order History
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
+        Lịch sử đơn bán
+      </h1>
+      <p className="mt-3 text-sm text-zinc-600">
+        Chức năng lịch sử đơn bán đã được tạo khung giao diện. Bạn có thể kết
+        nối API đơn hàng seller để hiển thị dữ liệu thực tế.
+      </p>
+    </section>
+  );
+}
+
+function SellerLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const session = getAuthSession();
+  const displayName =
+    session?.user?.fullName || session?.user?.username || "Seller";
+
+  if (!session?.token) {
+    navigate("/login", { replace: true });
+    return null;
+  }
+
+  if (!isSellerSession(session)) {
+    toast.error("Bạn không có quyền truy cập khu vực seller");
+    navigate("/products", { replace: true });
+    return null;
+  }
+
+  const handleLogout = () => {
+    clearAuth();
+    toast.success("Đăng xuất thành công");
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-4 py-6 md:px-6 md:py-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[260px_1fr]">
+        <aside className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:h-fit">
+          <div className="rounded-2xl bg-zinc-900 px-4 py-4 text-white">
+            <p className="text-xs uppercase tracking-[0.16em] text-zinc-300">
+              SplitGo Seller
+            </p>
+            <p className="mt-1 text-sm font-semibold">{displayName}</p>
+          </div>
+
+          <nav className="mt-4 space-y-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`block rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? "border-zinc-900 bg-zinc-900 text-white"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-900 hover:text-zinc-900"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-4 w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:border-red-400"
+          >
+            Đăng xuất
+          </button>
+        </aside>
+
+        <main>
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export { SellerDashboardHome, SellerLayout, SellerOrdersHistoryPage };
+export default SellerLayout;

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import CartButton from '../components/CartButton'
+import CartDrawer from '../components/CartDrawer'
+import { useCart } from '../context/CartContext'
 import { getProductDetail, getProducts } from '../services/productService'
 import { addToCart } from '../services/cartService'
 import { getAuthSession } from '../services/sessionService'
@@ -22,6 +25,7 @@ function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
   const [relatedProducts, setRelatedProducts] = useState([])
+  const { refreshCart, openCart } = useCart()
 
   const session = getAuthSession()
 
@@ -92,9 +96,11 @@ function ProductDetailPage() {
     setAdding(true)
 
     try {
-      const result = await addToCart(product.id, quantity)
+      await addToCart(product.id, quantity)
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`)
       setQuantity(1)
+      await refreshCart()
+      openCart()
     } catch (err) {
       toast.error(err?.message || 'Không thể thêm vào giỏ hàng')
     } finally {
@@ -154,12 +160,15 @@ function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
       <div className="mx-auto w-full max-w-6xl">
-        <Link
-          to="/products"
-          className="mb-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900"
-        >
-          ← Quay lại
-        </Link>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900"
+          >
+            ← Quay lại
+          </Link>
+          {session?.token && <CartButton />}
+        </div>
 
         <div className="grid gap-8 md:grid-cols-2">
           {/* Image Section */}
@@ -313,6 +322,8 @@ function ProductDetailPage() {
           </section>
         )}
       </div>
+
+      <CartDrawer />
     </div>
   )
 }

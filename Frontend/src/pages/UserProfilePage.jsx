@@ -1,16 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { Facehash } from 'facehash'
+import { getFacehashProps } from '../utils/facehashTheme'
 import { getCurrentUserDetail, updateCurrentUser } from '../services/authService'
 import { clearAuth, getAuthSession } from '../services/sessionService'
-
-function getInitials(name) {
-  if (!name) return 'U'
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return 'U'
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase()
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
-}
 
 function UserProfilePage() {
   const [session, setSession] = useState(() => getAuthSession())
@@ -62,6 +56,7 @@ function UserProfilePage() {
 
   const displayName = user?.fullName || user?.username || 'Tài khoản'
   const avatarUrl = user?.avatarUrl
+  const facehashProps = getFacehashProps(displayName)
 
   const missingFields = useMemo(() => {
     const checks = [
@@ -193,8 +188,12 @@ function UserProfilePage() {
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="h-20 w-20 rounded-full object-cover" />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">
-                {getInitials(displayName)}
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-zinc-100">
+                <Facehash
+                  {...facehashProps}
+                  size="100%"
+                  className="rounded-full"
+                />
               </div>
             )}
 
@@ -310,4 +309,3 @@ function UserProfilePage() {
 }
 
 export default UserProfilePage
-

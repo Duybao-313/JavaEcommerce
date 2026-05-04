@@ -97,6 +97,10 @@ public class CartServiceImpl implements CartService {
         CartItem item = cartItemRepository
                 .findByIdAndCartUserId(cartItemId, buyerId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+        Cart cart = item.getCart();
+        if (cart != null && cart.getItems() != null) {
+            cart.getItems().removeIf(existing -> existing.getId().equals(item.getId()));
+        }
         cartItemRepository.delete(item);
         return getMyCart(buyerId);
     }
@@ -143,6 +147,4 @@ public class CartServiceImpl implements CartService {
                 .build();
     }
 }
-
-
 
