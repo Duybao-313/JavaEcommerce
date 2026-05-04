@@ -1,16 +1,16 @@
-# SplitGo ERD Enhancement TODO
+# TODO - Role-based routing & 404 protection
 
-## Current Task: Enhance ERD for notifications and product images
-
-### Plan Steps:
-- [ ] 1. Create TODO.md ✅
-- [ ] 2. Update docs/erd-diagram.md with new entities (NOTIFICATION, PRODUCT_IMAGE) and relationships
-- [ ] 3. Verify Mermaid diagram renders correctly
-- [ ] 4. Update documentation sections (Key Relationships, Enums)
-- [ ] 5. Confirm completion with user
-
-### Future Steps (post-ERD):
-- [ ] Create JPA entities: ProductImage.java, Notification.java
-- [ ] Update Product.java (remove imageUrl, add featuredImageId)
-- [ ] Add repositories and services
-- [ ] Frontend: Image gallery in ProductDetailPage.jsx
+- [x] Add role-based redirect after login:
+  - ADMIN -> `/admin`
+  - USER -> `/products`
+  - SELLER -> `/seller`
+- [x] Update app routes:
+  - `/products` should render customer products page (not seller redirect)
+  - add `/admin` route
+  - add `/seller` route entry
+- [x] Add protected route guards by role:
+  - unauthorized access should go to 404 page
+- [x] Create 404 page and wire `*` fallback to 404
+- [ ] Verify flow:
+  - login as admin/user/seller
+  - direct URL access with wrong role -> 404

@@ -19,40 +19,44 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "reviews")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Category {
+public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;
-
-    @Column(length = 512)
-    private String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Category parent;
+    @JoinColumn(name = "reviewer_id", nullable = false)
+    private User reviewer;
 
-    @Column(length = 255, unique = true)
-    private String slug;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
-    @Column(length = 500)
-    private String imageUrl;
+    @Column(nullable = false)
+    private Integer rating; // 1-5
+
+    @Column(nullable = false, length = 255)
+    private String title;
+
+    @Column(length = 2000)
+    private String comment;
+
+    @Column(columnDefinition = "json")
+    private String images; // JSON array of image URLs
 
     @Column(nullable = false)
     @Builder.Default
-    private Integer sortOrder = 0;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isActive = true;
+    private Boolean isApproved = false;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -62,11 +66,12 @@ public class Category {
 
     @PrePersist
     public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = now;
         }
         if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
+            updatedAt = now;
         }
     }
 
@@ -75,5 +80,4 @@ public class Category {
         updatedAt = LocalDateTime.now();
     }
 }
-
 

@@ -39,9 +39,16 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
+    private String orderCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id", nullable = false)
     private User buyer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id")
+    private User seller;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,14 +61,34 @@ public class Order {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal shippingFee = BigDecimal.ZERO;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal finalAmount;
+
     @Column(nullable = false)
     private String shippingAddress;
+
+    @Column(length = 500)
+    private String note;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column
+    private LocalDateTime shippedAt;
+
+    @Column
+    private LocalDateTime deliveredAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -85,6 +112,12 @@ public class Order {
         if (totalAmount == null) {
             totalAmount = BigDecimal.ZERO;
         }
+        if (discountAmount == null) {
+            discountAmount = BigDecimal.ZERO;
+        }
+        if (shippingFee == null) {
+            shippingFee = BigDecimal.ZERO;
+        }
     }
 
     @PreUpdate
@@ -92,4 +125,6 @@ public class Order {
         updatedAt = LocalDateTime.now();
     }
 }
+
+
 

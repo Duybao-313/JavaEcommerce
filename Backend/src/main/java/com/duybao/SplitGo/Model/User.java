@@ -10,9 +10,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.duybao.SplitGo.Enum.Role;
+import com.duybao.SplitGo.Enum.SellerVerificationStatus;
+import com.duybao.SplitGo.Enum.StoreStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
 
 import lombok.*;
 @Entity
@@ -49,8 +52,54 @@ public class User implements UserDetails {
 
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime updatedAt;
+    
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // Seller Profile Fields
+    @Column(length = 255)
+    private String storeName;
+
+    @Column(length = 500)
+    private String storeLogo;
+
+    @Column(length = 500)
+    private String storeBanner;
+
+    @Column(length = 500)
+    private String storeAddress;
+
+    @Column(length = 255)
+    private String bankAccount;
+
+    @Column(length = 255)
+    private String bankName;
+
+    @Enumerated(EnumType.STRING)
+    private SellerVerificationStatus sellerVerified;
+
+    @Column(precision = 3, scale = 2)
+    private BigDecimal storeRating;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer totalSales = 0;
+
+    @Enumerated(EnumType.STRING)
+    private StoreStatus storeStatus;
+
+    // Verification Flags
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean phoneVerified = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

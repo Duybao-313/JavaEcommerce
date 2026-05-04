@@ -1,13 +1,16 @@
 package com.duybao.SplitGo.Model;
 
+import com.duybao.SplitGo.Enum.ShippingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -19,40 +22,36 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "shippings")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Category {
+public class Shipping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    private Order order;
 
-    @Column(length = 512)
-    private String description;
+    @Column(unique = true, length = 50)
+    private String trackingCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Category parent;
+    @Column(nullable = false, length = 100)
+    private String carrierName;
 
-    @Column(length = 255, unique = true)
-    private String slug;
-
-    @Column(length = 500)
-    private String imageUrl;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ShippingStatus status;
 
     @Column(nullable = false)
-    @Builder.Default
-    private Integer sortOrder = 0;
+    private LocalDateTime estimatedDelivery;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isActive = true;
+    @Column
+    private LocalDateTime actualDelivery;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -62,11 +61,15 @@ public class Category {
 
     @PrePersist
     public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = now;
         }
         if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
+            updatedAt = now;
+        }
+        if (status == null) {
+            status = ShippingStatus.PENDING;
         }
     }
 
@@ -75,5 +78,4 @@ public class Category {
         updatedAt = LocalDateTime.now();
     }
 }
-
 

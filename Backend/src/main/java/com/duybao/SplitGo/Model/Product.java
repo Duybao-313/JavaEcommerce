@@ -67,6 +67,21 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Column(length = 255, unique = true)
+    private String slug;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal salePrice;
+
+
+
+    @Column(length = 100)
+    private String sku;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isFeatured = false;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

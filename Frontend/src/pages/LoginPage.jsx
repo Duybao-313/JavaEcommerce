@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { login } from "../services/authService";
-import { isSellerSession, persistAuthResult } from "../services/sessionService";
+import { hasRole, persistAuthResult } from "../services/sessionService";
 import { loginDemoAccounts } from "../constants/demoAccounts";
 
 const initialState = {
@@ -47,7 +47,14 @@ function LoginPage() {
 
       persistAuthResult(result);
       const session = result?.data;
-      navigate(isSellerSession(session) ? "/seller/dashboard" : "/products");
+
+      if (hasRole(session, "ADMIN")) {
+        navigate("/admin");
+      } else if (hasRole(session, "SELLER")) {
+        navigate("/seller");
+      } else {
+        navigate("/products");
+      }
     } catch {
       // toast.promise đã hiển thị lỗi
     } finally {
