@@ -146,7 +146,7 @@ export async function getCurrentUserDetail() {
     const response = await authFetch('/auth/userdetail')
     const apiResponse = await parseApiResponse(response)
     return apiResponse?.data || null
-  } catch (firstError) {
+  } catch {
     await refreshTokenSingleFlight()
 
     const retried = await authFetch('/auth/userdetail')

@@ -7,6 +7,8 @@ import java.util.List;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+    List<Review> findAllByOrderByCreatedAtDesc();
+
     List<Review> findByProductId(Long productId);
 
     List<Review> findByProductIdAndIsApprovedTrue(Long productId);

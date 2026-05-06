@@ -108,17 +108,6 @@ GET    /wishlist                          Get my wishlist
 GET    /wishlist/check/{productId}        Check if in wishlist
 ```
 
-### Addresses (7 endpoints)
-```
-POST   /addresses                         Create address
-GET    /addresses                         Get all addresses
-GET    /addresses/{addressId}             Get specific address
-GET    /addresses/default                 Get default address
-PUT    /addresses/{addressId}             Update address
-DELETE /addresses/{addressId}             Delete address
-PUT    /addresses/{addressId}/set-default Set as default
-```
-
 ### Shipping (6 endpoints)
 ```
 POST   /shippings                         Create shipping

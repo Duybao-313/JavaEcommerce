@@ -7,6 +7,8 @@ import java.util.List;
 public interface ReviewService {
     ReviewResponse createReview(Long reviewerId, CreateReviewRequest request);
 
+    List<ReviewResponse> getAllReviews();
+
     List<ReviewResponse> getProductReviews(Long productId);
 
     List<ReviewResponse> getProductApprovedReviews(Long productId);

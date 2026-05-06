@@ -24,6 +24,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class ShippingController {
     private final ShippingService shippingService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ApiResponse<java.util.List<ShippingResponse>> getAllShippings() {
+        return ApiResponse.<java.util.List<ShippingResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách vận chuyển thành công")
+                .data(shippingService.getAllShippings())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ShippingResponse> createShipping(
@@ -52,6 +64,7 @@ public class ShippingController {
     }
 
     @GetMapping("/order/{orderId}")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ShippingResponse> getShippingByOrderId(@PathVariable Long orderId) {
         return ApiResponse.<ShippingResponse>builder()
                 .success(true)
@@ -63,6 +76,7 @@ public class ShippingController {
     }
 
     @GetMapping("/track")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ShippingResponse> trackShipping(@RequestParam String trackingCode) {
         return ApiResponse.<ShippingResponse>builder()
                 .success(true)

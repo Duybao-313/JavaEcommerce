@@ -12,6 +12,8 @@ public interface OrderService {
 
     List<OrderResponse> getSellerOrders(Long sellerId);
 
-    OrderResponse updateOrderStatusBySeller(Long sellerId, Long orderId, OrderStatus status);
+    List<OrderResponse> getAllOrders();
+
+    OrderResponse updateOrderStatus(Long actorId, boolean isAdmin, Long orderId, OrderStatus status);
 }
 

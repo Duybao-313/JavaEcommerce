@@ -14,7 +14,7 @@ public class CreateProductRequest {
 
     private String description;
     private String imageUrl;
-
+    private Long ownerId;
     @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal salePrice;
 

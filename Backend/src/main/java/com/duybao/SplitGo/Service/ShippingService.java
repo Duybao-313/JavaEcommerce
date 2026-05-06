@@ -6,6 +6,8 @@ import com.duybao.SplitGo.DTO.request.ecommerce.UpdateShippingRequest;
 import com.duybao.SplitGo.Enum.ShippingStatus;
 
 public interface ShippingService {
+    java.util.List<ShippingResponse> getAllShippings();
+
     ShippingResponse createShipping(CreateShippingRequest request);
 
     ShippingResponse updateShipping(Long shippingId, UpdateShippingRequest request);

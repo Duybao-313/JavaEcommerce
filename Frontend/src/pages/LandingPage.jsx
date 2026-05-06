@@ -10,36 +10,6 @@ import ProductSection from "../components/ProductSection";
 import AuthUserBadge from "../components/AuthUserBadge";
 import { getAuthSession } from "../services/sessionService";
 
-const skills = [
-  {
-    title: "Bộ khung landing chuẩn chuyển đổi",
-    type: "Playbook",
-    size: "2.4 MB",
-    summary:
-      "Cấu trúc section, thứ tự thông điệp và vị trí CTA tối ưu cho trang bán hàng.",
-  },
-  {
-    title: "Quy tắc tương tác và chuyển động",
-    type: "System",
-    size: "1.2 MB",
-    summary:
-      "Bộ quy tắc animation giúp trang web mượt, sang và giữ chân người dùng tốt hơn.",
-  },
-  {
-    title: "Thành phần UI cho ecommerce",
-    type: "Component",
-    size: "3.8 MB",
-    summary:
-      "Card sản phẩm, khung ưu đãi, trust badge có thể tái sử dụng cho shop online.",
-  },
-  {
-    title: "Mẫu theo dõi tăng trưởng",
-    type: "Template",
-    size: "890 KB",
-    summary:
-      "Mẫu theo dõi để test nội dung, bố cục và hiệu quả chương trình khuyến mãi hằng tuần.",
-  },
-];
 
 const highlights = [
   "Giao nhanh nội thành và liên tỉnh toàn quốc",

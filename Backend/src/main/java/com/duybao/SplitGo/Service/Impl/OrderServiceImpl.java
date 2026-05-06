@@ -7,6 +7,7 @@ import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.PaymentMethod;
 import com.duybao.SplitGo.Enum.PaymentStatus;
 import com.duybao.SplitGo.Enum.ProductStatus;
+import com.duybao.SplitGo.Enum.ShippingStatus;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Model.Cart;
@@ -22,6 +23,7 @@ import com.duybao.SplitGo.Repository.OrderItemRepository;
 import com.duybao.SplitGo.Repository.OrderRepository;
 import com.duybao.SplitGo.Repository.PaymentTransactionRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
+import com.duybao.SplitGo.Repository.ShippingRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.OrderService;
 import jakarta.transaction.Transactional;
@@ -39,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ShippingRepository shippingRepository;
 
     public OrderServiceImpl(
             CartRepository cartRepository,
@@ -47,7 +50,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItemRepository orderItemRepository,
             PaymentTransactionRepository paymentTransactionRepository,
             ProductRepository productRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ShippingRepository shippingRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -55,6 +59,7 @@ public class OrderServiceImpl implements OrderService {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.shippingRepository = shippingRepository;
     }
 
     @Override
@@ -147,17 +152,37 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse updateOrderStatusBySeller(Long sellerId, Long orderId, OrderStatus status) {
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(Long actorId, boolean isAdmin, Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (!orderItemRepository.existsByOrderIdAndSellerId(orderId, sellerId)) {
+        if (!isAdmin && !orderItemRepository.existsByOrderIdAndSellerId(orderId, actorId)) {
             throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
         }
 
         validateStatusTransition(order.getStatus(), status);
         order.setStatus(status);
 
-        return toOrderResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        syncShippingStatus(saved.getId(), status);
+        return toOrderResponse(saved);
+    }
+
+    private void syncShippingStatus(Long orderId, OrderStatus status) {
+        shippingRepository.findByOrderId(orderId).ifPresent(shipping -> {
+            if (status == OrderStatus.DELIVERED) {
+                shipping.setStatus(ShippingStatus.DELIVERED);
+                shipping.setActualDelivery(java.time.LocalDateTime.now());
+                shippingRepository.save(shipping);
+            }
+        });
     }
 
     private void validateStatusTransition(OrderStatus currentStatus, OrderStatus targetStatus) {

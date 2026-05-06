@@ -1,16 +1,31 @@
-# TODO - Role-based routing & 404 protection
+# TODO - feature/admin-ui-impeccable
 
-- [x] Add role-based redirect after login:
-  - ADMIN -> `/admin`
-  - USER -> `/products`
-  - SELLER -> `/seller`
-- [x] Update app routes:
-  - `/products` should render customer products page (not seller redirect)
-  - add `/admin` route
-  - add `/seller` route entry
-- [x] Add protected route guards by role:
-  - unauthorized access should go to 404 page
-- [x] Create 404 page and wire `*` fallback to 404
-- [ ] Verify flow:
-  - login as admin/user/seller
-  - direct URL access with wrong role -> 404
+- [ ] Inspect remaining relevant FE files:
+  - [ ] Frontend/src/pages/admin/AdminShippingsPage.jsx
+  - [ ] Frontend/src/pages/admin/AdminLayout.jsx
+  - [ ] Frontend/src/App.jsx
+  - [ ] Frontend/src/services/adminService.js
+  - [ ] Frontend/eslint.config.js
+  - [ ] Frontend/package.json scripts (test/e2e/lint)
+- [ ] Fix duplicated/corrupted code in:
+  - [ ] Frontend/src/pages/admin/AdminOrdersPage.jsx
+  - [ ] Frontend/src/pages/admin/AdminProductsPage.jsx
+  - [ ] Frontend/src/pages/admin/AdminReviewsPage.jsx
+- [ ] Validate and complete /admin/\* scope:
+  - [ ] /admin/products CRUD
+  - [ ] /admin/orders list + change status
+  - [ ] /admin/reviews approve/reject/delete
+  - [ ] /admin/shippings create/edit/mark status + tracking lookup
+  - [ ] RBAC guard redirect non-admin to /
+- [ ] Resolve dependency/build issues:
+  - [ ] eslint/@eslint/js peer conflict for npm ci
+- [ ] Run quality and verification:
+  - [ ] npm run lint (and auto-fix if possible)
+  - [ ] npm run test (or closest unit script)
+  - [ ] npm run e2e:smoke (if present)
+  - [ ] npm run build
+- [ ] Commit changes atomically with clear messages
+- [ ] Prepare PR content for:
+  - [ ] Branch: feature/admin-ui-impeccable
+  - [ ] Title: FE: Admin UI + build fixes + impeccable
+  - [ ] Include logs/excerpts, checklist, remaining issues

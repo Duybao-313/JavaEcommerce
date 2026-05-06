@@ -25,6 +25,13 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
+    public java.util.List<ShippingResponse> getAllShippings() {
+        return shippingRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toShippingResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public ShippingResponse createShipping(CreateShippingRequest request) {
         Order order = orderRepository.findById(request.getOrderId())

@@ -14,6 +14,12 @@ import SellerLayout, {
   SellerDashboardHome,
   SellerOrdersHistoryPage,
 } from "./pages/SellerDashboardPage";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
+import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import AdminShippingsPage from "./pages/admin/AdminShippingsPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import { getAuthSession, hasRole } from "./services/sessionService";
 import "./App.css";
 
@@ -61,10 +67,14 @@ function App() {
       </Route>
 
       <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
-        <Route
-          path="/admin"
-          element={<div className="p-8">Admin Dashboard</div>}
-        />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/products" replace />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="shippings" element={<AdminShippingsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+        </Route>
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />

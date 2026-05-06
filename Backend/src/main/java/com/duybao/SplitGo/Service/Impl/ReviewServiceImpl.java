@@ -70,6 +70,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public List<ReviewResponse> getAllReviews() {
+        return reviewRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toReviewResponse)
+                .toList();
+    }
+
+    @Override
     public List<ReviewResponse> getProductReviews(Long productId) {
         return reviewRepository.findByProductId(productId).stream()
                 .map(this::toReviewResponse)

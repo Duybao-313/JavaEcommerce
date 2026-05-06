@@ -9,17 +9,19 @@ import org.springframework.web.multipart.MultipartFile;
 public interface CatalogService {
     List<ProductResponse> getPublicProducts();
 
+    List<ProductResponse> getAllProducts();
+
     List<ProductResponse> getProductsBySellerId(Long sellerId);
 
     ProductResponse getProductDetail(Long productId);
 
 
-    ProductResponse createProduct(CreateProductRequest request, Long sellerId, MultipartFile imageFile);
+    ProductResponse createProduct(CreateProductRequest request, Long actorId, boolean isAdmin, MultipartFile imageFile);
 
-    ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long sellerId);
+    ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long actorId, boolean isAdmin);
 
-    ProductResponse updateProductImage(Long productId, Long sellerId, MultipartFile imageFile);
+    ProductResponse updateProductImage(Long productId, Long actorId, boolean isAdmin, MultipartFile imageFile);
 
-    void deleteProduct(Long productId, Long sellerId);
+    void deleteProduct(Long productId, Long actorId, boolean isAdmin);
 }
 
