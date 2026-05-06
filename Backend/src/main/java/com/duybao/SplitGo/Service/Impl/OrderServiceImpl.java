@@ -71,12 +71,16 @@ public class OrderServiceImpl implements OrderService {
         if (cart.getItems().isEmpty()) {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
-
+        BigDecimal discount = request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO;
         Order order = Order.builder()
                 .buyer(buyer)
                 .status(OrderStatus.PENDING)
                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD)
                 .shippingAddress(request.getShippingAddress())
+                .shippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO)
+                .discountAmount(discount)
+                .phone(request.getPhoneNumber())
+                .orderCode("ORD-" + System.currentTimeMillis())
                 .note(request.getNote())
                 .totalAmount(BigDecimal.ZERO)
                 .build();
@@ -228,6 +232,7 @@ public class OrderServiceImpl implements OrderService {
                 .items(itemResponses)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                .status(order.getStatus())
                 .build();
     }
 }
