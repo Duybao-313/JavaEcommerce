@@ -80,6 +80,7 @@ public class OrderServiceImpl implements OrderService {
                 .shippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO)
                 .discountAmount(discount)
                 .phone(request.getPhoneNumber())
+                .recipientName(request.getRecipientName())
                 .orderCode("ORD-" + System.currentTimeMillis())
                 .note(request.getNote())
                 .totalAmount(BigDecimal.ZERO)
@@ -148,6 +149,19 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public OrderResponse getOrderById(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        return toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
     public List<OrderResponse> getSellerOrders(Long sellerId) {
         return orderRepository.findOrdersBySellerId(sellerId).stream()
                 .map(this::toOrderResponse)
@@ -176,6 +190,25 @@ public class OrderServiceImpl implements OrderService {
 
         Order saved = orderRepository.save(order);
         syncShippingStatus(saved.getId(), status);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order saved = orderRepository.save(order);
         return toOrderResponse(saved);
     }
 
@@ -213,6 +246,7 @@ public class OrderServiceImpl implements OrderService {
                         .orderItemId(item.getId())
                         .productId(item.getProduct().getId())
                         .productName(item.getProductName())
+                        .productImageUrl(item.getProduct().getImageUrl())
                         .sellerId(item.getSeller().getId())
                         .sellerUsername(item.getSeller().getUsername())
                         .quantity(item.getQuantity())
@@ -221,18 +255,33 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .toList();
 
+        BigDecimal finalAmount = order.getFinalAmount();
+        if (finalAmount == null && order.getTotalAmount() != null) {
+            finalAmount = order.getTotalAmount()
+                    .subtract(order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO)
+                    .add(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO);
+        }
+
         return OrderResponse.builder()
                 .orderId(order.getId())
+                .orderCode(order.getOrderCode())
                 .buyerId(order.getBuyer().getId())
                 .buyerUsername(order.getBuyer().getUsername())
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
                 .shippingAddress(order.getShippingAddress())
+                .phone(order.getPhone())
+                .recipientName(order.getRecipientName())
                 .totalAmount(order.getTotalAmount())
+                .discountAmount(order.getDiscountAmount())
+                .shippingFee(order.getShippingFee())
+                .finalAmount(finalAmount)
+                .note(order.getNote())
                 .items(itemResponses)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
-                .status(order.getStatus())
+                .shippedAt(order.getShippedAt())
+                .deliveredAt(order.getDeliveredAt())
                 .build();
     }
 }

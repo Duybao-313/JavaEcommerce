@@ -9,6 +9,8 @@ import CreateProductPage from "./pages/CreateProductPage";
 import SellerProductsPage from "./pages/SellerProductsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import MyOrdersPage from "./pages/MyOrdersPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import SellerLayout, {
   SellerDashboardHome,
@@ -44,6 +46,8 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/me" element={<UserProfilePage />} />
+      <Route path="/orders" element={<MyOrdersPage />} />
+      <Route path="/orders/:orderId" element={<OrderDetailPage />} />
 
       <Route element={<RoleRoute allowedRoles={["SELLER"]} />}>
         <Route

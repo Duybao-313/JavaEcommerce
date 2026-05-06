@@ -179,12 +179,20 @@ function CheckoutPage() {
               Thanh toán
             </h1>
           </div>
-          <Link
-            to="/products"
-            className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
-          >
-            Quay lại sản phẩm
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/orders"
+              className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+            >
+              Đơn hàng
+            </Link>
+            <Link
+              to="/products"
+              className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+            >
+              Quay lại sản phẩm
+            </Link>
+          </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">

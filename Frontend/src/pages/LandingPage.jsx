@@ -10,7 +10,6 @@ import ProductSection from "../components/ProductSection";
 import AuthUserBadge from "../components/AuthUserBadge";
 import { getAuthSession } from "../services/sessionService";
 
-
 const highlights = [
   "Giao nhanh nội thành và liên tỉnh toàn quốc",
   "Thanh toán an toàn, theo dõi đơn hàng minh bạch",

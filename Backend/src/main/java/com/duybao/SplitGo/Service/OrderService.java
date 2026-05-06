@@ -10,10 +10,14 @@ public interface OrderService {
 
     List<OrderResponse> getMyOrders(Long buyerId);
 
+    OrderResponse getOrderById(Long buyerId, Long orderId);
+
     List<OrderResponse> getSellerOrders(Long sellerId);
 
     List<OrderResponse> getAllOrders();
 
     OrderResponse updateOrderStatus(Long actorId, boolean isAdmin, Long orderId, OrderStatus status);
+
+    OrderResponse cancelOrder(Long buyerId, Long orderId);
 }
 

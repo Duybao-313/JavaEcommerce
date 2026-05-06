@@ -51,6 +51,34 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> getOrderById(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy chi tiết đơn hàng thành công")
+                .data(orderService.getOrderById(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> cancelOrder(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Hủy đơn hàng thành công")
+                .data(orderService.cancelOrder(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/seller/orders")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<List<OrderResponse>> getSellerOrders(@AuthenticationPrincipal User user) {

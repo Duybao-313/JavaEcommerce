@@ -1,121 +1,127 @@
-import React, { useEffect, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
-import CartButton from '../components/CartButton'
-import CartDrawer from '../components/CartDrawer'
-import { useCart } from '../context/CartContext'
-import { getProductDetail, getProducts } from '../services/productService'
-import { addToCart } from '../services/cartService'
-import { getAuthSession } from '../services/sessionService'
+import React, { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import CartButton from "../components/CartButton";
+import CartDrawer from "../components/CartDrawer";
+import { useCart } from "../context/CartContext";
+import { getProductDetail, getProducts } from "../services/productService";
+import { addToCart } from "../services/cartService";
+import { getAuthSession } from "../services/sessionService";
 
 function formatPrice(value) {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
     maximumFractionDigits: 0,
-  }).format(value || 0)
+  }).format(value || 0);
 }
 
 function ProductDetailPage() {
-  const { productId } = useParams()
-  const navigate = useNavigate()
-  const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [quantity, setQuantity] = useState(1)
-  const [adding, setAdding] = useState(false)
-  const [relatedProducts, setRelatedProducts] = useState([])
-  const { refreshCart, openCart } = useCart()
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const { refreshCart, openCart } = useCart();
 
-  const session = getAuthSession()
+  const session = getAuthSession();
 
   useEffect(() => {
     async function loadProduct() {
-      setLoading(true)
-      setError('')
+      setLoading(true);
+      setError("");
 
       try {
         if (!productId) {
-          throw new Error('Product ID khong hop le')
+          throw new Error("Product ID khong hop le");
         }
-        const data = await getProductDetail(productId)
+        const data = await getProductDetail(productId);
 
         if (!data) {
-          throw new Error('Khong nhan duoc du lieu san pham tu API')
+          throw new Error("Khong nhan duoc du lieu san pham tu API");
         }
 
-        if (typeof data !== 'object') {
-          throw new Error(`Du lieu san pham khong hop le: ${typeof data}`)
+        if (typeof data !== "object") {
+          throw new Error(`Du lieu san pham khong hop le: ${typeof data}`);
         }
 
         if (!data.id) {
-          throw new Error('San pham khong co ID')
+          throw new Error("San pham khong co ID");
         }
 
-        setProduct(data)
-        setQuantity(1)
+        setProduct(data);
+        setQuantity(1);
 
-        const allProducts = await getProducts()
+        const allProducts = await getProducts();
         const sameCategory = allProducts
-          .filter((item) => item?.id !== data.id && item?.categoryId === data?.categoryId)
+          .filter(
+            (item) =>
+              item?.id !== data.id && item?.categoryId === data?.categoryId,
+          )
           .sort((a, b) => {
-            const byViews = Number(b?.viewCount || 0) - Number(a?.viewCount || 0)
-            if (byViews !== 0) return byViews
-            return Number(b?.id || 0) - Number(a?.id || 0)
-          })
+            const byViews =
+              Number(b?.viewCount || 0) - Number(a?.viewCount || 0);
+            if (byViews !== 0) return byViews;
+            return Number(b?.id || 0) - Number(a?.id || 0);
+          });
 
-        setRelatedProducts(sameCategory)
+        setRelatedProducts(sameCategory);
       } catch (err) {
-        setError(err?.message || 'Đã có lỗi khi tải sản phẩm')
-        setRelatedProducts([])
+        setError(err?.message || "Đã có lỗi khi tải sản phẩm");
+        setRelatedProducts([]);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadProduct()
-  }, [productId])
+    loadProduct();
+  }, [productId]);
 
   const handleQuantityChange = (newQuantity) => {
-    const value = Math.max(1, Math.min(newQuantity, product?.stock || 1))
-    setQuantity(value)
-  }
+    const value = Math.max(1, Math.min(newQuantity, product?.stock || 1));
+    setQuantity(value);
+  };
 
   const handleAddToCart = async () => {
     if (!session?.token) {
-      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng')
-      navigate('/login')
-      return
+      toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      navigate("/login");
+      return;
     }
 
     if (!product || quantity < 1) {
-      toast.error('Vui lòng chọn sản phẩm và số lượng hợp lệ')
-      return
+      toast.error("Vui lòng chọn sản phẩm và số lượng hợp lệ");
+      return;
     }
 
-    setAdding(true)
+    setAdding(true);
 
     try {
-      await addToCart(product.id, quantity)
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`)
-      setQuantity(1)
-      await refreshCart()
-      openCart()
+      await addToCart(product.id, quantity);
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+      setQuantity(1);
+      await refreshCart();
+      openCart();
     } catch (err) {
-      toast.error(err?.message || 'Không thể thêm vào giỏ hàng')
+      toast.error(err?.message || "Không thể thêm vào giỏ hàng");
     } finally {
-      setAdding(false)
+      setAdding(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
         <div className="mx-auto w-full max-w-5xl">
-          <p className="text-center text-sm text-zinc-600">Đang tải chi tiết sản phẩm...</p>
+          <p className="text-center text-sm text-zinc-600">
+            Đang tải chi tiết sản phẩm...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -123,10 +129,16 @@ function ProductDetailPage() {
       <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
         <div className="mx-auto w-full max-w-5xl">
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-            <p className="text-sm font-semibold text-red-700">Lỗi khi tải sản phẩm:</p>
-            <p className="mt-2 text-sm text-red-600 whitespace-pre-wrap break-words">{error}</p>
+            <p className="text-sm font-semibold text-red-700">
+              Lỗi khi tải sản phẩm:
+            </p>
+            <p className="mt-2 text-sm text-red-600 whitespace-pre-wrap break-words">
+              {error}
+            </p>
             <p className="mt-3 text-xs text-red-600">Product ID: {productId}</p>
-            <p className="mt-1 text-xs text-red-600">API URL: http://localhost:8080/products/{productId}</p>
+            <p className="mt-1 text-xs text-red-600">
+              API URL: http://localhost:8080/products/{productId}
+            </p>
             <Link
               to="/products"
               className="mt-4 inline-block rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-700 hover:border-red-500"
@@ -136,7 +148,7 @@ function ProductDetailPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!product) {
@@ -154,7 +166,7 @@ function ProductDetailPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -167,7 +179,17 @@ function ProductDetailPage() {
           >
             ← Quay lại
           </Link>
-          {session?.token && <CartButton />}
+          <div className="flex items-center gap-3">
+            {session?.token && (
+              <Link
+                to="/orders"
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+              >
+                Đơn hàng
+              </Link>
+            )}
+            {session?.token && <CartButton />}
+          </div>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2">
@@ -191,7 +213,7 @@ function ProductDetailPage() {
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  {product.categoryName || 'Danh mục'}
+                  {product.categoryName || "Danh mục"}
                 </p>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
                   {product.name}
@@ -212,11 +234,15 @@ function ProductDetailPage() {
             <div className="mt-6 space-y-3 border-t border-zinc-200 pt-6">
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Người bán:</span>
-                <span className="font-medium text-zinc-900">{product.sellerUsername}</span>
+                <span className="font-medium text-zinc-900">
+                  {product.sellerUsername}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Tồn kho:</span>
-                <span className="font-medium text-zinc-900">{product.stock} sản phẩm</span>
+                <span className="font-medium text-zinc-900">
+                  {product.stock} sản phẩm
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">ID Sản phẩm:</span>
@@ -224,7 +250,9 @@ function ProductDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Lượt xem:</span>
-                <span className="font-medium text-zinc-900">{Number(product.viewCount || 0).toLocaleString('vi-VN')}</span>
+                <span className="font-medium text-zinc-900">
+                  {Number(product.viewCount || 0).toLocaleString("vi-VN")}
+                </span>
               </div>
             </div>
 
@@ -251,7 +279,9 @@ function ProductDetailPage() {
                 <input
                   type="number"
                   value={quantity}
-                  onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleQuantityChange(parseInt(e.target.value) || 1)
+                  }
                   className="w-16 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-center font-medium text-zinc-900"
                   min="1"
                   max={product.stock}
@@ -272,7 +302,11 @@ function ProductDetailPage() {
               disabled={adding || product.stock === 0}
               className="mt-6 w-full rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed transition-colors"
             >
-              {adding ? 'Đang thêm...' : product.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
+              {adding
+                ? "Đang thêm..."
+                : product.stock === 0
+                  ? "Hết hàng"
+                  : "Thêm vào giỏ hàng"}
             </button>
 
             {!session?.token && (
@@ -289,7 +323,9 @@ function ProductDetailPage() {
         {relatedProducts.length > 0 && (
           <section className="mt-10 rounded-2xl border border-zinc-200 bg-white p-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">Sản phẩm liên quan</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-900">
+                Sản phẩm liên quan
+              </h2>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                 Cùng danh mục, ưu tiên lượt xem cao
               </p>
@@ -304,7 +340,11 @@ function ProductDetailPage() {
                   <Link to={`/products/${item.id}`} className="block">
                     <div className="h-36 overflow-hidden rounded-xl bg-zinc-100">
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500">
                           Chưa có ảnh
@@ -312,9 +352,16 @@ function ProductDetailPage() {
                       )}
                     </div>
 
-                    <h3 className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-900">{item.name}</h3>
-                    <p className="mt-1 text-sm font-semibold text-zinc-900">{formatPrice(item.price)}</p>
-                    <p className="mt-1 text-xs text-zinc-600">Lượt xem: {Number(item.viewCount || 0).toLocaleString('vi-VN')}</p>
+                    <h3 className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-900">
+                      {item.name}
+                    </h3>
+                    <p className="mt-1 text-sm font-semibold text-zinc-900">
+                      {formatPrice(item.price)}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-600">
+                      Lượt xem:{" "}
+                      {Number(item.viewCount || 0).toLocaleString("vi-VN")}
+                    </p>
                   </Link>
                 </article>
               ))}
@@ -325,7 +372,7 @@ function ProductDetailPage() {
 
       <CartDrawer />
     </div>
-  )
+  );
 }
 
-export default ProductDetailPage
+export default ProductDetailPage;

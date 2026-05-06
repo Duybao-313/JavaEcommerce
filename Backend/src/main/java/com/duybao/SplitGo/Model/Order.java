@@ -81,6 +81,9 @@ public class Order {
     @Column(nullable = false)
     private String phone;
 
+    @Column
+    private String recipientName;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
