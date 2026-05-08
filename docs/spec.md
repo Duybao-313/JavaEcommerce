@@ -157,6 +157,62 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 
 - Hien thi theo seller dang nhap
 
+## 4.6 Review Management
+
+### UC-REV-01 Tao danh gia san pham
+
+- Buyer da dang nhap va da mua san pham
+- Input: `productId`, `orderId`, `rating`, `title`, `comment`, `images` (optional)
+- Rule:
+  - `rating` trong khoang 1-5
+  - Khong duoc review trung cho cung order/product theo user
+
+### UC-REV-02 Xem danh gia san pham
+
+- Public co the xem danh sach review theo product
+- Ho tro endpoint lay review da duyet
+
+### UC-REV-03 Moderation danh gia
+
+- Admin co quyen approve/reject review
+- Buyer/Admin co the xoa review theo policy quyen
+
+## 4.7 Wishlist Management
+
+### UC-WISH-01 Them san pham vao wishlist
+
+- Buyer da dang nhap
+- Input: `productId`
+- Rule: khong tao ban ghi trung (`userId + productId`)
+
+### UC-WISH-02 Xoa san pham khoi wishlist
+
+- Buyer da dang nhap
+- Input: `productId`
+
+### UC-WISH-03 Xem va kiem tra wishlist
+
+- Buyer xem danh sach wishlist cua minh
+- Co endpoint check nhanh 1 product da trong wishlist hay chua
+
+## 4.8 Shipping Tracking
+
+### UC-SHIP-01 Tao va cap nhat shipping
+
+- Seller/Admin tao shipping cho order
+- Input tao moi: `orderId`, `carrierName`, `estimatedDelivery`, `trackingCode` (optional)
+- Input cap nhat: `status`, `trackingCode`, `carrierName`, `estimatedDelivery`, `actualDelivery`
+
+### UC-SHIP-02 Theo doi don hang
+
+- Lay shipping theo `orderId`
+- Track theo `trackingCode`
+
+### UC-SHIP-03 Chuyen trang thai van chuyen
+
+- Seller/Admin co endpoint mark in-transit va mark delivered
+- Khi delivered co the cap nhat thoi gian giao thuc te
+
 ---
 
 ## 5. API Contract (muc logic, can map lai endpoint thuc te)
@@ -191,7 +247,57 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 - `GET /orders/{id}`
 - `PATCH /orders/{id}/status` (seller/admin)
 
+## 5.5 Reviews
+
+- `POST /reviews` (user)
+- `GET /reviews/product/{productId}`
+- `GET /reviews/product/{productId}/approved`
+- `GET /reviews/user/{userId}`
+- `DELETE /reviews/{reviewId}` (user/admin)
+- `POST /reviews/{reviewId}/approve` (admin)
+- `POST /reviews/{reviewId}/reject` (admin)
+
+## 5.6 Wishlist
+
+- `POST /wishlist` (user)
+- `DELETE /wishlist/{productId}` (user)
+- `GET /wishlist` (user)
+- `GET /wishlist/check/{productId}` (user)
+
+## 5.7 Shipping
+
+- `POST /shippings` (seller/admin)
+- `PUT /shippings/{shippingId}` (seller/admin)
+- `GET /shippings/order/{orderId}`
+- `GET /shippings/track?trackingCode={trackingCode}`
+- `POST /shippings/{shippingId}/mark-delivered` (seller/admin)
+- `POST /shippings/{shippingId}/mark-in-transit` (seller/admin)
+
+## 5.8 Payload fields cap nhat (DTO contract snapshot)
+
+### Product create/update
+
+- Bo sung field: `salePrice`, `weight`, `sku`, `isFeatured`
+- Field cu van giu: `name`, `description`, `imageUrl`, `price`, `stock`, `categoryId`
+
+### Category create/update
+
+- Bo sung field: `parentId`, `imageUrl`, `sortOrder`, `isActive`
+- Field co ban: `name`, `description`
+
+### Checkout request
+
+- Bo sung field: `paymentMethod`, `note`
+- Field co ban: `shippingAddress`
+
+### Update user profile
+
+- Bo sung seller profile fields trong `UpdateUserRequest`:
+  - `avatarUrl`, `storeName`, `storeLogo`, `storeBanner`, `businessLicense`, `taxCode`, `storeAddress`, `bankAccount`, `bankName`
+
 > Luu y: Ten endpoint can doi chieu voi controller hien tai trong backend.
+
+> Luu y bo sung: `Address` DTO da co trong source, nhung module API Address chua thay trong danh sach controller hien tai.
 
 ---
 

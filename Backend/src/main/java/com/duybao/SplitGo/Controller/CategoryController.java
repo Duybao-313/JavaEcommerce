@@ -3,7 +3,6 @@ package com.duybao.SplitGo.Controller;
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.CategoryResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateCategoryRequest;
-import com.duybao.SplitGo.DTO.request.ecommerce.UpdateCategoryRequest;
 import com.duybao.SplitGo.Service.CategoryService;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
@@ -51,7 +50,7 @@ public class CategoryController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<CategoryResponse> updateCategory(
-            @PathVariable Long id, @RequestBody @Valid UpdateCategoryRequest request) {
+            @PathVariable Long id, @RequestBody @Valid CreateCategoryRequest request) {
         return ApiResponse.<CategoryResponse>builder()
                 .success(true)
                 .code(200)

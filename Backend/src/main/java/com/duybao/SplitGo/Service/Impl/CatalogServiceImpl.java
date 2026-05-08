@@ -45,6 +45,13 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
+
+    @Override
     public List<ProductResponse> getProductsBySellerId(Long sellerId) {
         return productRepository.findBySellerIdOrderByCreatedAtDesc(sellerId).stream()
                 .map(this::toProductResponse)
@@ -66,8 +73,9 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(CreateProductRequest request, Long sellerId, MultipartFile imageFile) {
-        User seller = userRepository.findById(sellerId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    public ProductResponse createProduct(CreateProductRequest request, Long actorId, boolean isAdmin, MultipartFile imageFile) {
+        Long ownerId = isAdmin && request.getOwnerId() != null ? request.getOwnerId() : actorId;
+        User seller = userRepository.findById(ownerId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         String imageUrl = request.getImageUrl();
         if (imageFile != null && !imageFile.isEmpty()) {
             imageUrl = fileUploadService.uploadProductImage(imageFile);
@@ -77,11 +85,6 @@ public class CatalogServiceImpl implements CatalogService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
-                .salePrice(request.getSalePrice())
-                .weight(request.getWeight())
-                .sku(request.getSku())
-                .isFeatured(request.getIsFeatured() != null && request.getIsFeatured())
-                .slug(slugify(request.getName()))
                 .stock(request.getStock())
                 .imageUrl(imageUrl)
                 .status(ProductStatus.ACTIVE)
@@ -94,10 +97,8 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long sellerId) {
-        Product product = productRepository
-                .findByIdAndSellerId(productId, sellerId)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+    public ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long actorId, boolean isAdmin) {
+        Product product = resolveMutableProduct(productId, actorId, isAdmin);
 
         if (request.getName() != null && !request.getName().isBlank()) {
             product.setName(request.getName());
@@ -108,26 +109,11 @@ public class CatalogServiceImpl implements CatalogService {
         if (request.getPrice() != null) {
             product.setPrice(request.getPrice());
         }
-        if (request.getSalePrice() != null) {
-            product.setSalePrice(request.getSalePrice());
-        }
-        if (request.getWeight() != null) {
-            product.setWeight(request.getWeight());
-        }
-        if (request.getSku() != null) {
-            product.setSku(request.getSku());
-        }
-        if (request.getIsFeatured() != null) {
-            product.setIsFeatured(request.getIsFeatured());
-        }
         if (request.getStock() != null) {
             product.setStock(request.getStock());
         }
         if (request.getStatus() != null) {
             product.setStatus(request.getStatus());
-        }
-        if (request.getName() != null && !request.getName().isBlank()) {
-            product.setSlug(slugify(request.getName()));
         }
         if (request.getCategoryId() != null) {
             Category category = categoryRepository
@@ -141,10 +127,16 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
-    public ProductResponse updateProductImage(Long productId, Long sellerId, MultipartFile imageFile) {
-        Product product = productRepository
-                .findByIdAndSellerId(productId, sellerId)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+    public void deleteProduct(Long productId, Long actorId, boolean isAdmin) {
+        Product product = resolveMutableProduct(productId, actorId, isAdmin);
+        product.setStatus(ProductStatus.INACTIVE);
+        productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse updateProductImage(Long productId, Long actorId, boolean isAdmin, MultipartFile imageFile) {
+        Product product = resolveMutableProduct(productId, actorId, isAdmin);
 
         if (imageFile == null || imageFile.isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
@@ -155,14 +147,15 @@ public class CatalogServiceImpl implements CatalogService {
         return toProductResponse(productRepository.save(product));
     }
 
-    @Override
-    @Transactional
-    public void deleteProduct(Long productId, Long sellerId) {
-        Product product = productRepository
-                .findByIdAndSellerId(productId, sellerId)
+    private Product resolveMutableProduct(Long productId, Long actorId, boolean isAdmin) {
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        product.setStatus(ProductStatus.INACTIVE);
-        productRepository.save(product);
+
+        if (!isAdmin && !product.getSeller().getId().equals(actorId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        return product;
     }
 
     private Category resolveCategory(Long categoryId, String categoryName) {
@@ -196,17 +189,6 @@ public class CatalogServiceImpl implements CatalogService {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
-    }
-
-    private String slugify(String value) {
-        if (value == null) {
-            return null;
-        }
-        return value.trim()
-                .toLowerCase()
-                .replaceAll("[^a-z0-9\\s-]", "")
-                .replaceAll("\\s+", "-")
-                .replaceAll("-+", "-");
     }
 }
 

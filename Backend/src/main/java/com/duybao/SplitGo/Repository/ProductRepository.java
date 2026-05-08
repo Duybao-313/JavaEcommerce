@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByStatusOrderByCreatedAtDesc(ProductStatus status);
 
+    List<Product> findAllByOrderByCreatedAtDesc();
+
     List<Product> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
 
     Optional<Product> findByIdAndSellerId(Long id, Long sellerId);

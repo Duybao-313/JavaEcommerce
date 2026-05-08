@@ -123,7 +123,7 @@ function CreateProductPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">SplitGo Seller</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">Tạo sản phẩm mới</h1>
           </div>
-          <Link to="/products" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
+          <Link to="/seller/products" className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900">
             Quay lại sản phẩm
           </Link>
         </header>

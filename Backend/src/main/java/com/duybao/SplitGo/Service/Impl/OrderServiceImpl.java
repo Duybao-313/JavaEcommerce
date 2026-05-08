@@ -7,6 +7,7 @@ import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.PaymentMethod;
 import com.duybao.SplitGo.Enum.PaymentStatus;
 import com.duybao.SplitGo.Enum.ProductStatus;
+import com.duybao.SplitGo.Enum.ShippingStatus;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Model.Cart;
@@ -22,6 +23,7 @@ import com.duybao.SplitGo.Repository.OrderItemRepository;
 import com.duybao.SplitGo.Repository.OrderRepository;
 import com.duybao.SplitGo.Repository.PaymentTransactionRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
+import com.duybao.SplitGo.Repository.ShippingRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.OrderService;
 import jakarta.transaction.Transactional;
@@ -39,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ShippingRepository shippingRepository;
 
     public OrderServiceImpl(
             CartRepository cartRepository,
@@ -47,7 +50,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItemRepository orderItemRepository,
             PaymentTransactionRepository paymentTransactionRepository,
             ProductRepository productRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ShippingRepository shippingRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -55,6 +59,7 @@ public class OrderServiceImpl implements OrderService {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.shippingRepository = shippingRepository;
     }
 
     @Override
@@ -66,12 +71,17 @@ public class OrderServiceImpl implements OrderService {
         if (cart.getItems().isEmpty()) {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
-
+        BigDecimal discount = request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO;
         Order order = Order.builder()
                 .buyer(buyer)
                 .status(OrderStatus.PENDING)
                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD)
                 .shippingAddress(request.getShippingAddress())
+                .shippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO)
+                .discountAmount(discount)
+                .phone(request.getPhoneNumber())
+                .recipientName(request.getRecipientName())
+                .orderCode("ORD-" + System.currentTimeMillis())
                 .note(request.getNote())
                 .totalAmount(BigDecimal.ZERO)
                 .build();
@@ -125,7 +135,9 @@ public class OrderServiceImpl implements OrderService {
                 .amount(totalAmount)
                 .build());
 
-        cartItemRepository.deleteAllByCartId(cart.getId());
+        // Clear cart items via orphanRemoval (Cart has @OneToMany cascade=ALL, orphanRemoval=true)
+        // This is safer than derived deleteAllByCartId which may bypass persistence context
+        cart.getItems().clear();
         return toOrderResponse(savedOrder);
     }
 
@@ -139,6 +151,19 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public OrderResponse getOrderById(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        return toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
     public List<OrderResponse> getSellerOrders(Long sellerId) {
         return orderRepository.findOrdersBySellerId(sellerId).stream()
                 .map(this::toOrderResponse)
@@ -147,17 +172,106 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse updateOrderStatusBySeller(Long sellerId, Long orderId, OrderStatus status) {
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toOrderResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(Long actorId, boolean isAdmin, Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        if (!orderItemRepository.existsByOrderIdAndSellerId(orderId, sellerId)) {
+        if (!isAdmin && !orderItemRepository.existsByOrderIdAndSellerId(orderId, actorId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        // Seller không được phép tự đánh dấu DELIVERED — chỉ buyer mới có quyền xác nhận đã nhận
+        if (!isAdmin && status == OrderStatus.DELIVERED) {
             throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
         }
 
         validateStatusTransition(order.getStatus(), status);
         order.setStatus(status);
 
-        return toOrderResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        // Buyer chỉ được hủy đơn ở trạng thái PENDING hoặc CONFIRMED
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order saved = orderRepository.save(order);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse confirmDelivery(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() != OrderStatus.SHIPPING) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setDeliveredAt(java.time.LocalDateTime.now());
+        Order saved = orderRepository.save(order);
+        syncShippingStatus(saved.getId(), OrderStatus.DELIVERED);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrderBySeller(Long sellerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Seller phải có ít nhất 1 item trong đơn này
+        if (!orderItemRepository.existsByOrderIdAndSellerId(orderId, sellerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order saved = orderRepository.save(order);
+        return toOrderResponse(saved);
+    }
+
+    private void syncShippingStatus(Long orderId, OrderStatus status) {
+        shippingRepository.findByOrderId(orderId).ifPresent(shipping -> {
+            if (status == OrderStatus.DELIVERED) {
+                shipping.setStatus(ShippingStatus.DELIVERED);
+                shipping.setActualDelivery(java.time.LocalDateTime.now());
+                shippingRepository.save(shipping);
+            }
+        });
     }
 
     private void validateStatusTransition(OrderStatus currentStatus, OrderStatus targetStatus) {
@@ -184,6 +298,7 @@ public class OrderServiceImpl implements OrderService {
                         .orderItemId(item.getId())
                         .productId(item.getProduct().getId())
                         .productName(item.getProductName())
+                        .productImageUrl(item.getProduct().getImageUrl())
                         .sellerId(item.getSeller().getId())
                         .sellerUsername(item.getSeller().getUsername())
                         .quantity(item.getQuantity())
@@ -192,17 +307,33 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .toList();
 
+        BigDecimal finalAmount = order.getFinalAmount();
+        if (finalAmount == null && order.getTotalAmount() != null) {
+            finalAmount = order.getTotalAmount()
+                    .subtract(order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO)
+                    .add(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO);
+        }
+
         return OrderResponse.builder()
                 .orderId(order.getId())
+                .orderCode(order.getOrderCode())
                 .buyerId(order.getBuyer().getId())
                 .buyerUsername(order.getBuyer().getUsername())
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
                 .shippingAddress(order.getShippingAddress())
+                .phone(order.getPhone())
+                .recipientName(order.getRecipientName())
                 .totalAmount(order.getTotalAmount())
+                .discountAmount(order.getDiscountAmount())
+                .shippingFee(order.getShippingFee())
+                .finalAmount(finalAmount)
+                .note(order.getNote())
                 .items(itemResponses)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                .shippedAt(order.getShippedAt())
+                .deliveredAt(order.getDeliveredAt())
                 .build();
     }
 }

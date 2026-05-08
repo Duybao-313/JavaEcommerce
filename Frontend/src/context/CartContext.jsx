@@ -36,7 +36,7 @@ export function CartProvider({ children }) {
         const next = prev.filter((id) => available.has(id))
         return next
       })
-    } catch (error) {
+    } catch {
       setCart({ items: [], totalAmount: 0 })
       setSelectedItemIds([])
     } finally {

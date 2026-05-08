@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    List<Order> findAllByOrderByCreatedAtDesc();
+
     List<Order> findByBuyerIdOrderByCreatedAtDesc(Long buyerId);
 
     @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE i.seller.id = :sellerId ORDER BY o.createdAt DESC")

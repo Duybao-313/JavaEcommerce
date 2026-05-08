@@ -79,6 +79,12 @@ public class Order {
     private String note;
 
     @Column(nullable = false)
+    private String phone;
+
+    @Column
+    private String recipientName;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -89,6 +95,9 @@ public class Order {
 
     @Column
     private LocalDateTime deliveredAt;
+
+    @Column
+    private OrderStatus orderStatus= OrderStatus.PENDING;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

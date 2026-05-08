@@ -4,6 +4,7 @@ import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
+import com.duybao.SplitGo.Enum.Role;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Model.User;
@@ -44,6 +45,18 @@ public class ProductController {
                 .build();
     }
 
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<ProductResponse>> getAllProductsForAdmin() {
+        return ApiResponse.<List<ProductResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách toàn bộ sản phẩm thành công")
+                .data(catalogService.getAllProducts())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/seller/{sellerId}")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<List<ProductResponse>> getProductsBySeller(
@@ -75,52 +88,56 @@ public class ProductController {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ProductResponse> createProductWithImage(
             @AuthenticationPrincipal User user,
             @Valid @ModelAttribute CreateProductRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
         return ApiResponse.<ProductResponse>builder()
                 .success(true)
                 .code(201)
                 .message("Tạo sản phẩm thành công")
-                .data(catalogService.createProduct(request, user.getId(), image))
+                .data(catalogService.createProduct(request, user.getId(), isAdmin, image))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ProductResponse> updateProduct(
             @AuthenticationPrincipal User user, @PathVariable Long id, @RequestBody @Valid UpdateProductRequest request) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
         return ApiResponse.<ProductResponse>builder()
                 .success(true)
                 .code(200)
                 .message("Cập nhật sản phẩm thành công")
-                .data(catalogService.updateProduct(id, request, user.getId()))
+                .data(catalogService.updateProduct(id, request, user.getId(), isAdmin))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
 
     @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<ProductResponse> updateProductImage(
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @RequestPart("image") MultipartFile image) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
         return ApiResponse.<ProductResponse>builder()
                 .success(true)
                 .code(200)
                 .message("Cập nhật ảnh sản phẩm thành công")
-                .data(catalogService.updateProductImage(id, user.getId(), image))
+                .data(catalogService.updateProductImage(id, user.getId(), isAdmin, image))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ApiResponse<Void> deleteProduct(@AuthenticationPrincipal User user, @PathVariable Long id) {
-        catalogService.deleteProduct(id, user.getId());
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        catalogService.deleteProduct(id, user.getId(), isAdmin);
         return ApiResponse.<Void>builder()
                 .success(true)
                 .code(200)

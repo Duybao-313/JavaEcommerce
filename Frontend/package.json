@@ -20,8 +20,11 @@
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-react": "^4.2.0",
     "css-loader": "^6.8.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
     "vite": "^5.0.0"
   }
 }

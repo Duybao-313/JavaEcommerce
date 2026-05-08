@@ -4,6 +4,7 @@ import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.OrderResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CheckoutRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateOrderStatusRequest;
+import com.duybao.SplitGo.Enum.Role;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Service.OrderService;
 import jakarta.validation.Valid;
@@ -50,6 +51,48 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> getOrderById(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy chi tiết đơn hàng thành công")
+                .data(orderService.getOrderById(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> cancelOrder(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Hủy đơn hàng thành công")
+                .data(orderService.cancelOrder(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping("/orders/{orderId}/confirm-delivery")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> confirmDelivery(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Xác nhận đã nhận hàng thành công")
+                .data(orderService.confirmDelivery(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/seller/orders")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<List<OrderResponse>> getSellerOrders(@AuthenticationPrincipal User user) {
@@ -62,17 +105,60 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping("/orders")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<OrderResponse>> getAllOrdersForAdmin() {
+        return ApiResponse.<List<OrderResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy tất cả đơn hàng thành công")
+                .data(orderService.getAllOrders())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @PatchMapping("/seller/orders/{orderId}/status")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<OrderResponse> updateOrderStatus(
             @AuthenticationPrincipal User user,
             @PathVariable Long orderId,
             @RequestBody @Valid UpdateOrderStatusRequest request) {
+        return updateOrderStatusInternal(user, orderId, request);
+    }
+
+    @PostMapping("/seller/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<OrderResponse> cancelSellerOrder(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Hủy đơn hàng thành công")
+                .data(orderService.cancelOrderBySeller(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PatchMapping("/orders/{orderId}/status")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ApiResponse<OrderResponse> updateOrderStatusByRole(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId,
+            @RequestBody @Valid UpdateOrderStatusRequest request) {
+        return updateOrderStatusInternal(user, orderId, request);
+    }
+
+    private ApiResponse<OrderResponse> updateOrderStatusInternal(
+            User user,
+            Long orderId,
+            UpdateOrderStatusRequest request) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
         return ApiResponse.<OrderResponse>builder()
                 .success(true)
                 .code(200)
                 .message("Cập nhật trạng thái đơn hàng thành công")
-                .data(orderService.updateOrderStatusBySeller(user.getId(), orderId, request.getStatus()))
+                .data(orderService.updateOrderStatus(user.getId(), isAdmin, orderId, request.getStatus()))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

@@ -10,6 +10,7 @@ public class OrderItemResponse {
     private Long orderItemId;
     private Long productId;
     private String productName;
+    private String productImageUrl;
     private Long sellerId;
     private String sellerUsername;
     private Integer quantity;

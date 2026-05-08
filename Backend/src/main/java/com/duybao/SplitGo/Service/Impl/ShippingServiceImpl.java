@@ -3,6 +3,7 @@ package com.duybao.SplitGo.Service.Impl;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ShippingResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateShippingRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateShippingRequest;
+import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.ShippingStatus;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
@@ -12,6 +13,7 @@ import com.duybao.SplitGo.Repository.OrderRepository;
 import com.duybao.SplitGo.Repository.ShippingRepository;
 import com.duybao.SplitGo.Service.ShippingService;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,6 +24,13 @@ public class ShippingServiceImpl implements ShippingService {
     public ShippingServiceImpl(ShippingRepository shippingRepository, OrderRepository orderRepository) {
         this.shippingRepository = shippingRepository;
         this.orderRepository = orderRepository;
+    }
+
+    @Override
+    public java.util.List<ShippingResponse> getAllShippings() {
+        return shippingRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toShippingResponse)
+                .toList();
     }
 
     @Override
@@ -36,7 +45,7 @@ public class ShippingServiceImpl implements ShippingService {
 
         Shipping shipping = Shipping.builder()
                 .order(order)
-                .carrierName(request.getCarrierName())
+                .carrierName(request.getCarrier().name())
                 .trackingCode(request.getTrackingCode())
                 .estimatedDelivery(request.getEstimatedDelivery())
                 .status(ShippingStatus.PENDING)
@@ -103,8 +112,16 @@ public class ShippingServiceImpl implements ShippingService {
                 .orElseThrow(() -> new AppException(ErrorCode.SHIPPING_NOT_FOUND));
 
         shipping.setStatus(ShippingStatus.DELIVERED);
-        shipping.setActualDelivery(java.time.LocalDateTime.now());
+        shipping.setActualDelivery(LocalDateTime.now());
         shippingRepository.save(shipping);
+
+        // ✅ Cập nhật Order status sang DELIVERED
+        Order order = shipping.getOrder();
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            order.setStatus(OrderStatus.DELIVERED);
+            order.setDeliveredAt(LocalDateTime.now());
+            orderRepository.save(order);
+        }
     }
 
     @Override
@@ -115,6 +132,14 @@ public class ShippingServiceImpl implements ShippingService {
 
         shipping.setStatus(ShippingStatus.IN_TRANSIT);
         shippingRepository.save(shipping);
+
+        // ✅ Cập nhật Order status sang SHIPPING
+        Order order = shipping.getOrder();
+        if (order.getStatus() != OrderStatus.SHIPPING) {
+            order.setStatus(OrderStatus.SHIPPING);
+            order.setShippedAt(LocalDateTime.now());
+            orderRepository.save(order);
+        }
     }
 
     private ShippingResponse toShippingResponse(Shipping shipping) {

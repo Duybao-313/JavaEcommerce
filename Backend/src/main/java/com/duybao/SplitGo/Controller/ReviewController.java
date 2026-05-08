@@ -39,6 +39,18 @@ public class ReviewController {
                 .build();
     }
 
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<ReviewResponse>> getAllReviewsForAdmin() {
+        return ApiResponse.<List<ReviewResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách review thành công")
+                .data(reviewService.getAllReviews())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/product/{productId}")
     public ApiResponse<List<ReviewResponse>> getProductReviews(@PathVariable Long productId) {
         return ApiResponse.<List<ReviewResponse>>builder()
