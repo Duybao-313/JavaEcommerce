@@ -19,5 +19,9 @@ public interface OrderService {
     OrderResponse updateOrderStatus(Long actorId, boolean isAdmin, Long orderId, OrderStatus status);
 
     OrderResponse cancelOrder(Long buyerId, Long orderId);
+
+    OrderResponse confirmDelivery(Long buyerId, Long orderId);
+
+    OrderResponse cancelOrderBySeller(Long sellerId, Long orderId);
 }
 

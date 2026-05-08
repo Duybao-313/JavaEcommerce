@@ -923,6 +923,83 @@
   background: var(--ord-success);
 }
 
+/* ---- Card action buttons ---- */
+.orders-card-clickable {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+.orders-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.65rem;
+  margin-top: 0.65rem;
+  border-top: 1px solid var(--ord-border);
+  flex-wrap: wrap;
+}
+.orders-confirm-delivery-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--ord-radius-sm);
+  border: 1px solid var(--ord-success);
+  background: var(--ord-success-bg);
+  color: var(--ord-success);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--ord-font);
+  transition:
+    background var(--ord-duration-fast) var(--ord-ease-out),
+    transform var(--ord-duration-fast) var(--ord-ease-out);
+}
+.orders-confirm-delivery-btn:hover:not(:disabled) {
+  background: oklch(0.88 0.07 150);
+  transform: translateY(-1px);
+}
+.orders-confirm-delivery-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.orders-confirm-delivery-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.orders-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--ord-radius-sm);
+  border: 1px solid var(--ord-danger-border);
+  background: var(--ord-danger-bg);
+  color: var(--ord-danger);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--ord-font);
+  transition:
+    background var(--ord-duration-fast) var(--ord-ease-out),
+    transform var(--ord-duration-fast) var(--ord-ease-out);
+}
+.orders-cancel-btn:hover:not(:disabled) {
+  background: oklch(0.92 0.06 20);
+  transform: translateY(-1px);
+}
+.orders-cancel-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.orders-cancel-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ==========================================
    Mobile (≤ 768px)
    ========================================== */

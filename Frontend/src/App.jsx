@@ -12,10 +12,8 @@ import UserProfilePage from "./pages/UserProfilePage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import SellerLayout, {
-  SellerDashboardHome,
-  SellerOrdersHistoryPage,
-} from "./pages/SellerDashboardPage";
+import SellerOrdersPage from "./pages/SellerOrdersPage";
+import SellerLayout, { SellerDashboardHome } from "./pages/SellerDashboardPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
@@ -74,7 +72,7 @@ function App() {
         <Route path="/seller" element={<SellerLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SellerDashboardHome />} />
-          <Route path="orders" element={<SellerOrdersHistoryPage />} />
+          <Route path="orders" element={<SellerOrdersPage />} />
           <Route path="products" element={<SellerProductsPage />} />
           <Route path="products/create" element={<CreateProductPage />} />
         </Route>

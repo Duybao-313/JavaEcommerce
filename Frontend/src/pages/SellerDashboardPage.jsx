@@ -76,23 +76,6 @@ function SellerDashboardHome() {
   );
 }
 
-function SellerOrdersHistoryPage() {
-  return (
-    <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-        Order History
-      </p>
-      <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
-        Lịch sử đơn bán
-      </h1>
-      <p className="mt-3 text-sm text-zinc-600">
-        Chức năng lịch sử đơn bán đã được tạo khung giao diện. Bạn có thể kết
-        nối API đơn hàng seller để hiển thị dữ liệu thực tế.
-      </p>
-    </section>
-  );
-}
-
 function SellerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -161,5 +144,5 @@ function SellerLayout() {
   );
 }
 
-export { SellerDashboardHome, SellerLayout, SellerOrdersHistoryPage };
+export { SellerDashboardHome, SellerLayout };
 export default SellerLayout;

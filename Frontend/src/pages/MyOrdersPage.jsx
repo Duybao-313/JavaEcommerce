@@ -9,11 +9,15 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   cancelOrder,
+  confirmDelivery,
   getMyOrders,
   isOrderCancellable,
   mapOrderToUiStatus,
   UI_STATUS,
   STATUS_GROUPS,
+  RAW_STATUS_LABEL,
+  RAW_STATUS_ICON,
+  RAW_STATUS_CSS,
 } from "../services/orderService";
 import "./MyOrdersPage.css";
 
@@ -60,11 +64,11 @@ const STATUS_CONFIG = {
     emptyTitle: "Không có đơn đang giao",
     emptyDesc: "Đơn hàng đang trên đường sẽ hiển thị ở đây.",
   },
-  [UI_STATUS.DELIVERED]: {
+  [UI_STATUS.RECEIVED]: {
     icon: "✅",
     cssClass: "orders-status-delivered",
-    emptyTitle: "Chưa có đơn giao thành công",
-    emptyDesc: "Đơn hàng đã giao thành công sẽ hiển thị tại đây.",
+    emptyTitle: "Chưa có đơn đã nhận",
+    emptyDesc: "Đơn hàng bạn đã xác nhận nhận hàng sẽ hiển thị tại đây.",
   },
   [UI_STATUS.CANCELLED]: {
     icon: "❌",
@@ -87,13 +91,14 @@ export default function MyOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
+  const [confirmingId, setConfirmingId] = useState(null);
   const searchTimeoutRef = useRef(null);
 
   const tabs = useMemo(
     () => [
       UI_STATUS.PENDING_CONFIRMATION,
       UI_STATUS.SHIPPING,
-      UI_STATUS.DELIVERED,
+      UI_STATUS.RECEIVED,
       UI_STATUS.CANCELLED,
     ],
     [],
@@ -203,14 +208,42 @@ export default function MyOrdersPage() {
     }
   }
 
+  // ---- Confirm Delivery ----
+  async function handleConfirmDelivery(order) {
+    if (confirmingId) return;
+    if (
+      !window.confirm(
+        `Bạn xác nhận đã nhận được đơn hàng #${order.orderCode || order.orderId}?`,
+      )
+    )
+      return;
+
+    setConfirmingId(order.orderId);
+    try {
+      await confirmDelivery(order.orderId);
+      toast.success("Đã xác nhận nhận hàng thành công");
+      await fetchOrders();
+      if (selectedOrder?.orderId === order.orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, status: "DELIVERED" } : null,
+        );
+      }
+    } catch (err) {
+      toast.error(err.message || "Không thể xác nhận nhận hàng");
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
   // ---- Render helpers ----
   function getStatusBadge(status) {
-    const config =
-      STATUS_CONFIG[mapOrderToUiStatus(status)] ||
-      STATUS_CONFIG[UI_STATUS.PENDING_CONFIRMATION];
+    const s = String(status || "").toUpperCase();
+    const label = RAW_STATUS_LABEL[s] || s;
+    const icon = RAW_STATUS_ICON[s] || "";
+    const cssClass = RAW_STATUS_CSS[s] || "orders-status-pending";
     return (
-      <span className={`orders-status-badge ${config.cssClass}`}>
-        {config.icon} {mapOrderToUiStatus(status)}
+      <span className={`orders-status-badge ${cssClass}`}>
+        {icon} {label}
       </span>
     );
   }
@@ -362,49 +395,73 @@ export default function MyOrdersPage() {
               <ul className="orders-card-list" role="list">
                 {pageOrders.map((order) => (
                   <li key={order.orderId}>
-                    <button
-                      type="button"
+                    <div
                       className={`orders-card ${selectedOrder?.orderId === order.orderId && drawerOpen ? "orders-card-selected" : ""}`}
-                      onClick={() => openDrawer(order)}
-                      aria-label={`Đơn hàng ${order.orderCode || order.orderId}, ${mapOrderToUiStatus(order.status)}, ${formatPrice(order.totalAmount)}`}
                     >
-                      <div className="orders-card-top">
-                        <span className="orders-card-code">
-                          #{order.orderCode || order.orderId}
-                        </span>
-                        {getStatusBadge(order.status)}
-                      </div>
-                      <div className="orders-card-body">
-                        <div className="orders-card-info">
-                          <p className="orders-card-amount">
-                            {formatPrice(
-                              order.finalAmount || order.totalAmount,
-                            )}
-                          </p>
-                          <p className="orders-card-date">
-                            {formatDateTime(order.createdAt)}
-                          </p>
-                          <p
-                            className="orders-card-address"
-                            title={order.shippingAddress}
-                          >
-                            📍 {order.shippingAddress}
-                          </p>
-                          {order.phone && (
-                            <p className="orders-card-phone">
-                              📞 {order.phone}
+                      <button
+                        type="button"
+                        className="orders-card-clickable"
+                        onClick={() => openDrawer(order)}
+                        aria-label={`Đơn hàng ${order.orderCode || order.orderId}, ${mapOrderToUiStatus(order.status)}, ${formatPrice(order.totalAmount)}`}
+                      >
+                        <div className="orders-card-top">
+                          <span className="orders-card-code">
+                            #{order.orderCode || order.orderId}
+                          </span>
+                          {getStatusBadge(order.status)}
+                        </div>
+                        <div className="orders-card-body">
+                          <div className="orders-card-info">
+                            <p className="orders-card-amount">
+                              {formatPrice(
+                                order.finalAmount || order.totalAmount,
+                              )}
                             </p>
-                          )}
+                            <p className="orders-card-date">
+                              {formatDateTime(order.createdAt)}
+                            </p>
+                            <p
+                              className="orders-card-address"
+                              title={order.shippingAddress}
+                            >
+                              📍 {order.shippingAddress}
+                            </p>
+                            {order.phone && (
+                              <p className="orders-card-phone">
+                                📞 {order.phone}
+                              </p>
+                            )}
+                          </div>
+                          <div className="orders-card-items-preview">
+                            {order.items && order.items.length > 0 && (
+                              <span className="orders-card-item-count">
+                                {order.items.length} sản phẩm
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="orders-card-items-preview">
-                          {order.items && order.items.length > 0 && (
-                            <span className="orders-card-item-count">
-                              {order.items.length} sản phẩm
-                            </span>
-                          )}
-                        </div>
+                      </button>
+
+                      {/* Action buttons */}
+                      <div
+                        className="orders-card-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {String(order.status || "").toUpperCase() ===
+                          "SHIPPING" && (
+                          <button
+                            type="button"
+                            className="orders-confirm-delivery-btn"
+                            disabled={confirmingId === order.orderId}
+                            onClick={() => handleConfirmDelivery(order)}
+                          >
+                            {confirmingId === order.orderId
+                              ? "Đang xử lý..."
+                              : "✅ Xác nhận đã nhận hàng"}
+                          </button>
+                        )}
                       </div>
-                    </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -612,6 +669,19 @@ export default function MyOrdersPage() {
 
               {/* Actions */}
               <div className="orders-drawer-actions">
+                {String(selectedOrder.status || "").toUpperCase() ===
+                  "SHIPPING" && (
+                  <button
+                    className="orders-confirm-delivery-btn"
+                    style={{ width: "100%" }}
+                    disabled={confirmingId === selectedOrder.orderId}
+                    onClick={() => handleConfirmDelivery(selectedOrder)}
+                  >
+                    {confirmingId === selectedOrder.orderId
+                      ? "Đang xử lý..."
+                      : "✅ Xác nhận đã nhận hàng"}
+                  </button>
+                )}
                 <button
                   className="orders-btn-detail"
                   onClick={() => navigate(`/orders/${selectedOrder.orderId}`)}

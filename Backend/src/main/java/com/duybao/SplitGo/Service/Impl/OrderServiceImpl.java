@@ -187,6 +187,11 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
         }
 
+        // Seller không được phép tự đánh dấu DELIVERED — chỉ buyer mới có quyền xác nhận đã nhận
+        if (!isAdmin && status == OrderStatus.DELIVERED) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
         validateStatusTransition(order.getStatus(), status);
         order.setStatus(status);
 
@@ -202,6 +207,52 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        // Buyer chỉ được hủy đơn ở trạng thái PENDING hoặc CONFIRMED
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order saved = orderRepository.save(order);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse confirmDelivery(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getStatus() != OrderStatus.SHIPPING) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setDeliveredAt(java.time.LocalDateTime.now());
+        Order saved = orderRepository.save(order);
+        syncShippingStatus(saved.getId(), OrderStatus.DELIVERED);
+        return toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrderBySeller(Long sellerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Seller phải có ít nhất 1 item trong đơn này
+        if (!orderItemRepository.existsByOrderIdAndSellerId(orderId, sellerId)) {
             throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
         }
 

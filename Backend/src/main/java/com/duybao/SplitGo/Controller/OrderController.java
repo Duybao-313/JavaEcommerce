@@ -79,6 +79,20 @@ public class OrderController {
                 .build();
     }
 
+    @PostMapping("/orders/{orderId}/confirm-delivery")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> confirmDelivery(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Xác nhận đã nhận hàng thành công")
+                .data(orderService.confirmDelivery(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/seller/orders")
     @PreAuthorize("hasRole('SELLER')")
     public ApiResponse<List<OrderResponse>> getSellerOrders(@AuthenticationPrincipal User user) {
@@ -110,6 +124,20 @@ public class OrderController {
             @PathVariable Long orderId,
             @RequestBody @Valid UpdateOrderStatusRequest request) {
         return updateOrderStatusInternal(user, orderId, request);
+    }
+
+    @PostMapping("/seller/orders/{orderId}/cancel")
+    @PreAuthorize("hasRole('SELLER')")
+    public ApiResponse<OrderResponse> cancelSellerOrder(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Hủy đơn hàng thành công")
+                .data(orderService.cancelOrderBySeller(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @PatchMapping("/orders/{orderId}/status")
