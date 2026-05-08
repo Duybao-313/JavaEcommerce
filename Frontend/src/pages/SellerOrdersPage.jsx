@@ -11,6 +11,10 @@ import {
   getSellerOrders,
   updateSellerOrderStatus,
   cancelSellerOrder,
+  createShipping,
+  getShippingByOrderId,
+  markShippingInTransit,
+  CARRIERS,
   STATUS_LABEL,
   STATUS_COLOR,
   STATUS_ICON,
@@ -89,6 +93,12 @@ export default function SellerOrdersPage() {
 
   // Detail drawer
   const [drawerOrder, setDrawerOrder] = useState(null);
+
+  // Shipping state
+  const [shippingMap, setShippingMap] = useState({}); // orderId → shipping record
+  const [carrierModal, setCarrierModal] = useState(null); // order for carrier picker
+  const [selectedCarrier, setSelectedCarrier] = useState("");
+  const [shippingProcessing, setShippingProcessing] = useState(false);
 
   // ---- Fetch ----
   const fetchOrders = useCallback(async () => {
@@ -227,6 +237,91 @@ export default function SellerOrdersPage() {
       setCancelling(false);
     }
   }
+
+  // ---- Shipping handlers ----
+  function openCarrierModal(order) {
+    setCarrierModal(order);
+    setSelectedCarrier("");
+  }
+
+  function closeCarrierModal() {
+    setCarrierModal(null);
+    setSelectedCarrier("");
+  }
+
+  async function handleCreateShipping() {
+    if (!carrierModal || !selectedCarrier || shippingProcessing) return;
+    setShippingProcessing(true);
+    try {
+      const estimated = new Date();
+      estimated.setDate(estimated.getDate() + 5);
+      const shipping = await createShipping({
+        orderId: carrierModal.orderId,
+        carrier: selectedCarrier,
+        estimatedDelivery: estimated.toISOString(),
+      });
+      setShippingMap((prev) => ({
+        ...prev,
+        [carrierModal.orderId]: shipping,
+      }));
+      toast.success(
+        `Đã tạo vận chuyển cho đơn #${carrierModal.orderCode || carrierModal.orderId} qua ${CARRIERS.find((c) => c.value === selectedCarrier)?.label || selectedCarrier}`,
+      );
+      closeCarrierModal();
+    } catch (err) {
+      toast.error(err.message || "Không thể tạo vận chuyển");
+    } finally {
+      setShippingProcessing(false);
+    }
+  }
+
+  async function handleMarkInTransit(order) {
+    const shipping = shippingMap[order.orderId];
+    if (!shipping || shippingProcessing) return;
+    setShippingProcessing(true);
+    try {
+      await markShippingInTransit(shipping.id);
+      toast.success(
+        `Đơn #${order.orderCode || order.orderId} đã chuyển sang đang giao`,
+      );
+      await fetchOrders();
+      setShippingMap((prev) => {
+        const next = { ...prev };
+        delete next[order.orderId];
+        return next;
+      });
+    } catch (err) {
+      toast.error(err.message || "Không thể cập nhật vận chuyển");
+    } finally {
+      setShippingProcessing(false);
+    }
+  }
+
+  // Load shipping records for PREPARING/SHIPPING orders
+  useEffect(() => {
+    async function loadShippings() {
+      const targets = orders.filter(
+        (o) =>
+          String(o.status || "").toUpperCase() === ORDER_STATUS.PREPARING ||
+          String(o.status || "").toUpperCase() === ORDER_STATUS.SHIPPING,
+      );
+      const map = {};
+      for (const o of targets) {
+        if (shippingMap[o.orderId]) {
+          map[o.orderId] = shippingMap[o.orderId];
+          continue;
+        }
+        try {
+          const s = await getShippingByOrderId(o.orderId);
+          if (s) map[o.orderId] = s;
+        } catch {
+          // no shipping yet — expected for PREPARING without shipping
+        }
+      }
+      setShippingMap((prev) => ({ ...prev, ...map }));
+    }
+    if (orders.length > 0) loadShippings();
+  }, [orders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Status badge ----
   function StatusBadge({ status }) {
@@ -426,6 +521,7 @@ export default function SellerOrdersPage() {
                     <th>Mã đơn</th>
                     <th>Khách hàng</th>
                     <th>Trạng thái</th>
+                    <th>Vận chuyển</th>
                     <th>Sản phẩm</th>
                     <th className="seller-orders-col-right">Tổng tiền</th>
                     <th className="seller-orders-col-right">Phí ship</th>
@@ -435,8 +531,11 @@ export default function SellerOrdersPage() {
                 </thead>
                 <tbody>
                   {pageOrders.map((order) => {
+                    const status = String(order.status || "").toUpperCase();
                     const action = getNextAction(order.status);
                     const terminal = isTerminal(order.status);
+                    const shipping = shippingMap[order.orderId];
+                    const hasShipping = !!shipping;
                     return (
                       <tr
                         key={order.orderId}
@@ -473,6 +572,32 @@ export default function SellerOrdersPage() {
                           <StatusBadge status={order.status} />
                         </td>
                         <td>
+                          {hasShipping ? (
+                            <div className="seller-orders-shipping-info">
+                              <span className="seller-orders-carrier">
+                                {CARRIERS.find(
+                                  (c) => c.value === shipping.carrierName,
+                                )?.icon || "📦"}{" "}
+                                {CARRIERS.find(
+                                  (c) => c.value === shipping.carrierName,
+                                )?.label || shipping.carrierName}
+                              </span>
+                              {shipping.trackingCode && (
+                                <span className="seller-orders-tracking">
+                                  {shipping.trackingCode}
+                                </span>
+                              )}
+                              <span
+                                className={`seller-orders-shipping-status ${shipping.status}`}
+                              >
+                                {shipping.status}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="seller-orders-no-shipping">—</span>
+                          )}
+                        </td>
+                        <td>
                           <span className="seller-orders-item-count">
                             {order.items?.length || 0} SP
                           </span>
@@ -495,6 +620,27 @@ export default function SellerOrdersPage() {
                               <span className="seller-orders-terminal-badge">
                                 {STATUS_LABEL[order.status] || order.status}
                               </span>
+                            ) : status === ORDER_STATUS.PREPARING &&
+                              !hasShipping ? (
+                              <button
+                                type="button"
+                                className="seller-orders-action-btn bg-indigo-600 hover:bg-indigo-700 text-white"
+                                onClick={() => openCarrierModal(order)}
+                              >
+                                🚚 Tạo vận chuyển
+                              </button>
+                            ) : status === ORDER_STATUS.PREPARING &&
+                              hasShipping ? (
+                              <button
+                                type="button"
+                                className="seller-orders-action-btn bg-orange-600 hover:bg-orange-700 text-white"
+                                disabled={shippingProcessing}
+                                onClick={() => handleMarkInTransit(order)}
+                              >
+                                {shippingProcessing
+                                  ? "Đang xử lý..."
+                                  : "📦 Đã giao cho ĐVVC"}
+                              </button>
                             ) : action ? (
                               <button
                                 type="button"
@@ -696,6 +842,95 @@ export default function SellerOrdersPage() {
                 </button>
               </div>
             )}
+          {/* Shipping info in drawer */}
+          {shippingMap[drawerOrder.orderId] && (
+            <div className="seller-orders-drawer-section">
+              <h4 className="seller-orders-drawer-section-title">Vận chuyển</h4>
+              <dl className="seller-orders-drawer-dl">
+                <div>
+                  <dt>Đơn vị VC</dt>
+                  <dd>
+                    {CARRIERS.find(
+                      (c) =>
+                        c.value ===
+                        shippingMap[drawerOrder.orderId].carrierName,
+                    )?.label || shippingMap[drawerOrder.orderId].carrierName}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Mã vận đơn</dt>
+                  <dd>
+                    {shippingMap[drawerOrder.orderId].trackingCode || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Trạng thái VC</dt>
+                  <dd>{shippingMap[drawerOrder.orderId].status}</dd>
+                </div>
+                <div>
+                  <dt>Dự kiến giao</dt>
+                  <dd>
+                    {shippingMap[drawerOrder.orderId].estimatedDelivery
+                      ? formatDateTime(
+                          shippingMap[drawerOrder.orderId].estimatedDelivery,
+                        )
+                      : "—"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Carrier picker modal */}
+      {carrierModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg">
+            <h3 className="text-lg font-semibold text-zinc-900">
+              Chọn đơn vị vận chuyển
+            </h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              Đơn #{carrierModal.orderCode || carrierModal.orderId}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {CARRIERS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setSelectedCarrier(c.value)}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                    selectedCarrier === c.value
+                      ? "border-zinc-900 bg-zinc-900 text-white"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400"
+                  }`}
+                >
+                  <span>{c.icon}</span>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeCarrierModal}
+                disabled={shippingProcessing}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateShipping}
+                disabled={!selectedCarrier || shippingProcessing}
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {shippingProcessing ? "Đang xử lý..." : "Tạo vận chuyển"}
+              </button>
+            </div>
+          </div>{" "}
         </div>
       )}
 

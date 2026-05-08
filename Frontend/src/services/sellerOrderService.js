@@ -28,6 +28,51 @@ export async function cancelSellerOrder(orderId) {
   return payload?.data || null;
 }
 
+// ---- Shipping APIs ----
+export async function createShipping({ orderId, carrier, estimatedDelivery }) {
+  const response = await authFetch("/shippings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderId, carrier, estimatedDelivery }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function getShippingByOrderId(orderId) {
+  const response = await authFetch(`/shippings/order/${orderId}`);
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function markShippingInTransit(shippingId) {
+  const response = await authFetch(`/shippings/${shippingId}/mark-in-transit`, {
+    method: "POST",
+  });
+  const payload = await parseApiResponse(response);
+  return payload;
+}
+
+export async function markShippingDelivered(shippingId) {
+  const response = await authFetch(`/shippings/${shippingId}/mark-delivered`, {
+    method: "POST",
+  });
+  const payload = await parseApiResponse(response);
+  return payload;
+}
+
+// ---- Carrier list ----
+export const CARRIERS = [
+  { value: "GHN", label: "GHN", icon: "📦" },
+  { value: "GHTK", label: "GHTK", icon: "📮" },
+  { value: "VIETTEL_POST", label: "Viettel Post", icon: "🏣" },
+  { value: "JT_EXPRESS", label: "J&T Express", icon: "🚛" },
+  { value: "GRAB_EXPRESS", label: "GrabExpress", icon: "🛵" },
+  { value: "AHAMOVE", label: "Ahamove", icon: "🏍️" },
+  { value: "LALAMOVE", label: "Lalamove", icon: "🚐" },
+  { value: "OTHER", label: "Khác", icon: "📋" },
+];
+
 // ---- Status metadata ----
 export const ORDER_STATUS = {
   PENDING: "PENDING",
@@ -77,9 +122,11 @@ export const STATUS_FILTERS = [
   { value: ORDER_STATUS.CANCELLED, label: "Đã hủy", icon: "❌" },
 ];
 
-// ---- Action rules: which status can transition to what ----
+// ---- Action rules for shipping-integrated flow ----
+// After PREPARING, seller uses Shipping actions (create → markInTransit → markDelivered)
 export const NEXT_ACTIONS = {
   [ORDER_STATUS.PENDING]: {
+    type: "confirm",
     nextStatus: ORDER_STATUS.CONFIRMED,
     label: "Xác nhận",
     confirmTitle: "Xác nhận đơn hàng",
@@ -88,6 +135,7 @@ export const NEXT_ACTIONS = {
     cssClass: "bg-blue-600 hover:bg-blue-700 text-white",
   },
   [ORDER_STATUS.CONFIRMED]: {
+    type: "prepare",
     nextStatus: ORDER_STATUS.PREPARING,
     label: "Chuẩn bị hàng",
     confirmTitle: "Bắt đầu chuẩn bị",
@@ -95,25 +143,11 @@ export const NEXT_ACTIONS = {
       `Chuyển đơn #${order.orderCode || order.orderId} sang "Đang chuẩn bị"?`,
     cssClass: "bg-purple-600 hover:bg-purple-700 text-white",
   },
-  [ORDER_STATUS.PREPARING]: {
-    nextStatus: ORDER_STATUS.SHIPPING,
-    label: "Giao hàng",
-    confirmTitle: "Xác nhận giao hàng",
-    confirmMessage: (order) =>
-      `Chuyển đơn #${order.orderCode || order.orderId} sang "Đang giao"?`,
-    cssClass: "bg-orange-600 hover:bg-orange-700 text-white",
-  },
-  [ORDER_STATUS.SHIPPING]: {
-    nextStatus: ORDER_STATUS.DELIVERED,
-    label: "Đã giao",
-    confirmTitle: "Xác nhận đã giao",
-    confirmMessage: (order) =>
-      `Xác nhận đơn #${order.orderCode || order.orderId} đã giao thành công?`,
-    cssClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
-  },
+  // PREPARING: handled separately with shipping flow (create shipping / mark-in-transit)
+  // SHIPPING: handled separately with mark-delivered
 };
 
-// Terminal statuses — seller cannot act on SHIPPING (buyer confirms delivery)
+// Terminal statuses (seller cannot act on SHIPPING — buyer confirms delivery)
 export const TERMINAL_STATUSES = [
   ORDER_STATUS.DELIVERED,
   ORDER_STATUS.CANCELLED,
@@ -126,4 +160,10 @@ export function isTerminal(status) {
 
 export function getNextAction(status) {
   return NEXT_ACTIONS[String(status || "").toUpperCase()] || null;
+}
+
+// Check if order status allows shipping actions
+export function isShippingActionable(status) {
+  const s = String(status || "").toUpperCase();
+  return s === ORDER_STATUS.PREPARING || s === ORDER_STATUS.SHIPPING;
 }

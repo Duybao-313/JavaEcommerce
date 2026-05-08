@@ -196,7 +196,6 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(status);
 
         Order saved = orderRepository.save(order);
-        syncShippingStatus(saved.getId(), status);
         return toOrderResponse(saved);
     }
 

@@ -306,6 +306,51 @@
   color: var(--so-text-secondary);
   font-variant-numeric: tabular-nums;
 }
+
+/* Shipping info cell */
+.seller-orders-shipping-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.seller-orders-carrier {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--so-text-primary);
+}
+.seller-orders-tracking {
+  font-size: 0.7rem;
+  color: var(--so-accent);
+  font-variant-numeric: tabular-nums;
+}
+.seller-orders-shipping-status {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  display: inline-block;
+  width: fit-content;
+}
+.seller-orders-shipping-status.PENDING {
+  background: oklch(0.94 0.04 85);
+  color: oklch(0.62 0.16 85);
+}
+.seller-orders-shipping-status.IN_TRANSIT {
+  background: oklch(0.93 0.04 250);
+  color: oklch(0.55 0.17 250);
+}
+.seller-orders-shipping-status.OUT_FOR_DELIVERY {
+  background: oklch(0.93 0.05 150);
+  color: oklch(0.55 0.17 150);
+}
+.seller-orders-shipping-status.DELIVERED {
+  background: oklch(0.93 0.05 150);
+  color: oklch(0.55 0.17 150);
+}
+.seller-orders-no-shipping {
+  font-size: 0.78rem;
+  color: var(--so-text-tertiary);
+}
 .seller-orders-amount {
   font-weight: 600;
   color: var(--so-text-primary);

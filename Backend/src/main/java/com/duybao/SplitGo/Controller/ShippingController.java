@@ -88,7 +88,7 @@ public class ShippingController {
     }
 
     @PostMapping("/{shippingId}/mark-delivered")
-    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ApiResponse<String> markAsDelivered(@PathVariable Long shippingId) {
         shippingService.markAsDelivered(shippingId);
         return ApiResponse.<String>builder()
