@@ -1,5 +1,11 @@
 import React from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   clearAuth,
@@ -95,14 +101,11 @@ function SellerLayout() {
     session?.user?.fullName || session?.user?.username || "Seller";
 
   if (!session?.token) {
-    navigate("/login", { replace: true });
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   if (!isSellerSession(session)) {
-    toast.error("Bạn không có quyền truy cập khu vực seller");
-    navigate("/products", { replace: true });
-    return null;
+    return <Navigate to="/products" replace />;
   }
 
   const handleLogout = () => {

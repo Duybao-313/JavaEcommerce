@@ -36,10 +36,31 @@ function RoleRoute({ allowedRoles }) {
   return <Outlet />;
 }
 
+function LandingGuard({ children }) {
+  const session = getAuthSession();
+
+  if (hasRole(session, "ADMIN")) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (hasRole(session, "SELLER")) {
+    return <Navigate to="/seller" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route
+        path="/"
+        element={
+          <LandingGuard>
+            <LandingPage />
+          </LandingGuard>
+        }
+      />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
@@ -50,11 +71,8 @@ function App() {
       <Route path="/orders/:orderId" element={<OrderDetailPage />} />
 
       <Route element={<RoleRoute allowedRoles={["SELLER"]} />}>
-        <Route
-          path="/seller"
-          element={<Navigate to="/seller/dashboard" replace />}
-        />
         <Route path="/seller" element={<SellerLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SellerDashboardHome />} />
           <Route path="orders" element={<SellerOrdersHistoryPage />} />
           <Route path="products" element={<SellerProductsPage />} />

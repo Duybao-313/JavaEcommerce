@@ -8,7 +8,7 @@ import {
   updateSellerProduct,
   updateSellerProductImage,
 } from "../services/productService";
-import { getAuthSession, isSellerSession } from "../services/sessionService";
+import { getAuthSession } from "../services/sessionService";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("vi-VN", {
@@ -28,7 +28,6 @@ function normalizeText(value) {
 
 function SellerProductsPage() {
   const navigate = useNavigate();
-  const [session, setSession] = useState(() => getAuthSession());
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,27 +52,18 @@ function SellerProductsPage() {
     categoryId: "",
   });
 
-  const sellerId = useMemo(
-    () => session?.user?.id || session?.id || session?.sellerId || null,
-    [session],
-  );
-
   useEffect(() => {
     const current = getAuthSession();
-    setSession(current);
 
     if (!current?.token) {
       navigate("/login", { replace: true });
       return;
     }
 
-    if (!isSellerSession(current)) {
-      toast.error("Chỉ seller mới có quyền truy cập trang này");
-      navigate("/products", { replace: true });
-      return;
-    }
+    const currentSellerId =
+      current?.user?.id || current?.id || current?.sellerId || null;
 
-    if (!sellerId) {
+    if (!currentSellerId) {
       toast.error("Không tìm thấy thông tin seller trong phiên đăng nhập");
       navigate("/products", { replace: true });
       return;
@@ -85,7 +75,7 @@ function SellerProductsPage() {
       setLoading(true);
       try {
         const [sellerProducts, categoryList] = await Promise.all([
-          getProductsBySeller(sellerId),
+          getProductsBySeller(currentSellerId),
           getCategories().catch(() => []),
         ]);
 
@@ -110,7 +100,7 @@ function SellerProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [navigate, sellerId]);
+  }, [navigate]);
 
   const filteredProducts = useMemo(() => {
     const keyword = normalizeText(searchTerm);
@@ -296,8 +286,6 @@ function SellerProductsPage() {
       setImageSavingId(null);
     }
   };
-
-  if (!session?.token || !isSellerSession(session)) return null;
 
   return (
     <div className="w-full">

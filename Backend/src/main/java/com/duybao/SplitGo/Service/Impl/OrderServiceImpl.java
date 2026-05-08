@@ -135,7 +135,9 @@ public class OrderServiceImpl implements OrderService {
                 .amount(totalAmount)
                 .build());
 
-        cartItemRepository.deleteAllByCartId(cart.getId());
+        // Clear cart items via orphanRemoval (Cart has @OneToMany cascade=ALL, orphanRemoval=true)
+        // This is safer than derived deleteAllByCartId which may bypass persistence context
+        cart.getItems().clear();
         return toOrderResponse(savedOrder);
     }
 
