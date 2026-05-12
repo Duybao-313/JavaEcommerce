@@ -80,8 +80,10 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 
 ### UC-PROD-02 Xem chi tiet san pham
 
-- Du lieu: name, description, price, stock, images, category
-- Hien thi trang thai con hang/het hang
+- Du lieu: name, description, price, salePrice, stock, images, category, options (derived option types + values), variants (size, color...) voi gia/stock/image rieng
+- Neu product co variants: hien thi variant selector (vd: chon color + size), gia/stock theo variant
+- Hien thi trang thai con hang/het hang theo variant
+- Options duoc derive tu variant attributes, tra ve cung ProductResponse
 
 ---
 
@@ -90,10 +92,11 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 ### UC-CART-01 Them vao gio hang
 
 - Buyer da dang nhap
-- Input: productId, quantity
+- Input: productId, quantity, variantId (optional, neu product co variants)
 - Rule:
   - quantity > 0
-  - khong vuot ton kho
+  - khong vuot ton kho (stock cua variant neu co, hoac stock cua product)
+  - Moi variant cua cung product duoc luu thanh cart item rieng
 
 ### UC-CART-02 Cap nhat so luong
 
@@ -107,7 +110,7 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 ### UC-CART-04 Lay gio hang hien tai
 
 - Output:
-  - danh sach item
+  - danh sach item (gom variantId, variantAttributes neu co)
   - tong tien tam tinh
 
 ---
@@ -144,10 +147,23 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 - Validation:
   - gia > 0
   - so luong >= 0
+- Ho tro tao kem variants (size, color) voi gia/stock/image rieng cho tung variant
+  - **Quy trinh 2 buoc:**
+    1. Seller dinh nghia option types (vd: `{name: "color", values: ["red","blue"]}`, `{name: "size", values: ["M","L","XL"]}`)
+    2. He thong tu dong generate combinations (cartesian product) hoac seller tu nhap variant manually
+  - Variant fields: sku, attributes (JSON: `{"color":"red","size":"XL"}`), price, salePrice, stock, imageUrl, weight
+  - Neu co variants: product stock = sum(variant stocks), product sku = null
+  - Moi variant phai co price > 0 va stock >= 0
+  - SKU variant phai unique
+  - **Server validation**: `validateOptionsAndVariants` dam bao:
+    - Moi variant attributes chua tat ca option keys
+    - Moi attribute value thuoc tap allowed values cua option tuong ung
+    - Khong co duplicate attribute key trong cung variant
 
 ### UC-SELL-02 Sua san pham
 
 - Chi cho phep owner seller hoac admin
+- Co the cap nhat/them/xoa variants (replace strategy)
 
 ### UC-SELL-03 Xoa san pham
 
@@ -228,17 +244,21 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 
 - `GET /products`
 - `GET /products/{id}`
-- `POST /products` (seller/admin)
-- `PUT /products/{id}` (owner/admin)
+- `GET /products/{id}/variants` (danh sach variant cua product)
+- `POST /products` (seller/admin, multipart: co the gui options JSON + variants JSON + image)
+- `PUT /products/{id}` (owner/admin, co the update variants)
+- `PUT /products/{id}/image` (owner/admin)
 - `DELETE /products/{id}` (owner/admin)
 - `GET /categories`
 
 ## 5.3 Cart
 
 - `GET /cart`
-- `POST /cart/items`
+- `POST /cart/items` (body: `{productId, quantity, variantId?}`)
 - `PUT /cart/items/{itemId}`
 - `DELETE /cart/items/{itemId}`
+
+Cart item response bo sung: `variantId`, `variantAttributes`, `imageUrl`
 
 ## 5.4 Orders
 
@@ -246,6 +266,8 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 - `GET /orders/my`
 - `GET /orders/{id}`
 - `PATCH /orders/{id}/status` (seller/admin)
+
+OrderItem bo sung: `variantId`, `variantAttributes`
 
 ## 5.5 Reviews
 
@@ -278,7 +300,24 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 ### Product create/update
 
 - Bo sung field: `salePrice`, `weight`, `sku`, `isFeatured`
-- Field cu van giu: `name`, `description`, `imageUrl`, `price`, `stock`, `categoryId`
+- Field cu van giu: `name`, `description`, `imageUrl`, `price`, `stock`, `categoryId`, `categoryName`
+- **Options (moi)**: `options[]` - danh sach option types do seller dinh nghia:
+  - `name` (string, required, vd: "color", "size")
+  - `values` (List<String>, required, vd: ["red","blue"])
+  - `required` (boolean, default true)
+- **Variants (moi)**: `variants[]` - danh sach bien the, moi variant gom:
+  - `sku` (string, unique, optional)
+  - `attributes` (Map<String,String>, vd: `{"color":"red","size":"XL"}`)
+  - `price` (BigDecimal, required)
+  - `salePrice` (BigDecimal, optional)
+  - `stock` (Integer, required)
+  - `imageUrl` (string, optional)
+  - `weight` (BigDecimal, optional)
+
+### Product response
+
+- Bo sung fields: `salePrice`, `weight`, `sku`, `isFeatured`, `variants[]`
+- Moi variant trong response: `id`, `sku`, `attributes`, `price`, `salePrice`, `stock`, `imageUrl`, `weight`
 
 ### Category create/update
 
@@ -321,19 +360,58 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 - Header co search/cart/auth action
 - Product cards dong nhat
 - Product detail co CTA "Them vao gio"
+- Neu product co variants: hien thi variant selector (size buttons), gia/stock thay doi theo variant chon
+- Seller form tao product co section "Biến thể" de them size/color voi gia/stock rieng
+- Cart hien thi variant attributes (vd: "Size: XL") neu co
+
+---
+
+## 8. Product Variant Architecture
+
+### 8.1 Thiet ke du lieu
+
+- `Product`: thong tin chung (name, description, category, seller...), stock = sum(variant stocks)
+- `ProductVariant`: moi record = 1 variant cu the (size XL, color red...)
+  - Fields: id, product_id (FK), sku (unique), attributes (JSON: size/color), price, salePrice, stock, imageUrl, weight
+  - `@Version` field cho optimistic locking
+- `attributes` duoc luu duoi dang JSON TEXT, dung `JsonMapConverter` (JPA AttributeConverter) de serialize/deserialize
+
+### 8.2 Stock safety
+
+- Decrement stock: `UPDATE product_variant SET stock = stock - :qty WHERE id = :id AND stock >= :qty` — kiem tra affectedRows
+- Optimistic locking: `ProductVariant` co `@Version`, xu ly `OptimisticLockException` voi retry
+- CartItem va OrderItem co tham chieu den `variantId` de truy vet chinh xac variant da mua
+
+### 8.3 API
+
+- `POST /products` (multipart): nhan `variants` JSON string + image file, parse qua `@RequestParam`
+- `GET /products/{id}/variants`: lay danh sach variant cua product
+- `POST /cart/items`: body `{productId, quantity, variantId?}`
+- CartItemResponse bo sung: `variantId`, `variantAttributes`, `imageUrl`
+
+### 8.4 Validation
+
+- Neu `variants` khong rong: moi variant BAT BUOC co `price > 0` va `stock >= 0`
+- SKU variant phai unique (server enforce)
+- Neu co variants, product-level `sku` = null, `stock` = sum(variant stocks)
+- Khong cho phep gia am, stock am
 - Cart drawer/page hien tong tien
 - Checkout form ro rang
 - Trang seller :
-+co layout rieng 
-+bang san pham 
-+ form tao/sua
-+lich su mua hang
-+ dash board
+  +co layout rieng
+  +bang san pham
+
+* form tao/sua
+  +lich su mua hang
+* dash board
+
 - Trang seller :
-+co layout rieng  
-+ phan quyen
-+quan ly user
-+ dash board
+  +co layout rieng
+
+* phan quyen
+  +quan ly user
+* dash board
+
 ---
 
 ## 8. Acceptance Criteria (MVP)

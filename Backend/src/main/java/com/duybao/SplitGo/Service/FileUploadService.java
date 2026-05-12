@@ -6,5 +6,7 @@ public interface FileUploadService {
     String uploadProductImage(MultipartFile file);
 
     String uploadUserAvatar(MultipartFile file);
+
+    String uploadImage(MultipartFile file);
 }
 

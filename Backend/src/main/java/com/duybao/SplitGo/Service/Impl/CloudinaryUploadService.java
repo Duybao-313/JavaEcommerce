@@ -29,6 +29,11 @@ public class CloudinaryUploadService implements FileUploadService {
         return upload(file, "splitgo/avatars");
     }
 
+    @Override
+    public String uploadImage(MultipartFile file) {
+        return upload(file, "splitgo/images");
+    }
+
     private String upload(MultipartFile file, String folder) {
         if (file == null || file.isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST);

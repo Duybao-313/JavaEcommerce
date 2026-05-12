@@ -18,8 +18,8 @@ Trang thai hien tai: da chuyen tu giai doan "dinh nghia context" sang "cap nhat 
 - `Backend/src/main/java/com/duybao/SplitGo/Config`: cau hinh bao mat, JWT, cloudinary, khoi tao du lieu.
 - `Backend/src/main/java/com/duybao/SplitGo/Controller`: Authentication, Product, Category, Cart, Order, Admin, **Review, Wishlist, Shipping**.
 - `Backend/src/main/java/com/duybao/SplitGo/Service` + `Service/Impl`: business logic cho module cu va module moi.
-- `Backend/src/main/java/com/duybao/SplitGo/Repository`: JPA repositories (bao gom **ReviewRepository, WishlistRepository, ShippingRepository**).
-- `Backend/src/main/java/com/duybao/SplitGo/Model`: entities chinh (User, Product, Category, Cart, Order, PaymentTransaction, **Review, Wishlist, Shipping**).
+- `Backend/src/main/java/com/duybao/SplitGo/Repository`: JPA repositories (bao gom **ReviewRepository, WishlistRepository, ShippingRepository, ProductVariantRepository**).
+- `Backend/src/main/java/com/duybao/SplitGo/Model`: entities chinh (User, Product, Category, Cart, Order, PaymentTransaction, **Review, Wishlist, Shipping, ProductVariant**).
 - `Backend/src/main/java/com/duybao/SplitGo/Enum`: enum mo rong them **SellerVerificationStatus, StoreStatus, AddressType, ShippingStatus**.
 - `Backend/src/main/java/com/duybao/SplitGo/DTO`: request/response models; da cap nhat them field moi cho product/category/checkout/user + DTO cho review/wishlist/shipping.
 - `Backend/src/main/resources/application.yaml`: cau hinh app.
@@ -29,7 +29,7 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 
 ### Frontend
 
-- `Frontend/src/pages`: Landing, Products, ProductDetail, Login, Register, Checkout, SellerProducts, CreateProduct...
+- `Frontend/src/pages`: Landing, Products, ProductDetail, Login, Register, Checkout, SellerProducts, **CreateProduct (da redesign: 2-step — dinh nghia options truoc, generate variants sau)**...
 - `Frontend/src/components`: Header, Footer, ProductSection, CartDrawer...
 - `Frontend/src/services`: `apiClient`, `authService`, `productService`, `cartService`, `categoryService`, `sessionService`
 - `Frontend/src/context/CartContext.jsx`: state gio hang
@@ -46,9 +46,16 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
    - Xem danh sach san pham, chi tiet san pham
    - CRUD san pham theo role seller/admin
    - Product da ho tro them field `salePrice`, `weight`, `sku`, `isFeatured`, `slug`
+   - **Product Variant**: ho tro nhieu variant (size, color) voi gia/stock/image rieng
+     - Entity `ProductVariant` + `JsonMapConverter` cho attributes JSON
+     - API `GET /products/{id}/variants`
+     - Variant selector tren ProductDetailPage + CartDrawer
+     - **Product Options (moi)**: seller dinh nghia option types (vd color, size) truoc, sau do he thong tu dong generate variant combinations tu cac option values. DTO: `ProductOptionRequest` / `ProductOptionResponse`. Validation server-side (`validateOptionsAndVariants`) dam bao moi variant co du cac option key va value hop le.
+     - `ProductResponse` tra ve ca `options` (derived tu variant attributes) va `variants`.
 
 3. Gio hang + thanh toan:
    - Them/sua/xoa item trong cart
+   - **Cart ho tro variantId**: moi variant cua cung product la cart item rieng
    - Checkout request da ho tro `paymentMethod` va `note`
 
 4. Don hang:
@@ -77,8 +84,11 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 - `User`: bo sung seller profile fields (`storeName`, `storeLogo`, `storeBanner`, `storeAddress`, `bankAccount`, `bankName`, `sellerVerified`, `storeRating`, `totalSales`, `storeStatus`) + verification flags (`emailVerified`, `phoneVerified`, `isActive`).
 - `Category`: ho tro parent-child hierarchy, `slug`, `imageUrl`, `sortOrder`, `isActive`.
 - `Product`: bo sung truong khuyen mai/hien thi (`salePrice`, `weight`, `sku`, `isFeatured`, `slug`).
+  - **ProductVariant**: entity moi luu bien the (size, color...) voi sku, attributes (JSON), price, salePrice, stock, imageUrl, weight, @Version.
+  - CartItem/OrderItem: bo sung `variantId`, `variantAttributes`. Stock decrement an toan qua conditional UPDATE + optimistic locking.
 - `Order`: bo sung multi-seller + shipping/payment tracking fields.
-- New entities: `Review`, `Wishlist`, `Shipping`; co lien ket voi `User`, `Product`, `Order`.
+- New entities: `Review`, `Wishlist`, `Shipping`, **`ProductVariant`**; co lien ket voi `User`, `Product`, `Order`.
+- New DTOs: `ProductVariantRequest`, `ProductVariantResponse`, `ProductOptionRequest`, `ProductOptionResponse`, update `CreateProductRequest`, `UpdateProductRequest`, `ProductResponse`, `AddCartItemRequest`, `CartItemResponse`.
 
 ### Frontend architecture
 
@@ -101,20 +111,16 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 
 ## 6) Pham vi uu tien de trien khai tiep
 
-1. **Dong bo schema + migration**
-   - Chot va chay migration cho field moi cua User/Product/Category/Order
-   - Tao table moi cho Review/Wishlist/Shipping
+1. **Hoan thien Order flow voi variant**
+   - Dong bo checkout de decrement variant stock an toan
+   - OrderItem luu variantAttributes de hien thi don hang
 
 2. **Hoan thien module Address**
    - Tao `Address` entity + repository/service/controller
    - Noi ket voi checkout flow
 
-3. **Dong bo API voi frontend**
-   - Mapping endpoint review/wishlist/shipping vao service frontend
-   - Dong bo field moi (salePrice, shipping tracking, seller profile)
-
-4. **Quality**
-   - Them test cho critical flow: checkout, review moderation, wishlist duplicate, shipping status transition
+3. **Quality**
+   - Them test cho critical flow: checkout voi variant, concurrent order (variant stock safety)
    - Chuan hoa empty/loading/error states o UI
 
 ---
@@ -125,14 +131,16 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 - CORS va baseURL giua 2 app
 - Dong bo enum va order lifecycle theo nghiep vu
 - Quyen truy cap (buyer/seller/admin) va ownership checks
-- Dong bo migration DB voi model hien tai
+- Dong bo migration DB voi model hien tai (ddl-auto: update)
 - Khoang trong module Address (DTO da co, layer runtime chua co)
+- **Variant stock safety**: can test concurrent order de dam bao optimistic locking + conditional UPDATE hoat dong dung
+- **Checkout voi variant**: can dong bo OrderServiceImpl de decrement variant stock thay vi product stock
 
 ---
 
 ## 8) Dinh huong tai lieu tiep theo
 
-- `docs/spec.md`: cap nhat API contract cho reviews/wishlist/shippings va field moi cua product/category/order/user.
+- `docs/spec.md`: cap nhat API contract cho product variant, reviews/wishlist/shippings va field moi.
 - `docs/IMPLEMENTATION_SUMMARY.md`: theo doi tien do implementation theo phase.
 - `docs/QUICK_CHECKLIST.md`: checklist migration + API test + deployment readiness.
-- Bo sung sequence flow cho checkout + shipping tracking + review moderation.
+- Bo sung sequence flow cho checkout + variant stock decrement + shipping tracking + review moderation.

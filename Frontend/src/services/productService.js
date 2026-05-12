@@ -56,6 +56,11 @@ export async function createProductWithImage(payload, imageFile) {
     formData.append("variants", JSON.stringify(payload.variants));
   }
 
+  // Append options as JSON string (for validation on server)
+  if (payload?.options && payload.options.length > 0) {
+    formData.append("options", JSON.stringify(payload.options));
+  }
+
   const response = await authFetch("/products", {
     method: "POST",
     body: formData,

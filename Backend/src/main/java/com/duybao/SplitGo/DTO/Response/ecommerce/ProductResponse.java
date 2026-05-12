@@ -29,6 +29,7 @@ public class ProductResponse {
     private String categoryName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<ProductOptionResponse> options;
     private List<ProductVariantResponse> variants;
 }
 

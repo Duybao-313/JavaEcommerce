@@ -31,6 +31,7 @@ public class UpdateProductRequest {
     private ProductStatus status;
     private Long categoryId;
 
+    private List<ProductOptionRequest> options;
     private List<ProductVariantRequest> variants;
 }
 

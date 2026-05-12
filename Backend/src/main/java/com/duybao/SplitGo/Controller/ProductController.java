@@ -40,10 +40,9 @@ public class ProductController {
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
-        // Prevent Spring from trying to bind the "variants" JSON string
-        // to CreateProductRequest.variants (List<ProductVariantRequest>).
-        // The variants JSON is parsed manually via @RequestParam.
-        binder.setDisallowedFields("variants");
+        // Prevent Spring from trying to bind the "variants" and "options" JSON strings
+        // to CreateProductRequest fields. They are parsed manually via @RequestParam.
+        binder.setDisallowedFields("variants", "options");
     }
 
     @GetMapping
@@ -105,11 +104,27 @@ public class ProductController {
             @AuthenticationPrincipal User user,
             @Valid @ModelAttribute CreateProductRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "variants", required = false) String variantsJson) {
+            @RequestParam(value = "variants", required = false) String variantsJson,
+            @RequestParam(value = "options", required = false) String optionsJson) {
         boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        // Parse options JSON
+        if (optionsJson != null && !optionsJson.isBlank()) {
+            try {
+                List<com.duybao.SplitGo.DTO.request.ecommerce.ProductOptionRequest> options = mapper.readValue(
+                        optionsJson,
+                        mapper.getTypeFactory().constructCollectionType(List.class,
+                                com.duybao.SplitGo.DTO.request.ecommerce.ProductOptionRequest.class));
+                request.setOptions(options);
+            } catch (Exception e) {
+                throw new AppException(ErrorCode.INVALID_REQUEST);
+            }
+        }
+
+        // Parse variants JSON
         if (variantsJson != null && !variantsJson.isBlank()) {
             try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 List<com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest> variants = mapper.readValue(
                         variantsJson,
                         mapper.getTypeFactory().constructCollectionType(List.class,

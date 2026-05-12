@@ -1,8 +1,10 @@
 package com.duybao.SplitGo.Service.Impl;
 
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductOptionResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
+import com.duybao.SplitGo.DTO.request.ecommerce.ProductOptionRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
 import com.duybao.SplitGo.Enum.ProductStatus;
@@ -21,8 +23,12 @@ import com.duybao.SplitGo.Service.FileUploadService;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -105,6 +111,8 @@ public class CatalogServiceImpl implements CatalogService {
                     throw new AppException(ErrorCode.VARIANT_SKU_DUPLICATE);
                 }
             }
+            // Validate options-variants consistency
+            validateOptionsAndVariants(request);
         }
 
         // For product with variants, compute aggregate stock
@@ -198,6 +206,12 @@ public class CatalogServiceImpl implements CatalogService {
         // Handle variant updates if provided
         List<ProductVariantRequest> variantRequests = request.getVariants();
         if (variantRequests != null && !variantRequests.isEmpty()) {
+            // Validate options-variants consistency
+            CreateProductRequest tempReq = new CreateProductRequest();
+            tempReq.setOptions(request.getOptions());
+            tempReq.setVariants(variantRequests);
+            validateOptionsAndVariants(tempReq);
+
             // Validate SKU uniqueness among new variants
             for (ProductVariantRequest vr : variantRequests) {
                 if (vr.getSku() != null && !vr.getSku().isBlank()) {
@@ -282,6 +296,63 @@ public class CatalogServiceImpl implements CatalogService {
                 .build()));
     }
 
+    /**
+     * Validates that if options are defined, every variant must:
+     * - Contain all required option keys in its attributes
+     * - Have attribute values that belong to the allowed values for each option
+     * - Each option key must have exactly one value per variant
+     */
+    private void validateOptionsAndVariants(CreateProductRequest req) {
+        List<ProductOptionRequest> options = req.getOptions();
+        List<ProductVariantRequest> variants = req.getVariants();
+
+        if (options == null || options.isEmpty()) {
+            return; // no options defined, skip validation
+        }
+
+        if (variants == null || variants.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                    "Phải cung cấp ít nhất 1 variant khi có options");
+        }
+
+        // Collect required option keys
+        Set<String> optionKeys = options.stream()
+                .map(ProductOptionRequest::getName)
+                .collect(Collectors.toSet());
+
+        // Build allowed values map
+        Map<String, Set<String>> allowed = new HashMap<>();
+        for (ProductOptionRequest o : options) {
+            if (o.getValues() == null || o.getValues().isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST,
+                        "Option '" + o.getName() + "' phải có ít nhất 1 giá trị");
+            }
+            allowed.put(o.getName(), new HashSet<>(o.getValues()));
+        }
+
+        for (ProductVariantRequest v : variants) {
+            Map<String, String> attrs = v.getAttributes();
+            if (attrs == null || attrs.isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST,
+                        "Variant thiếu attributes, cần có: " + optionKeys);
+            }
+            // Check that all required option keys are present
+            if (!attrs.keySet().containsAll(optionKeys)) {
+                throw new AppException(ErrorCode.INVALID_REQUEST,
+                        "Variant phải có tất cả option: " + optionKeys);
+            }
+            // Check each value is allowed
+            for (String key : optionKeys) {
+                String val = attrs.get(key);
+                if (val == null || !allowed.get(key).contains(val)) {
+                    throw new AppException(ErrorCode.INVALID_REQUEST,
+                            "Giá trị không hợp lệ cho '" + key + "': " + val
+                                    + ". Giá trị hợp lệ: " + allowed.get(key));
+                }
+            }
+        }
+    }
+
     @Override
     public List<ProductVariantResponse> getVariantsByProductId(Long productId) {
         return variantRepository.findByProductIdOrderByIdAsc(productId).stream()
@@ -294,6 +365,9 @@ public class CatalogServiceImpl implements CatalogService {
                 .findByProductIdOrderByIdAsc(product.getId()).stream()
                 .map(this::toVariantResponse)
                 .toList();
+
+        // Derive options from variants' attribute keys and unique values
+        List<ProductOptionResponse> optionResponses = deriveOptions(variantResponses);
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -315,6 +389,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .options(optionResponses.isEmpty() ? null : optionResponses)
                 .variants(variantResponses.isEmpty() ? null : variantResponses)
                 .build();
     }
@@ -330,6 +405,39 @@ public class CatalogServiceImpl implements CatalogService {
                 .imageUrl(variant.getImageUrl())
                 .weight(variant.getWeight())
                 .build();
+    }
+
+    /**
+     * Derives option types and their unique values from the list of variants.
+     * For example, if variants have attributes: {color: red, size: XL}, {color: blue, size: M},
+     * this returns options: [{name: color, values: [red, blue]}, {name: size, values: [XL, M]}].
+     */
+    private List<ProductOptionResponse> deriveOptions(List<ProductVariantResponse> variants) {
+        if (variants == null || variants.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<String, Set<String>> optionMap = new HashMap<>();
+        for (ProductVariantResponse v : variants) {
+            Map<String, String> attrs = v.getAttributes();
+            if (attrs != null) {
+                for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                    optionMap.computeIfAbsent(entry.getKey(), k -> new HashSet<>())
+                            .add(entry.getValue());
+                }
+            }
+        }
+        if (optionMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ProductOptionResponse> result = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : optionMap.entrySet()) {
+            result.add(ProductOptionResponse.builder()
+                    .name(entry.getKey())
+                    .values(new ArrayList<>(entry.getValue()))
+                    .required(true)
+                    .build());
+        }
+        return result;
     }
 }
 

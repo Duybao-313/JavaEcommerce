@@ -37,6 +37,7 @@ public class CreateProductRequest {
 
     private String categoryName;
 
+    private List<ProductOptionRequest> options; // option types defined by seller (e.g., color, size)
     private List<ProductVariantRequest> variants;
 }
 

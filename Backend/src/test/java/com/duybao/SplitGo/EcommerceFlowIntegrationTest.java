@@ -41,6 +41,7 @@ class EcommerceFlowIntegrationTest {
                 .username("seller_1")
                 .email("seller1@splitgo.dev")
                 .password("secret")
+                .phone("")
                 .role(Role.ROLE_SELLER)
                 .build());
 
@@ -48,6 +49,7 @@ class EcommerceFlowIntegrationTest {
                 .username("buyer_1")
                 .email("buyer1@splitgo.dev")
                 .password("secret")
+                .phone("")
                 .address("123 Test Street")
                 .role(Role.ROLE_USER)
                 .build());
@@ -55,6 +57,7 @@ class EcommerceFlowIntegrationTest {
         Product product = productRepository.save(Product.builder()
                 .name("Ao thun")
                 .description("Ao cotton")
+                .imageUrl("")
                 .price(new BigDecimal("120000"))
                 .stock(5)
                 .status(ProductStatus.ACTIVE)
