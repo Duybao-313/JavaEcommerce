@@ -61,6 +61,9 @@ public enum ErrorCode {
     ADDRESS_NOT_FOUND(2012, "Không tìm thấy địa chỉ", HttpStatus.NOT_FOUND),
     SHIPPING_NOT_FOUND(2013, "Không tìm thấy thông tin vận chuyển", HttpStatus.NOT_FOUND),
     SHIPPING_ALREADY_EXISTS(2014, "Thông tin vận chuyển đã tồn tại", HttpStatus.BAD_REQUEST),
+    VARIANT_NOT_FOUND(2015, "Không tìm thấy biến thể sản phẩm", HttpStatus.NOT_FOUND),
+    VARIANT_OUT_OF_STOCK(2016, "Biến thể sản phẩm đã hết hàng", HttpStatus.BAD_REQUEST),
+    VARIANT_SKU_DUPLICATE(2017, "Mã SKU biến thể đã tồn tại", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
 
     private final int code;

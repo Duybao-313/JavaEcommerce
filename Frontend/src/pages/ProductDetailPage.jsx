@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import CartButton from "../components/CartButton";
@@ -25,9 +25,40 @@ function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const { refreshCart, openCart } = useCart();
 
   const session = getAuthSession();
+
+  const hasVariants = product?.variants && product.variants.length > 0;
+
+  const currentPrice = useMemo(() => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.salePrice || selectedVariant.price;
+    }
+    return product?.salePrice || product?.price;
+  }, [product, selectedVariant, hasVariants]);
+
+  const originalPrice = useMemo(() => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.salePrice ? selectedVariant.price : null;
+    }
+    return product?.salePrice ? product?.price : null;
+  }, [product, selectedVariant, hasVariants]);
+
+  const currentStock = useMemo(() => {
+    if (hasVariants && selectedVariant) {
+      return selectedVariant.stock;
+    }
+    return product?.stock || 0;
+  }, [product, selectedVariant, hasVariants]);
+
+  const currentImage = useMemo(() => {
+    if (hasVariants && selectedVariant?.imageUrl) {
+      return selectedVariant.imageUrl;
+    }
+    return product?.imageUrl;
+  }, [product, selectedVariant, hasVariants]);
 
   useEffect(() => {
     async function loadProduct() {
@@ -35,25 +66,24 @@ function ProductDetailPage() {
       setError("");
 
       try {
-        if (!productId) {
-          throw new Error("Product ID khong hop le");
-        }
+        if (!productId) throw new Error("Product ID không hợp lệ");
         const data = await getProductDetail(productId);
 
-        if (!data) {
-          throw new Error("Khong nhan duoc du lieu san pham tu API");
-        }
-
-        if (typeof data !== "object") {
-          throw new Error(`Du lieu san pham khong hop le: ${typeof data}`);
-        }
-
-        if (!data.id) {
-          throw new Error("San pham khong co ID");
-        }
+        if (!data) throw new Error("Không nhận được dữ liệu sản phẩm từ API");
+        if (typeof data !== "object")
+          throw new Error(`Dữ liệu sản phẩm không hợp lệ: ${typeof data}`);
+        if (!data.id) throw new Error("Sản phẩm không có ID");
 
         setProduct(data);
         setQuantity(1);
+
+        // Auto-select first variant if available
+        if (data.variants && data.variants.length > 0) {
+          const inStockVariant = data.variants.find((v) => v.stock > 0);
+          setSelectedVariant(inStockVariant || data.variants[0]);
+        } else {
+          setSelectedVariant(null);
+        }
 
         const allProducts = await getProducts();
         const sameCategory = allProducts
@@ -67,7 +97,6 @@ function ProductDetailPage() {
             if (byViews !== 0) return byViews;
             return Number(b?.id || 0) - Number(a?.id || 0);
           });
-
         setRelatedProducts(sameCategory);
       } catch (err) {
         setError(err?.message || "Đã có lỗi khi tải sản phẩm");
@@ -81,7 +110,7 @@ function ProductDetailPage() {
   }, [productId]);
 
   const handleQuantityChange = (newQuantity) => {
-    const value = Math.max(1, Math.min(newQuantity, product?.stock || 1));
+    const value = Math.max(1, Math.min(newQuantity, currentStock || 1));
     setQuantity(value);
   };
 
@@ -97,11 +126,19 @@ function ProductDetailPage() {
       return;
     }
 
+    if (hasVariants && !selectedVariant) {
+      toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
+      return;
+    }
+
     setAdding(true);
 
     try {
-      await addToCart(product.id, quantity);
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+      await addToCart(product.id, quantity, selectedVariant?.id || null);
+      const variantLabel = selectedVariant
+        ? ` (${selectedVariant.attributes?.size || ""})`
+        : "";
+      toast.success(`Đã thêm ${quantity} sản phẩm${variantLabel} vào giỏ hàng`);
       setQuantity(1);
       await refreshCart();
       openCart();
@@ -175,7 +212,7 @@ function ProductDetailPage() {
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
             to="/products"
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900"
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900 transition-colors"
           >
             ← Quay lại
           </Link>
@@ -183,7 +220,7 @@ function ProductDetailPage() {
             {session?.token && (
               <Link
                 to="/orders"
-                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 transition-colors"
               >
                 Đơn hàng
               </Link>
@@ -194,15 +231,15 @@ function ProductDetailPage() {
 
         <div className="grid gap-8 md:grid-cols-2">
           {/* Image Section */}
-          <div className="flex items-center justify-center rounded-2xl border border-zinc-200 bg-white">
-            {product.imageUrl ? (
+          <div className="flex items-center justify-center rounded-2xl border border-zinc-200 bg-white overflow-hidden">
+            {currentImage ? (
               <img
-                src={product.imageUrl}
+                src={currentImage}
                 alt={product.name}
-                className="h-full w-full rounded-2xl object-cover"
+                className="h-full w-full object-cover rounded-2xl"
               />
             ) : (
-              <div className="flex h-96 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-200 to-zinc-100 text-sm font-semibold text-zinc-500">
+              <div className="flex h-96 w-full items-center justify-center bg-gradient-to-br from-zinc-200 to-zinc-100 text-sm font-semibold text-zinc-500">
                 Chưa có ảnh sản phẩm
               </div>
             )}
@@ -230,8 +267,58 @@ function ProductDetailPage() {
               </p>
             )}
 
+            {/* Variant Selector */}
+            {hasVariants && (
+              <div className="mt-6 border-t border-zinc-200 pt-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  Chọn size
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map((variant) => {
+                    const isSelected = selectedVariant?.id === variant.id;
+                    const isOutOfStock = variant.stock === 0;
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={() => {
+                          if (!isOutOfStock) {
+                            setSelectedVariant(variant);
+                            setQuantity(1);
+                          }
+                        }}
+                        disabled={isOutOfStock}
+                        className={`relative rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all ${
+                          isSelected
+                            ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                            : isOutOfStock
+                              ? "border-zinc-200 bg-zinc-50 text-zinc-300 cursor-not-allowed line-through"
+                              : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-900"
+                        }`}
+                      >
+                        {variant.attributes?.size ||
+                          variant.sku ||
+                          `#${variant.id}`}
+                        {isOutOfStock && (
+                          <span className="ml-1 text-[10px]">(hết)</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedVariant && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Còn{" "}
+                    <span className="font-semibold text-zinc-800">
+                      {selectedVariant.stock}
+                    </span>{" "}
+                    sản phẩm
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Product Info */}
-            <div className="mt-6 space-y-3 border-t border-zinc-200 pt-6">
+            <div className="mt-5 space-y-3 border-t border-zinc-200 pt-5">
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Người bán:</span>
                 <span className="font-medium text-zinc-900">
@@ -241,7 +328,7 @@ function ProductDetailPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Tồn kho:</span>
                 <span className="font-medium text-zinc-900">
-                  {product.stock} sản phẩm
+                  {currentStock} sản phẩm
                 </span>
               </div>
               <div className="flex justify-between">
@@ -257,21 +344,36 @@ function ProductDetailPage() {
             </div>
 
             {/* Price */}
-            <div className="mt-6 border-t border-zinc-200 pt-6">
-              <p className="text-4xl font-bold text-zinc-900">
-                {formatPrice(product.price)}
-              </p>
+            <div className="mt-5 border-t border-zinc-200 pt-5">
+              <div className="flex items-baseline gap-2">
+                <p className="text-4xl font-bold text-zinc-900">
+                  {formatPrice(currentPrice)}
+                </p>
+                {originalPrice && (
+                  <p className="text-lg text-zinc-400 line-through">
+                    {formatPrice(originalPrice)}
+                  </p>
+                )}
+              </div>
+              {hasVariants && selectedVariant?.salePrice && (
+                <p className="mt-1 text-xs font-semibold text-emerald-700">
+                  Tiết kiệm{" "}
+                  {formatPrice(
+                    selectedVariant.price - selectedVariant.salePrice,
+                  )}
+                </p>
+              )}
             </div>
 
             {/* Quantity Selector */}
-            <div className="mt-6 border-t border-zinc-200 pt-6">
+            <div className="mt-5 border-t border-zinc-200 pt-5">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Số lượng
               </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleQuantityChange(quantity - 1)}
-                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900"
+                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
                   disabled={quantity <= 1}
                 >
                   −
@@ -284,12 +386,12 @@ function ProductDetailPage() {
                   }
                   className="w-16 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-center font-medium text-zinc-900"
                   min="1"
-                  max={product.stock}
+                  max={currentStock}
                 />
                 <button
                   onClick={() => handleQuantityChange(quantity + 1)}
-                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900"
-                  disabled={quantity >= product.stock}
+                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
+                  disabled={quantity >= currentStock}
                 >
                   +
                 </button>
@@ -299,12 +401,12 @@ function ProductDetailPage() {
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              disabled={adding || product.stock === 0}
+              disabled={adding || currentStock === 0}
               className="mt-6 w-full rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed transition-colors"
             >
               {adding
                 ? "Đang thêm..."
-                : product.stock === 0
+                : currentStock === 0
                   ? "Hết hàng"
                   : "Thêm vào giỏ hàng"}
             </button>
@@ -356,7 +458,7 @@ function ProductDetailPage() {
                       {item.name}
                     </h3>
                     <p className="mt-1 text-sm font-semibold text-zinc-900">
-                      {formatPrice(item.price)}
+                      {formatPrice(item.salePrice || item.price)}
                     </p>
                     <p className="mt-1 text-xs text-zinc-600">
                       Lượt xem:{" "}

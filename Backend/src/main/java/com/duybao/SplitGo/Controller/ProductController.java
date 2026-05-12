@@ -2,6 +2,7 @@ package com.duybao.SplitGo.Controller;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
 import com.duybao.SplitGo.Enum.Role;
@@ -17,14 +18,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +37,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/products")
 public class ProductController {
     private final CatalogService catalogService;
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        // Prevent Spring from trying to bind the "variants" JSON string
+        // to CreateProductRequest.variants (List<ProductVariantRequest>).
+        // The variants JSON is parsed manually via @RequestParam.
+        binder.setDisallowedFields("variants");
+    }
 
     @GetMapping
     public ApiResponse<List<ProductResponse>> getProducts() {
@@ -92,8 +104,21 @@ public class ProductController {
     public ApiResponse<ProductResponse> createProductWithImage(
             @AuthenticationPrincipal User user,
             @Valid @ModelAttribute CreateProductRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "variants", required = false) String variantsJson) {
         boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        if (variantsJson != null && !variantsJson.isBlank()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                List<com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest> variants = mapper.readValue(
+                        variantsJson,
+                        mapper.getTypeFactory().constructCollectionType(List.class,
+                                com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest.class));
+                request.setVariants(variants);
+            } catch (Exception e) {
+                throw new AppException(ErrorCode.INVALID_REQUEST);
+            }
+        }
         return ApiResponse.<ProductResponse>builder()
                 .success(true)
                 .code(201)
@@ -142,6 +167,17 @@ public class ProductController {
                 .success(true)
                 .code(200)
                 .message("Ẩn sản phẩm thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/{id}/variants")
+    public ApiResponse<List<ProductVariantResponse>> getVariants(@PathVariable Long id) {
+        return ApiResponse.<List<ProductVariantResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách biến thể thành công")
+                .data(catalogService.getVariantsByProductId(id))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

@@ -1,6 +1,7 @@
 package com.duybao.SplitGo.Service;
 
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
 import java.util.List;
@@ -15,7 +16,6 @@ public interface CatalogService {
 
     ProductResponse getProductDetail(Long productId);
 
-
     ProductResponse createProduct(CreateProductRequest request, Long actorId, boolean isAdmin, MultipartFile imageFile);
 
     ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long actorId, boolean isAdmin);
@@ -23,5 +23,7 @@ public interface CatalogService {
     ProductResponse updateProductImage(Long productId, Long actorId, boolean isAdmin, MultipartFile imageFile);
 
     void deleteProduct(Long productId, Long actorId, boolean isAdmin);
+
+    List<ProductVariantResponse> getVariantsByProductId(Long productId);
 }
 

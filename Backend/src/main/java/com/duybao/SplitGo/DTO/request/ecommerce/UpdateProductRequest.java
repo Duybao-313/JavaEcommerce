@@ -4,6 +4,7 @@ import com.duybao.SplitGo.Enum.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -29,5 +30,7 @@ public class UpdateProductRequest {
 
     private ProductStatus status;
     private Long categoryId;
+
+    private List<ProductVariantRequest> variants;
 }
 
