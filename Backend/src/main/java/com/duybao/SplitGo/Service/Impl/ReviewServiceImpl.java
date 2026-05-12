@@ -1,5 +1,6 @@
 package com.duybao.SplitGo.Service.Impl;
 
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductReviewSummaryResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateReviewRequest;
 import com.duybao.SplitGo.Exception.AppException;
@@ -17,6 +18,8 @@ import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.ReviewService;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -105,7 +108,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public List<ReviewResponse> getProductApprovedReviews(Long productId) {
-        return reviewRepository.findByProductIdAndIsApprovedTrue(productId).stream()
+        return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId).stream()
                 .map(this::toReviewResponse)
                 .toList();
     }
@@ -118,23 +121,24 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    @Transactional
-    public ReviewResponse approveReview(Long reviewId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+    public ProductReviewSummaryResponse getProductReviewSummary(Long productId) {
+        Double avgRating = reviewRepository.computeAvgRatingByProductId(productId);
+        long count = reviewRepository.countByProductId(productId);
 
-        review.setIsApproved(true);
-        return toReviewResponse(reviewRepository.save(review));
-    }
+        // Get top 4 recent reviews
+        List<ReviewResponse> recentReviews = reviewRepository
+                .findByProductIdOrderByCreatedAtDesc(productId)
+                .stream()
+                .limit(4)
+                .map(this::toReviewResponse)
+                .toList();
 
-    @Override
-    @Transactional
-    public ReviewResponse rejectReview(Long reviewId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
-
-        review.setIsApproved(false);
-        return toReviewResponse(reviewRepository.save(review));
+        return ProductReviewSummaryResponse.builder()
+                .productId(productId)
+                .avgRating(avgRating)
+                .reviewCount((int) count)
+                .recentReviews(recentReviews)
+                .build();
     }
 
     @Override
@@ -143,12 +147,25 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
 
+        User seller = review.getProduct().getSeller();
         reviewRepository.delete(review);
+
+        // Recalculate seller's storeRating after delete
+        updateSellerStoreRating(seller.getId());
     }
 
     @Override
     public boolean canUserReviewProduct(Long userId, Long orderId) {
         return reviewRepository.existsByOrderIdAndReviewerId(orderId, userId);
+    }
+
+    private void updateSellerStoreRating(Long sellerId) {
+        User seller = userRepository.findById(sellerId).orElse(null);
+        if (seller == null) return;
+
+        Double avgRating = reviewRepository.computeAvgRatingBySellerId(sellerId);
+        seller.setStoreRating(avgRating != null ? BigDecimal.valueOf(avgRating).setScale(2, RoundingMode.HALF_UP) : null);
+        userRepository.save(seller);
     }
 
     private ReviewResponse toReviewResponse(Review review) {

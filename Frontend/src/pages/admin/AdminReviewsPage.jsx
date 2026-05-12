@@ -3,30 +3,10 @@ import toast from "react-hot-toast";
 import ConfirmationModal from "../../components/admin/ConfirmationModal";
 import LoadingSpinner from "../../components/admin/LoadingSpinner";
 import PaginationBar from "../../components/admin/PaginationBar";
-import {
-  approveReview,
-  deleteReview,
-  getAdminReviews,
-  rejectReview,
-} from "../../services/adminService";
+import { deleteReview, getAdminReviews } from "../../services/adminService";
 import { formatDateTime, normalizeText, paginate } from "./adminHelpers";
 
 const pageSize = 10;
-
-function StatusBadge({ approved }) {
-  if (approved) {
-    return (
-      <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-        ✓ Đã duyệt
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">
-      ⏳ Chờ duyệt
-    </span>
-  );
-}
 
 function AdminReviewsPage() {
   const [reviews, setReviews] = useState([]);
@@ -71,7 +51,10 @@ function AdminReviewsPage() {
     );
   }, [reviews, search]);
 
-  const pageItems = useMemo(() => paginate(filtered, page, pageSize), [filtered, page]);
+  const pageItems = useMemo(
+    () => paginate(filtered, page, pageSize),
+    [filtered, page],
+  );
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -79,32 +62,6 @@ function AdminReviewsPage() {
       setPage(maxPage);
     }
   }, [filtered.length, page]);
-
-  async function handleApprove(reviewId) {
-    setSavingId(reviewId);
-    try {
-      const updated = await approveReview(reviewId);
-      setReviews((prev) => prev.map((item) => (item.id === reviewId ? { ...item, ...updated } : item)));
-      toast.success("Đã duyệt đánh giá");
-    } catch (err) {
-      toast.error(err?.message || "Lỗi");
-    } finally {
-      setSavingId(null);
-    }
-  }
-
-  async function handleReject(reviewId) {
-    setSavingId(reviewId);
-    try {
-      const updated = await rejectReview(reviewId);
-      setReviews((prev) => prev.map((item) => (item.id === reviewId ? { ...item, ...updated } : item)));
-      toast.success("Đã từ chối đánh giá");
-    } catch (err) {
-      toast.error(err?.message || "Lỗi");
-    } finally {
-      setSavingId(null);
-    }
-  }
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -153,42 +110,45 @@ function AdminReviewsPage() {
       ) : (
         <div className="space-y-3">
           {pageItems.map((review) => (
-            <div key={review.id} className="rounded-lg border border-zinc-200 bg-white p-4">
+            <div
+              key={review.id}
+              className="rounded-lg border border-zinc-200 bg-white p-4"
+            >
               <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-zinc-900">{review.reviewerName || `#${review.reviewerId}`}</h3>
+                    <h3 className="font-semibold text-zinc-900">
+                      {review.reviewerName || `#${review.reviewerId}`}
+                    </h3>
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <span key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-300"}>
+                        <span
+                          key={i}
+                          className={
+                            i < review.rating
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }
+                        >
                           ★
                         </span>
                       ))}
                     </div>
                   </div>
-                  <p className="mt-1 text-sm text-zinc-500">{review.productName || `Sản phẩm #${review.productId}`}</p>
-                  <p className="mt-2 text-sm text-zinc-700">{review.comment || review.title || "-"}</p>
-                  <p className="mt-2 text-xs text-zinc-400">{formatDateTime(review.createdAt)}</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {review.productName || `Sản phẩm #${review.productId}`}
+                  </p>
+                  <p className="mt-2 text-sm text-zinc-700">
+                    {review.comment || review.title || "-"}
+                  </p>
+                  <p className="mt-2 text-xs text-zinc-400">
+                    {formatDateTime(review.createdAt)}
+                  </p>
                 </div>
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-200 pt-3">
-                <StatusBadge approved={review.isApproved} />
                 <div className="flex flex-wrap gap-2 md:ml-auto">
-                  <button
-                    onClick={() => handleApprove(review.id)}
-                    disabled={savingId === review.id || review.isApproved}
-                    className="rounded px-2 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    Duyệt
-                  </button>
-                  <button
-                    onClick={() => handleReject(review.id)}
-                    disabled={savingId === review.id}
-                    className="rounded px-2 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50"
-                  >
-                    Từ chối
-                  </button>
                   <button
                     onClick={() => setDeleteTarget(review)}
                     disabled={savingId === review.id}
@@ -205,7 +165,12 @@ function AdminReviewsPage() {
 
       {/* Pagination */}
       {!loading && pageItems.length > 0 && (
-        <PaginationBar page={page} pageSize={pageSize} totalItems={filtered.length} onPageChange={setPage} />
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalItems={filtered.length}
+          onPageChange={setPage}
+        />
       )}
 
       {/* Delete Confirmation */}
@@ -225,6 +190,3 @@ function AdminReviewsPage() {
 }
 
 export default AdminReviewsPage;
-
-
-

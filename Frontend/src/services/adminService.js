@@ -57,22 +57,6 @@ export async function getAdminReviews() {
   return parseListResponse(response);
 }
 
-export async function approveReview(reviewId) {
-  const response = await authFetch(`/reviews/${reviewId}/approve`, {
-    method: "POST",
-  });
-  const payload = await parseApiResponse(response);
-  return payload?.data || null;
-}
-
-export async function rejectReview(reviewId) {
-  const response = await authFetch(`/reviews/${reviewId}/reject`, {
-    method: "POST",
-  });
-  const payload = await parseApiResponse(response);
-  return payload?.data || null;
-}
-
 export async function deleteReview(reviewId) {
   const response = await authFetch(`/reviews/${reviewId}`, {
     method: "DELETE",
@@ -132,4 +116,3 @@ export async function getShippingByOrderId(orderId) {
   const payload = await parseApiResponse(response);
   return payload?.data || null;
 }
-

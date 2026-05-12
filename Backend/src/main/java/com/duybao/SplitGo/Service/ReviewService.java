@@ -1,5 +1,6 @@
 package com.duybao.SplitGo.Service;
 
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductReviewSummaryResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateReviewRequest;
 import java.util.List;
@@ -15,9 +16,7 @@ public interface ReviewService {
 
     List<ReviewResponse> getUserReviews(Long userId);
 
-    ReviewResponse approveReview(Long reviewId);
-
-    ReviewResponse rejectReview(Long reviewId);
+    ProductReviewSummaryResponse getProductReviewSummary(Long productId);
 
     void deleteReview(Long reviewId);
 

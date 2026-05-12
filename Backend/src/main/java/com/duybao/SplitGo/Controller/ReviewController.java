@@ -1,6 +1,7 @@
 package com.duybao.SplitGo.Controller;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ProductReviewSummaryResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateReviewRequest;
 import com.duybao.SplitGo.Model.User;
@@ -73,6 +74,17 @@ public class ReviewController {
                 .build();
     }
 
+    @GetMapping("/product/{productId}/summary")
+    public ApiResponse<ProductReviewSummaryResponse> getProductReviewSummary(@PathVariable Long productId) {
+        return ApiResponse.<ProductReviewSummaryResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy tóm tắt đánh giá thành công")
+                .data(reviewService.getProductReviewSummary(productId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/user/{userId}")
     public ApiResponse<List<ReviewResponse>> getUserReviews(@PathVariable Long userId) {
         return ApiResponse.<List<ReviewResponse>>builder()
@@ -96,28 +108,5 @@ public class ReviewController {
                 .build();
     }
 
-    @PostMapping("/{reviewId}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<ReviewResponse> approveReview(@PathVariable Long reviewId) {
-        return ApiResponse.<ReviewResponse>builder()
-                .success(true)
-                .code(200)
-                .message("Duyệt đánh giá thành công")
-                .data(reviewService.approveReview(reviewId))
-                .timestamp(LocalDateTime.now())
-                .build();
-    }
-
-    @PostMapping("/{reviewId}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<ReviewResponse> rejectReview(@PathVariable Long reviewId) {
-        return ApiResponse.<ReviewResponse>builder()
-                .success(true)
-                .code(200)
-                .message("Từ chối đánh giá thành công")
-                .data(reviewService.rejectReview(reviewId))
-                .timestamp(LocalDateTime.now())
-                .build();
-    }
 }
 

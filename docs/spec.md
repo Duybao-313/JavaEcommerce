@@ -288,24 +288,36 @@ addItem(buyerId, AddCartItemRequest{productId, quantity, variantId?})
 
 - Hien thi theo seller dang nhap
 
-## 4.6 Review Management
+## 4.6 Review Management (Post-Purchase)
 
-### UC-REV-01 Tao danh gia san pham
+### UC-REV-01 Tao danh gia san pham (sau khi nhan hang)
 
-- Buyer da dang nhap va da mua san pham
-- Input: `productId`, `orderId`, `rating`, `title`, `comment`, `images` (optional)
+- Buyer da dang nhap va order o trang thai DELIVERED
+- Input: `productId`, `orderId`, `variantId` (optional), `rating` (1-5), `title`, `comment`, `images` (JSON array of URLs, optional)
 - Rule:
-  - `rating` trong khoang 1-5
-  - Khong duoc review trung cho cung order/product theo user
+  - `rating` trong khoang 1-5, `title` required
+  - Khong duoc review trung cho cung order/product/variant cua cung user
+  - Chi buyer cua order moi duoc review
+- Flow UX:
+  1. User vao order detail / my orders
+  2. Order SHIPPING → bam "Xac nhan da nhan hang" → order chuyen DELIVERED
+  3. Modal hoi: "Danh gia ngay" hoac "De sau"
+  4. Neu "Danh gia ngay": hien form danh gia cho tung item trong don
+     - Chon sao 1-5
+     - Nhap tieu de + nhan xet
+     - Upload anh (drag & drop, toi da 5 anh, max 5MB/anh)
+  5. Neu "De sau": don van duoc xac nhan da nhan, user co the quay lai danh gia sau
+- Sau khi review: item hien badge "Da danh gia"
+- Item chua review: hien nut "Danh gia"
 
 ### UC-REV-02 Xem danh gia san pham
 
-- Public co the xem danh sach review theo product
-- Ho tro endpoint lay review da duyet
+- Public co the xem danh sach review theo product (hien thi ngay, khong can duyet)
+- Ho tro endpoint lay review (`GET /reviews/product/{id}/approved`)
+- Ho tro endpoint tom tat danh gia (`GET /reviews/product/{id}/summary`) tra ve avgRating, reviewCount, recentReviews
 
-### UC-REV-03 Moderation danh gia
+### UC-REV-03 Xoa danh gia
 
-- Admin co quyen approve/reject review
 - Buyer/Admin co the xoa review theo policy quyen
 
 ## 4.7 Wishlist Management
@@ -380,19 +392,26 @@ Cart item response bo sung: `variantId`, `variantAttributes`, `imageUrl`
 - `POST /orders/checkout`
 - `GET /orders/my`
 - `GET /orders/{id}`
+- `POST /orders/{orderId}/cancel` (buyer)
+- `POST /orders/{orderId}/confirm-delivery` (buyer) — xac nhan da nhan hang, chuyen trang thai sang DELIVERED
+- `GET /orders/{orderId}/reviewable-items` (buyer) — lay danh sach item co the danh gia
 - `PATCH /orders/{id}/status` (seller/admin)
 
-OrderItem bo sung: `variantId`, `variantAttributes`
+OrderItem response bo sung: `variantId`, `variantAttributes`, `reviewed`, `canReview`
+
+OrderResponse bo sung: items[] co `reviewed` (Boolean) va `canReview` (Boolean) cho tung item
 
 ## 5.5 Reviews
 
-- `POST /reviews` (user)
+- `POST /reviews` (user) — body: `{productId, orderId, variantId?, rating, title, comment, images?}`
 - `GET /reviews/product/{productId}`
 - `GET /reviews/product/{productId}/approved`
+- `GET /reviews/product/{productId}/summary` — tra ve `{productId, avgRating, reviewCount, recentReviews[]}`
 - `GET /reviews/user/{userId}`
+- `GET /orders/{orderId}/reviewable-items` (user) — response: `[{productId, variantId, productName, variantAttributes, productImageUrl, canReview, reviewed}]`
 - `DELETE /reviews/{reviewId}` (user/admin)
-- `POST /reviews/{reviewId}/approve` (admin)
-- `POST /reviews/{reviewId}/reject` (admin)
+
+Review hien thi ngay sau khi tao, khong can admin duyet.
 
 ## 5.6 Wishlist
 
@@ -515,35 +534,73 @@ OrderItem bo sung: `variantId`, `variantAttributes`
 - Khong cho phep gia am, stock am
 - Cart drawer/page hien tong tien
 - Checkout form ro rang
-- Trang seller :
-  +co layout rieng
-  +bang san pham
-
-* form tao/sua
-  +lich su mua hang
-* dash board
-
-- Trang seller :
-  +co layout rieng
-
-* phan quyen
-  +quan ly user
-* dash board
 
 ---
 
-## 8. Acceptance Criteria (MVP)
+## 9. Review Flow Architecture (Post-Purchase)
+
+### 9.1 Lifecycle
+
+```
+Order SHIPPING
+  → User bam "Xac nhan da nhan hang" (POST /orders/{id}/confirm-delivery)
+  → Order chuyen DELIVERED
+  → ReviewChoiceModal: "Danh gia ngay" | "De sau"
+
+Neu "Danh gia ngay":
+  → ProductReviewCard cho tung item:
+     ⭐ Star rating (1-5), accessible (role=radio, aria-label)
+     ✏️ Title (required) + Comment (optional, max 2000)
+     📷 ReviewUploadZone: drag & drop, max 5 anh, max 5MB/anh
+  → POST /reviews {productId, orderId, variantId?, rating, title, comment, images?}
+  → Item → badge "Da danh gia"
+
+Neu "De sau":
+  → Order van DELIVERED
+  → O MyOrdersPage / OrderDetailPage: item chua review hien nut "Danh gia"
+  → User co the quay lai danh gia bat ky luc nao
+```
+
+### 9.2 Components
+
+| Component           | Path                                      | Mo ta                                                 |
+| ------------------- | ----------------------------------------- | ----------------------------------------------------- |
+| `ReviewFlow`        | `components/review/ReviewFlow.jsx`        | Dieu phoi toan bo flow: banner, modal, form, success  |
+| `ReviewChoiceModal` | `components/review/ReviewChoiceModal.jsx` | Modal chon "Danh gia ngay" / "De sau"                 |
+| `ProductReviewCard` | `components/review/ProductReviewCard.jsx` | Form danh gia per item: stars, title, comment, upload |
+| `ReviewUploadZone`  | `components/review/ReviewUploadZone.jsx`  | Drag & drop upload anh, preview, xoa                  |
+
+### 9.3 Backend contracts
+
+| Endpoint                        | Method | Auth | Mo ta                        |
+| ------------------------------- | ------ | ---- | ---------------------------- |
+| `/orders/{id}/confirm-delivery` | POST   | USER | Xac nhan da nhan hang        |
+| `/orders/{id}/reviewable-items` | GET    | USER | Lay items co the danh gia    |
+| `/reviews`                      | POST   | USER | Tao danh gia (variant-aware) |
+
+### 9.4 Review status display rules
+
+- `canReview=true && reviewed=false` → hien nut "⭐ Đánh giá"
+- `reviewed=true` → hien badge "✅ Đã đánh giá"
+- Status review hien thi per item, khong ap dung chung cho ca don
+
+---
+
+## 10. Acceptance Criteria (MVP)
 
 1. User dang ky/dang nhap thanh cong va giu session.
-2. User xem duoc danh sach + chi tiet san pham.
-3. User them/sua/xoa gio hang khong loi business rule.
+2. User xem duoc danh sach + chi tiet san pham (gom variant selector).
+3. User them/sua/xoa gio hang khong loi business rule (gom variant-aware).
 4. User checkout tao order thanh cong.
-5. Seller tao/sua/xoa san pham thanh cong.
+5. Seller tao/sua/xoa san pham thanh cong (gom variants).
 6. Loi API duoc hien thi ro tren frontend.
+7. User xac nhan da nhan hang va danh gia san pham (star, comment, upload anh).
+8. Review hien thi dung badge "Da danh gia" / nut "Danh gia" theo tung item.
+9. UI review responsive, mobile-first, accessible.
 
 ---
 
-## 9. Ke hoach trien khai de xuat (ngan)
+## 11. Ke hoach trien khai de xuat (ngan)
 
 ### Phase 1 (Core buyer flow)
 
@@ -559,10 +616,12 @@ OrderItem bo sung: `variantId`, `variantAttributes`
 
 ---
 
-## 10. Tracking task
+## 12. Tracking task
 
 - Tai lieu context: `docs/context.md`
 - Tai lieu spec: `docs/spec.md`
 - Co the bo sung tiep:
   - `docs/api-mapping.md` (map frontend service -> backend endpoint thuc te)
   - `docs/test-cases.md` (test case theo UC)
+  - `docs/IMPLEMENTATION_GUIDE.md` (huong dan trien khai chi tiet)
+  - `docs/ADMIN_API_TEST_GUIDE.md` (test API admin)

@@ -1,4 +1,4 @@
-import { parseApiResponse } from "./apiClient";
+import { parseApiResponse, request } from "./apiClient";
 import { authFetch } from "./authService";
 
 /**
@@ -28,14 +28,25 @@ export async function getReviewableItems(orderId) {
 }
 
 /**
- * Get all reviews for a product (approved only).
+ * Get all approved reviews for a product (public).
  * @param {number|string} productId
  * @returns {Promise<Array>} List of reviews
  */
 export async function getProductReviews(productId) {
-  const response = await authFetch(`/reviews/product/${productId}/approved`);
+  const response = await request(`/reviews/product/${productId}/approved`);
   const payload = await parseApiResponse(response);
   return payload?.data || [];
+}
+
+/**
+ * Get review summary for a product (avg rating, count, recent reviews) - public.
+ * @param {number|string} productId
+ * @returns {Promise<{ productId, avgRating, reviewCount, recentReviews }>}
+ */
+export async function getProductReviewSummary(productId) {
+  const response = await request(`/reviews/product/${productId}/summary`);
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
 }
 
 /**

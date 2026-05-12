@@ -252,6 +252,17 @@ public class OrderServiceImpl implements OrderService {
         order.setDeliveredAt(java.time.LocalDateTime.now());
         Order saved = orderRepository.save(order);
         syncShippingStatus(saved.getId(), OrderStatus.DELIVERED);
+
+        // Increment totalSales for each seller in the order
+        for (OrderItem item : saved.getItems()) {
+            Product product = item.getProduct();
+            if (product != null && product.getSeller() != null) {
+                User seller = product.getSeller();
+                seller.setTotalSales(seller.getTotalSales() + item.getQuantity());
+                userRepository.save(seller);
+            }
+        }
+
         return toOrderResponse(saved);
     }
 

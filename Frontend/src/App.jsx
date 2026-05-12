@@ -12,6 +12,7 @@ import UserProfilePage from "./pages/UserProfilePage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import StorePage from "./pages/StorePage";
+import ReviewsPage from "./pages/ReviewsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
 import SellerLayout, { SellerDashboardHome } from "./pages/SellerDashboardPage";
@@ -62,6 +63,7 @@ function App() {
       />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:productId" element={<ProductDetailPage />} />
+      <Route path="/products/:productId/reviews" element={<ReviewsPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

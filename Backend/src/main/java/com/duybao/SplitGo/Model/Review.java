@@ -60,7 +60,7 @@ public class Review {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isApproved = false;
+    private Boolean isApproved = true;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

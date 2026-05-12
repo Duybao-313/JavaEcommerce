@@ -20,6 +20,7 @@ import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Repository.CategoryRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
 import com.duybao.SplitGo.Repository.ProductVariantRepository;
+import com.duybao.SplitGo.Repository.ReviewRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.CatalogService;
 import com.duybao.SplitGo.Service.FileUploadService;
@@ -42,6 +43,7 @@ public class CatalogServiceImpl implements CatalogService {
     private final ProductVariantRepository variantRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
     private final FileUploadService fileUploadService;
 
     public CatalogServiceImpl(
@@ -49,11 +51,13 @@ public class CatalogServiceImpl implements CatalogService {
             ProductVariantRepository variantRepository,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
+            ReviewRepository reviewRepository,
             FileUploadService fileUploadService) {
         this.productRepository = productRepository;
         this.variantRepository = variantRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.reviewRepository = reviewRepository;
         this.fileUploadService = fileUploadService;
     }
 
@@ -436,8 +440,8 @@ public class CatalogServiceImpl implements CatalogService {
                 .updatedAt(product.getUpdatedAt())
                 .options(optionResponses.isEmpty() ? null : optionResponses)
                 .variants(variantResponses.isEmpty() ? Collections.emptyList() : variantResponses)
-                .avgRating(null)    // TODO: integrate review service
-                .reviewCount(null)  // TODO: integrate review service
+                .avgRating(reviewRepository.computeAvgRatingByProductId(product.getId()))
+                .reviewCount((int) reviewRepository.countByProductId(product.getId()))
                 .relatedProducts(related)
                 .build();
     }

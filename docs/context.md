@@ -30,8 +30,8 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 ### Frontend
 
 - `Frontend/src/pages`: Landing, Products, ProductDetail, Login, Register, Checkout, SellerProducts, **CreateProduct (da redesign: 2-step — dinh nghia options truoc, generate variants sau)**...
-- `Frontend/src/components`: Header, Footer, ProductSection, CartDrawer...
-- `Frontend/src/services`: `apiClient`, `authService`, `productService`, `cartService`, `categoryService`, `sessionService`
+- `Frontend/src/components`: Header, Footer, ProductSection, CartDrawer, **review/** (ReviewFlow, ProductReviewCard, ReviewChoiceModal, ReviewUploadZone)...
+- `Frontend/src/services`: `apiClient`, `authService`, `productService`, `cartService`, `categoryService`, `sessionService`, **`reviewService`**, **`orderService`**
 - `Frontend/src/context/CartContext.jsx`: state gio hang
 - `Frontend/src/App.jsx`, `Frontend/src/main.jsx`: app shell + routing bootstrap
 
@@ -63,7 +63,8 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
    - Order da co them field financial/tracking: `orderCode`, `discountAmount`, `shippingFee`, `finalAmount`, `shippedAt`, `deliveredAt`, `seller`
 
 5. Tinh nang moi:
-   - **Review API** (`/reviews`): tao, lay danh sach, approve/reject, xoa
+   - **Review API** (`/reviews`): tao, lay danh sach, xoa. Review hien thi ngay, khong can duyet. Ho tro variant-level review.
+   - **Review Flow sau mua hang**: user xac nhan da nhan hang → modal chon "Danh gia ngay" / "De sau" → form danh gia per item (star 1-5, title, comment, upload anh) → badge "Da danh gia" tren item da review.
    - **Wishlist API** (`/wishlist`): add/remove/list/check
    - **Shipping API** (`/shippings`): tao/cap nhat/track/mark-delivered/mark-in-transit
 
@@ -88,7 +89,8 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
   - CartItem/OrderItem: bo sung `variantId`, `variantAttributes`. Stock decrement an toan qua conditional UPDATE + optimistic locking.
 - `Order`: bo sung multi-seller + shipping/payment tracking fields.
 - New entities: `Review`, `Wishlist`, `Shipping`, **`ProductVariant`**; co lien ket voi `User`, `Product`, `Order`.
-- New DTOs: `ProductVariantRequest`, `ProductVariantResponse`, `ProductOptionRequest`, `ProductOptionResponse`, update `CreateProductRequest`, `UpdateProductRequest`, `ProductResponse`, `AddCartItemRequest`, `CartItemResponse`.
+  - `Review`: bo sung `variantId` (FK ProductVariant) de ho tro review theo variant cu the. `OrderItemResponse` bo sung `variantId`, `reviewed`, `canReview`.
+- New DTOs: `ProductVariantRequest`, `ProductVariantResponse`, `ProductOptionRequest`, `ProductOptionResponse`, `ReviewableItemResponse`, update `CreateProductRequest`, `UpdateProductRequest`, `ProductResponse`, `AddCartItemRequest`, `CartItemResponse`, `CreateReviewRequest` (them `variantId`).
 
 ### Frontend architecture
 
@@ -135,6 +137,7 @@ Ghi chu: hien tai co `CreateAddressRequest` va `UpdateAddressRequest`, nhung chu
 - Khoang trong module Address (DTO da co, layer runtime chua co)
 - **Variant stock safety**: can test concurrent order de dam bao optimistic locking + conditional UPDATE hoat dong dung
 - **Checkout voi variant**: can dong bo OrderServiceImpl de decrement variant stock thay vi product stock
+- **Review voi variant**: dam bao duplicate check per product+variant (khong chi per order)
 
 ---
 
