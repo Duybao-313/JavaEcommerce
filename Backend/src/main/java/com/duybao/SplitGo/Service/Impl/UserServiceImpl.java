@@ -63,10 +63,39 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        UserDTO dto = userMapper.toDTO(user);
+        dto.setRole(user.getRole());
+        return dto;
+    }
+
+    @Override
     public UserDTO updateAvatar(Long id, MultipartFile file) {
         User userStore = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         String avatarUrl = fileUploadService.uploadUserAvatar(file);
         userStore.setAvatarUrl(avatarUrl);
+        userStore.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(userStore);
+        return userMapper.toDTO(userStore);
+    }
+
+    @Override
+    public UserDTO updateStoreLogo(Long id, MultipartFile file) {
+        User userStore = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String logoUrl = fileUploadService.uploadUserAvatar(file);
+        userStore.setStoreLogo(logoUrl);
+        userStore.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(userStore);
+        return userMapper.toDTO(userStore);
+    }
+
+    @Override
+    public UserDTO updateStoreBanner(Long id, MultipartFile file) {
+        User userStore = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String bannerUrl = fileUploadService.uploadUserAvatar(file);
+        userStore.setStoreBanner(bannerUrl);
         userStore.setUpdatedAt(LocalDateTime.now());
         userRepository.save(userStore);
         return userMapper.toDTO(userStore);

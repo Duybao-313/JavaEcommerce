@@ -59,11 +59,20 @@ public class CartServiceImpl implements CartService {
                 .findById(request.getProductId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
+        // Kiểm tra product có variant hay không
+        List<ProductVariant> productVariants = variantRepository
+                .findByProductIdOrderByIdAsc(product.getId());
+        boolean productHasVariants = !productVariants.isEmpty();
+
         ProductVariant variant;
         BigDecimal itemPrice;
         int availableStock;
 
-        if (request.getVariantId() != null) {
+        if (productHasVariants) {
+            // Product có variant -> bắt buộc phải chọn variantId
+            if (request.getVariantId() == null) {
+                throw new AppException(ErrorCode.VARIANT_REQUIRED);
+            }
             variant = variantRepository.findById(request.getVariantId())
                     .orElseThrow(() -> new AppException(ErrorCode.VARIANT_NOT_FOUND));
             if (!variant.getProduct().getId().equals(product.getId())) {
@@ -72,6 +81,10 @@ public class CartServiceImpl implements CartService {
             itemPrice = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getPrice();
             availableStock = variant.getStock();
         } else {
+            // Product không có variant -> không được gửi variantId
+            if (request.getVariantId() != null) {
+                throw new AppException(ErrorCode.INVALID_REQUEST);
+            }
             variant = null;
             itemPrice = product.getSalePrice() != null ? product.getSalePrice() : product.getPrice();
             availableStock = product.getStock();
@@ -116,16 +129,26 @@ public class CartServiceImpl implements CartService {
                 .findByIdAndCartUserId(cartItemId, buyerId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
 
+        BigDecimal itemPrice;
         int availableStock;
+
         if (item.getVariant() != null) {
+            // Cart item gắn với variant -> dùng stock & giá của variant
             availableStock = item.getVariant().getStock();
+            itemPrice = item.getVariant().getSalePrice() != null
+                    ? item.getVariant().getSalePrice()
+                    : item.getVariant().getPrice();
         } else {
+            // Cart item không có variant -> dùng stock & giá của product
             availableStock = item.getProduct().getStock();
+            itemPrice = item.getProduct().getSalePrice() != null
+                    ? item.getProduct().getSalePrice()
+                    : item.getProduct().getPrice();
         }
 
         validateProductCanBuy(item.getProduct(), request.getQuantity(), availableStock);
         item.setQuantity(request.getQuantity());
-        item.setPriceSnapshot(item.getProduct().getPrice());
+        item.setPriceSnapshot(itemPrice); // cập nhật lại giá mới nhất
         cartItemRepository.save(item);
 
         return getMyCart(buyerId);
@@ -166,12 +189,18 @@ public class CartServiceImpl implements CartService {
         List<CartItemResponse> items = cart.getItems().stream()
                 .map(item -> {
                     BigDecimal lineTotal = item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity()));
+                    // Ưu tiên ảnh variant nếu có, nếu không dùng ảnh product
+                    String imageUrl = (item.getVariant() != null && item.getVariant().getImageUrl() != null
+                            && !item.getVariant().getImageUrl().isBlank())
+                            ? item.getVariant().getImageUrl()
+                            : item.getProduct().getImageUrl();
+
                     return CartItemResponse.builder()
                             .cartItemId(item.getId())
                             .productId(item.getProduct().getId())
                             .variantId(item.getVariant() != null ? item.getVariant().getId() : null)
                             .productName(item.getProduct().getName())
-                            .imageUrl(item.getProduct().getImageUrl())
+                            .imageUrl(imageUrl)
                             .variantAttributes(item.getVariant() != null ? item.getVariant().getAttributes() : null)
                             .quantity(item.getQuantity())
                             .unitPrice(item.getPriceSnapshot())

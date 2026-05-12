@@ -6,10 +6,12 @@ import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Model.Order;
 import com.duybao.SplitGo.Model.Product;
+import com.duybao.SplitGo.Model.ProductVariant;
 import com.duybao.SplitGo.Model.Review;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Repository.OrderRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
+import com.duybao.SplitGo.Repository.ProductVariantRepository;
 import com.duybao.SplitGo.Repository.ReviewRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.ReviewService;
@@ -23,16 +25,19 @@ public class ReviewServiceImpl implements ReviewService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final ProductVariantRepository variantRepository;
 
     public ReviewServiceImpl(
             ReviewRepository reviewRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
-            OrderRepository orderRepository) {
+            OrderRepository orderRepository,
+            ProductVariantRepository variantRepository) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
+        this.variantRepository = variantRepository;
     }
 
     @Override
@@ -51,11 +56,21 @@ public class ReviewServiceImpl implements ReviewService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        if (reviewRepository.existsByOrderIdAndReviewerId(request.getOrderId(), reviewerId)) {
+        // Check duplicate per product+variant (not just per order)
+        boolean alreadyReviewed;
+        if (request.getVariantId() != null) {
+            alreadyReviewed = reviewRepository.existsByOrderIdAndProductIdAndVariantIdAndReviewerId(
+                    request.getOrderId(), request.getProductId(), request.getVariantId(), reviewerId);
+        } else {
+            alreadyReviewed = reviewRepository.existsByOrderIdAndProductIdAndReviewerId(
+                    request.getOrderId(), request.getProductId(), reviewerId);
+        }
+
+        if (alreadyReviewed) {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
-        Review review = Review.builder()
+        Review.ReviewBuilder reviewBuilder = Review.builder()
                 .product(product)
                 .reviewer(reviewer)
                 .order(order)
@@ -63,10 +78,15 @@ public class ReviewServiceImpl implements ReviewService {
                 .title(request.getTitle())
                 .comment(request.getComment())
                 .images(request.getImages())
-                .isApproved(false)
-                .build();
+                .isApproved(false);
 
-        return toReviewResponse(reviewRepository.save(review));
+        if (request.getVariantId() != null) {
+            ProductVariant variant = variantRepository.findById(request.getVariantId())
+                    .orElseThrow(() -> new AppException(ErrorCode.VARIANT_NOT_FOUND));
+            reviewBuilder.variant(variant);
+        }
+
+        return toReviewResponse(reviewRepository.save(reviewBuilder.build()));
     }
 
     @Override
@@ -139,6 +159,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .reviewerId(review.getReviewer().getId())
                 .reviewerName(review.getReviewer().getFullName())
                 .orderId(review.getOrder().getId())
+                .variantId(review.getVariant() != null ? review.getVariant().getId() : null)
                 .rating(review.getRating())
                 .title(review.getTitle())
                 .comment(review.getComment())

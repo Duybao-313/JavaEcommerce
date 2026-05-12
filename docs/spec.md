@@ -87,7 +87,121 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 
 ---
 
-## 4.3 Cart
+## 4.3 Cart — Phan tich nghiep vu chi tiet
+
+### 4.3.1 Tong quan kien truc gio hang
+
+Gio hang duoc xay dung theo mo hinh **cart-per-user**:
+
+- Moi Buyer (da dang nhap) co **duy nhat 1 Cart** (`Cart` entity)
+- Cart chua danh sach `CartItem`, moi `CartItem` anh xa den 1 `Product` + `ProductVariant` (optional) + `quantity` + `priceSnapshot`
+
+### 4.3.2 Cac fields moi cua Product anh huong den Cart
+
+Cac field duoc bo sung trong `Product` va `ProductVariant`:
+
+| Field        | Model                                         | Y nghia trong Cart                                               |
+| ------------ | --------------------------------------------- | ---------------------------------------------------------------- |
+| `salePrice`  | Product, ProductVariant                       | Gia khuyen mai, uu tien hon `price` khi tinh `priceSnapshot`     |
+| `weight`     | Product, ProductVariant                       | Khoi luong, dung de tinh phi ship sau nay                        |
+| `sku`        | Product (null neu co variant), ProductVariant | Ma san pham / ma variant de truy vet                             |
+| `isFeatured` | Product                                       | San pham noi bat, khong anh huong truc tiep cart                 |
+| `variants[]` | ProductVariant (list)                         | **Quan trong nhat**: san pham co nhieu bien the (size, color...) |
+| `options[]`  | Derived tu variants                           | Dung de hien thi option selector o frontend                      |
+
+### 4.3.3 Nguyen tac them vao gio hang (variant-aware)
+
+#### a) San pham KHONG co variant (product don gian)
+
+- Input: `productId`, `quantity` (variantId = null)
+- Backend logic (`CartServiceImpl.addItem`):
+  1. Lay product, kiem tra `status = ACTIVE`
+  2. Tinh `itemPrice = salePrice ?? price` (product level)
+  3. Kiem tra `availableStock = product.stock`
+  4. Neu da co CartItem cung `productId + variantId=null` -> cong don quantity
+  5. Neu quantity moi > availableStock -> throw `PRODUCT_OUT_OF_STOCK`
+  6. Luu CartItem voi `priceSnapshot = itemPrice`
+
+#### b) San pham CO variant (san pham co option nhu size, color...)
+
+- Input: `productId`, `quantity`, `variantId` (**bat buoc**)
+- Backend logic:
+  1. Lay product + variant, kiem tra variant thuoc dung product
+  2. Tinh `itemPrice = variant.salePrice ?? variant.price` (variant level)
+  3. Kiem tra `availableStock = variant.stock`
+  4. Neu da co CartItem cung `productId + variantId` -> cong don quantity
+  5. Moi variant cua cung product duoc luu thanh **CartItem rieng biet**
+  6. Validate quantity <= variant.stock
+
+#### c) Quick-add tu danh sach san pham — UX rule moi
+
+Khi user bam nut **"Thêm vào giỏ"** tu trang danh sach san pham (ProductSection):
+
+- **Neu product co variants** (`product.variants.length > 0`):
+  - ❌ KHONG them truc tiep vao gio (vi chua chon duoc variant cu the)
+  - ✅ **Dieu huong** user sang trang chi tiet san pham (`/products/{id}`)
+  - ✅ Hien thi toast thong bao: _"Vui lòng chọn phân loại hàng trước khi thêm vào giỏ"_
+  - Tai trang detail, user chon option (size/color...) -> chon variant -> them vao gio voi variantId
+
+- **Neu product KHONG co variant** (`product.variants.length === 0`):
+  - ✅ Them truc tiep vao gio (nhu hien tai)
+  - Van giu nguyen logic: kiem tra dang nhap, kiem tra stock > 0
+
+### 4.3.4 Backend flow chi tiet (CartServiceImpl.addItem)
+
+```
+addItem(buyerId, AddCartItemRequest{productId, quantity, variantId?})
+  ├── getOrCreateCart(buyerId)
+  ├── find Product by productId
+  ├── if variantId != null:
+  │     ├── find ProductVariant by variantId
+  │     ├── validate variant.product.id == product.id
+  │     ├── itemPrice = variant.salePrice ?? variant.price
+  │     └── availableStock = variant.stock
+  ├── else:
+  │     ├── variant = null
+  │     ├── itemPrice = product.salePrice ?? product.price
+  │     └── availableStock = product.stock
+  ├── validateProductCanBuy(product, quantity, availableStock)
+  │     ├── product.status == ACTIVE
+  │     └── quantity <= availableStock
+  ├── find existing CartItem by (cartId, productId, variantId)
+  ├── newQty = existing.quantity + request.quantity
+  ├── if newQty > availableStock -> throw PRODUCT_OUT_OF_STOCK
+  ├── save CartItem with priceSnapshot
+  └── return getMyCart(buyerId) -> CartResponse
+```
+
+### 4.3.5 CartResponse (du lieu tra ve cho frontend)
+
+```json
+{
+  "cartId": 1,
+  "buyerId": 5,
+  "items": [
+    {
+      "cartItemId": 10,
+      "productId": 100,
+      "variantId": 201,
+      "productName": "Áo thun",
+      "imageUrl": "/images/ao-thun.jpg",
+      "variantAttributes": { "color": "Đỏ", "size": "XL" },
+      "quantity": 2,
+      "unitPrice": 150000,
+      "lineTotal": 300000
+    }
+  ],
+  "totalAmount": 300000
+}
+```
+
+### 4.3.6 Luu y ve priceSnapshot
+
+- `priceSnapshot` la gia tai thoi diem **them vao gio**, khong thay doi khi product duoc seller cap nhat gia sau nay
+- Khi checkout, order se dung `priceSnapshot` de tinh tien, dam bao tinh nhat quan
+- Neu user cap nhat quantity (`PUT /cart/items/{id}`), `priceSnapshot` duoc cap nhat lai tu product/variant hien tai
+
+---
 
 ### UC-CART-01 Them vao gio hang
 
@@ -97,6 +211,7 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
   - quantity > 0
   - khong vuot ton kho (stock cua variant neu co, hoac stock cua product)
   - Moi variant cua cung product duoc luu thanh cart item rieng
+  - **Frontend UX**: Neu product co variants, nut "Them vao gio" tu list page se dieu huong den detail page thay vi add truc tiep
 
 ### UC-CART-02 Cap nhat so luong
 
@@ -361,6 +476,9 @@ OrderItem bo sung: `variantId`, `variantAttributes`
 - Product cards dong nhat
 - Product detail co CTA "Them vao gio"
 - Neu product co variants: hien thi variant selector (size buttons), gia/stock thay doi theo variant chon
+- **Quick-add UX**: Nut "Them vao gio" tren product card (list page):
+  - Neu product **co variants** -> dieu huong den `/products/{id}` de user chon variant truoc
+  - Neu product **khong co variant** -> them truc tiep vao gio, mo CartDrawer
 - Seller form tao product co section "Biến thể" de them size/color voi gia/stock rieng
 - Cart hien thi variant attributes (vd: "Size: XL") neu co
 

@@ -40,6 +40,12 @@ export async function confirmDelivery(orderId) {
   return payload?.data || null;
 }
 
+export async function getReviewableItems(orderId) {
+  const response = await authFetch(`/orders/${orderId}/reviewable-items`);
+  const payload = await parseApiResponse(response);
+  return payload?.data || [];
+}
+
 // ---- Status mapping (backend → UI) ----
 export const UI_STATUS = {
   PENDING_CONFIRMATION: "Chờ xác nhận",

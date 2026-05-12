@@ -213,9 +213,19 @@ function CheckoutPage() {
                     className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-zinc-900">
-                        {item.productName}
-                      </p>
+                      <div>
+                        <p className="font-semibold text-zinc-900">
+                          {item.productName}
+                        </p>
+                        {item.variantAttributes &&
+                          Object.keys(item.variantAttributes).length > 0 && (
+                            <span className="mt-1 inline-block rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium text-zinc-600">
+                              {Object.entries(item.variantAttributes)
+                                .map(([key, val]) => `${key}: ${val}`)
+                                .join(", ")}
+                            </span>
+                          )}
+                      </div>
                       <p className="text-sm font-semibold text-zinc-900">
                         {formatPrice(item.lineTotal)}
                       </p>

@@ -11,7 +11,13 @@ public interface UserService {
 
     public UserDTO getUser(Long id);
 
+    public UserDTO getUserById(Long id);
+
     public UserDTO updateUser(Long id, UpdateUserRequest userRequest);
 
     public UserDTO updateAvatar(Long id, MultipartFile file);
+
+    public UserDTO updateStoreLogo(Long id, MultipartFile file);
+
+    public UserDTO updateStoreBanner(Long id, MultipartFile file);
 }

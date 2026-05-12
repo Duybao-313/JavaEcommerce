@@ -1,0 +1,156 @@
+.rcm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+  animation: rcmFadeIn 0.2s ease;
+}
+
+@keyframes rcmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rcm-modal {
+  position: relative;
+  background: oklch(100% 0 0);
+  border-radius: 18px;
+  padding: 32px 28px 24px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+  animation: rcmSlideUp 0.25s ease;
+}
+
+@keyframes rcmSlideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.rcm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: oklch(95% 0.01 260);
+  color: oklch(45% 0.02 260);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.rcm-close:hover {
+  background: oklch(88% 0.03 20);
+  color: oklch(30% 0.15 20);
+}
+
+.rcm-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.rcm-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: oklch(22% 0.02 260);
+  margin: 0 0 10px;
+  line-height: 1.35;
+}
+
+.rcm-desc {
+  font-size: 0.9375rem;
+  color: oklch(45% 0.02 260);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.rcm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rcm-btn {
+  padding: 13px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+}
+
+.rcm-btn:active {
+  transform: scale(0.98);
+}
+
+.rcm-btn-primary {
+  background: oklch(48% 0.18 260);
+  color: #fff;
+}
+
+.rcm-btn-primary:hover {
+  background: oklch(40% 0.18 260);
+}
+
+.rcm-btn-primary:focus-visible {
+  outline: 2px solid oklch(50% 0.18 260);
+  outline-offset: 2px;
+}
+
+.rcm-btn-secondary {
+  background: oklch(96% 0.01 260);
+  color: oklch(35% 0.03 260);
+}
+
+.rcm-btn-secondary:hover {
+  background: oklch(90% 0.02 260);
+}
+
+.rcm-btn-secondary:focus-visible {
+  outline: 2px solid oklch(40% 0.02 260);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .rcm-modal {
+    padding: 24px 18px 20px;
+    border-radius: 14px;
+  }
+
+  .rcm-title {
+    font-size: 1.125rem;
+  }
+
+  .rcm-btn {
+    padding: 15px 20px;
+    font-size: 1rem;
+  }
+}

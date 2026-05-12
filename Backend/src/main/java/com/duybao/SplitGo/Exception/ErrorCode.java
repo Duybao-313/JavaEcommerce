@@ -64,6 +64,7 @@ public enum ErrorCode {
     VARIANT_NOT_FOUND(2015, "Không tìm thấy biến thể sản phẩm", HttpStatus.NOT_FOUND),
     VARIANT_OUT_OF_STOCK(2016, "Biến thể sản phẩm đã hết hàng", HttpStatus.BAD_REQUEST),
     VARIANT_SKU_DUPLICATE(2017, "Mã SKU biến thể đã tồn tại", HttpStatus.BAD_REQUEST),
+    VARIANT_REQUIRED(2018, "Vui lòng chọn biến thể sản phẩm (size, color...)", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
 
     private final int code;

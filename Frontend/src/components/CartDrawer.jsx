@@ -119,11 +119,14 @@ function CartDrawer() {
                         <p className="line-clamp-2 text-sm font-semibold text-zinc-900">
                           {item.productName}
                         </p>
-                        {item.variantAttributes?.size && (
-                          <span className="mt-1 inline-block rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium text-zinc-600">
-                            Size: {item.variantAttributes.size}
-                          </span>
-                        )}
+                        {item.variantAttributes &&
+                          Object.keys(item.variantAttributes).length > 0 && (
+                            <span className="mt-1 inline-block rounded-md border border-zinc-200 bg-white px-2 py-0.5 text-xs font-medium text-zinc-600">
+                              {Object.entries(item.variantAttributes)
+                                .map(([key, val]) => `${key}: ${val}`)
+                                .join(", ")}
+                            </span>
+                          )}
                         <p className="mt-1 text-xs text-zinc-600">
                           {formatPrice(item.unitPrice)} / sản phẩm
                         </p>

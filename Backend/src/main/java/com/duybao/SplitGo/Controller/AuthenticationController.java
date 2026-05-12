@@ -16,6 +16,7 @@ import com.duybao.SplitGo.DTO.Response.RefreshToken;
 import com.duybao.SplitGo.DTO.Response.RegisterResponse;
 import com.duybao.SplitGo.DTO.Response.User.UserDTO;
 import com.duybao.SplitGo.DTO.request.*;
+import com.duybao.SplitGo.Enum.Role;
 import com.duybao.SplitGo.Mappers.UserMapper;
 import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Service.AuthenticationService;
@@ -114,6 +115,72 @@ public class AuthenticationController {
                 .success(true)
                 .message("Cập nhật avatar thành công")
                 .data(userService.updateAvatar(user.getId(), avatar))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    // ─── Seller Profile Endpoints ───
+
+    @GetMapping("/seller/profile")
+    public ApiResponse<UserDTO> getSellerProfile(@AuthenticationPrincipal User user) {
+        UserDTO dto = userService.getUser(user.getId());
+        return ApiResponse.<UserDTO>builder()
+                .data(dto)
+                .success(true)
+                .message("Lấy thông tin seller")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PutMapping("/seller/profile")
+    public ApiResponse<UserDTO> updateSellerProfile(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody UpdateUserRequest request) {
+        UserDTO updated = userService.updateUser(user.getId(), request);
+        return ApiResponse.<UserDTO>builder()
+                .data(updated)
+                .success(true)
+                .message("Cập nhật thông tin cửa hàng thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping(value = "/seller/store-logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<UserDTO> uploadStoreLogo(
+            @AuthenticationPrincipal User user,
+            @RequestPart("logo") MultipartFile logo) {
+        UserDTO updated = userService.updateStoreLogo(user.getId(), logo);
+        return ApiResponse.<UserDTO>builder()
+                .data(updated)
+                .success(true)
+                .message("Cập nhật logo cửa hàng thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping(value = "/seller/store-banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<UserDTO> uploadStoreBanner(
+            @AuthenticationPrincipal User user,
+            @RequestPart("banner") MultipartFile banner) {
+        UserDTO updated = userService.updateStoreBanner(user.getId(), banner);
+        return ApiResponse.<UserDTO>builder()
+                .data(updated)
+                .success(true)
+                .message("Cập nhật banner cửa hàng thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    // ─── Public Store Endpoint ───
+
+    @GetMapping("/sellers/{sellerId}")
+    public ApiResponse<UserDTO> getPublicSellerProfile(@PathVariable Long sellerId) {
+        UserDTO dto = userService.getUserById(sellerId);
+        dto.maskSensitiveFields();
+        return ApiResponse.<UserDTO>builder()
+                .data(dto)
+                .success(true)
+                .message("Thông tin cửa hàng")
                 .timestamp(LocalDateTime.now())
                 .build();
     }

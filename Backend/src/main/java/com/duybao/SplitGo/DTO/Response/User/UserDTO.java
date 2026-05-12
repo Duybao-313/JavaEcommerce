@@ -1,8 +1,11 @@
 package com.duybao.SplitGo.DTO.Response.User;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.duybao.SplitGo.Enum.Role;
+import com.duybao.SplitGo.Enum.SellerVerificationStatus;
+import com.duybao.SplitGo.Enum.StoreStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -27,4 +30,32 @@ public class UserDTO {
 
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime updatedAt;
+
+    // --- Seller / Store Fields ---
+    private String storeName;
+    private String storeLogo;
+    private String storeBanner;
+    private String storeAddress;
+    private String bankAccount;
+    private String bankName;
+    private SellerVerificationStatus sellerVerified;
+    private BigDecimal storeRating;
+    private Integer totalSales;
+    private StoreStatus storeStatus;
+
+    // --- Verification Flags ---
+    private Boolean emailVerified;
+    private Boolean phoneVerified;
+    private Boolean isActive;
+
+    /**
+     * Mask bank account for non-owner views.
+     * Call before returning to buyer/public roles.
+     */
+    public void maskSensitiveFields() {
+        this.bankAccount = null;
+        this.bankName = null;
+        this.emailVerified = null;
+        this.phoneVerified = null;
+    }
 }

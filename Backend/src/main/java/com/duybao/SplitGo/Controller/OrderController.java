@@ -2,6 +2,7 @@ package com.duybao.SplitGo.Controller;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.OrderResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewableItemResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CheckoutRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateOrderStatusRequest;
 import com.duybao.SplitGo.Enum.Role;
@@ -89,6 +90,20 @@ public class OrderController {
                 .code(200)
                 .message("Xác nhận đã nhận hàng thành công")
                 .data(orderService.confirmDelivery(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/orders/{orderId}/reviewable-items")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<List<ReviewableItemResponse>> getReviewableItems(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<List<ReviewableItemResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách sản phẩm có thể đánh giá thành công")
+                .data(orderService.getReviewableItems(user.getId(), orderId))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

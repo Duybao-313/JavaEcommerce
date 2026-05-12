@@ -1,0 +1,185 @@
+/* ---- Banner ---- */
+.rf-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, oklch(96% 0.04 80), oklch(98% 0.02 80));
+  border: 1px solid oklch(88% 0.06 80);
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.rf-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rf-banner-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.rf-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rf-banner-text strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: oklch(30% 0.08 80);
+}
+
+.rf-banner-sub {
+  font-size: 0.8125rem;
+  color: oklch(50% 0.05 80);
+}
+
+.rf-banner-btn {
+  flex-shrink: 0;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: oklch(55% 0.18 80);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.rf-banner-btn:hover {
+  background: oklch(45% 0.18 80);
+}
+
+.rf-banner-btn:active {
+  transform: scale(0.97);
+}
+
+.rf-banner-btn:focus-visible {
+  outline: 2px solid oklch(50% 0.18 260);
+  outline-offset: 2px;
+}
+
+/* ---- Section / Header ---- */
+.rf-section {
+  margin-bottom: 32px;
+}
+
+.rf-header {
+  margin-bottom: 20px;
+}
+
+.rf-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: oklch(22% 0.02 260);
+  margin: 0 0 4px;
+}
+
+.rf-subheading {
+  font-size: 0.875rem;
+  color: oklch(50% 0.02 260);
+  margin: 0;
+}
+
+.rf-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Success ---- */
+.rf-success {
+  text-align: center;
+  padding: 32px 20px;
+  background: oklch(97% 0.01 145);
+  border: 1px solid oklch(92% 0.03 145);
+  border-radius: 14px;
+}
+
+.rf-success-icon {
+  font-size: 2.75rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.rf-success-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: oklch(25% 0.02 260);
+  margin: 0 0 8px;
+}
+
+.rf-success-desc {
+  font-size: 0.9375rem;
+  color: oklch(50% 0.02 260);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* ---- Review item inline status (for order items list) ---- */
+.rf-item-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  margin-top: 6px;
+}
+
+.rf-review-btn-inline {
+  padding: 6px 16px;
+  border: 1px solid oklch(55% 0.18 260);
+  border-radius: 8px;
+  background: oklch(100% 0 0);
+  color: oklch(48% 0.18 260);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.rf-review-btn-inline:hover {
+  background: oklch(48% 0.18 260);
+  color: #fff;
+}
+
+.rf-reviewed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: oklch(95% 0.04 145);
+  color: oklch(38% 0.12 145);
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 480px) {
+  .rf-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .rf-banner-btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px 20px;
+  }
+
+  .rf-heading {
+    font-size: 1.125rem;
+  }
+}

@@ -3,11 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   cancelOrder,
+  confirmDelivery,
   getOrderById,
   isOrderCancellable,
   mapOrderToUiStatus,
   UI_STATUS,
 } from "../services/orderService";
+import ReviewFlow from "../components/review/ReviewFlow";
 
 // ---- Helpers ----
 function formatPrice(value) {
@@ -48,6 +50,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
@@ -84,6 +87,27 @@ export default function OrderDetailPage() {
       toast.error(err.message || "Không thể hủy đơn hàng");
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function handleConfirmDelivery() {
+    if (confirming || !order) return;
+    if (
+      !window.confirm(
+        `Bạn xác nhận đã nhận được đơn hàng #${order.orderCode || order.orderId}?`,
+      )
+    )
+      return;
+
+    setConfirming(true);
+    try {
+      const updated = await confirmDelivery(order.orderId);
+      setOrder(updated);
+      toast.success("Đã xác nhận nhận hàng thành công");
+    } catch (err) {
+      toast.error(err.message || "Không thể xác nhận nhận hàng");
+    } finally {
+      setConfirming(false);
     }
   }
 
@@ -251,7 +275,15 @@ export default function OrderDetailPage() {
               {(order.items || []).map((item) => (
                 <div key={item.orderItemId} className="orders-detail-item">
                   <div className="orders-detail-item-thumb">
-                    <div className="orders-detail-item-placeholder">📦</div>
+                    {item.productImageUrl ? (
+                      <img
+                        src={item.productImageUrl}
+                        alt={item.productName}
+                        className="orders-detail-item-img"
+                      />
+                    ) : (
+                      <div className="orders-detail-item-placeholder">📦</div>
+                    )}
                   </div>
                   <div className="orders-detail-item-info">
                     <Link
@@ -260,12 +292,35 @@ export default function OrderDetailPage() {
                     >
                       {item.productName}
                     </Link>
+                    {item.variantAttributes && (
+                      <span className="orders-detail-item-variant">
+                        {(() => {
+                          try {
+                            const attrs =
+                              typeof item.variantAttributes === "string"
+                                ? JSON.parse(item.variantAttributes)
+                                : item.variantAttributes;
+                            return Object.entries(attrs)
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(", ");
+                          } catch {
+                            return item.variantAttributes;
+                          }
+                        })()}
+                      </span>
+                    )}
                     <span className="orders-detail-item-seller">
                       Người bán: {item.sellerUsername || `#${item.sellerId}`}
                     </span>
                     <span className="orders-detail-item-meta">
                       {formatPrice(item.unitPrice)} × {item.quantity}
                     </span>
+                    {/* Review status badge */}
+                    {item.reviewed && (
+                      <span className="orders-detail-item-reviewed">
+                        ✅ Đã đánh giá
+                      </span>
+                    )}
                   </div>
                   <div className="orders-detail-item-total">
                     {formatPrice(item.lineTotal)}
@@ -380,6 +435,15 @@ export default function OrderDetailPage() {
           {/* Actions */}
           <section className="orders-detail-section">
             <div className="orders-detail-actions">
+              {String(order.status || "").toUpperCase() === "SHIPPING" && (
+                <button
+                  className="orders-btn-confirm orders-btn-confirm-block"
+                  disabled={confirming}
+                  onClick={handleConfirmDelivery}
+                >
+                  {confirming ? "Đang xử lý..." : "✅ Xác nhận đã nhận hàng"}
+                </button>
+              )}
               {isOrderCancellable(order.status) && (
                 <button
                   className="orders-btn-cancel orders-btn-cancel-block"
@@ -406,6 +470,9 @@ export default function OrderDetailPage() {
           </section>
         </div>
       </div>
+
+      {/* Review flow for delivered orders */}
+      <ReviewFlow order={order} embedded />
     </div>
   );
 }

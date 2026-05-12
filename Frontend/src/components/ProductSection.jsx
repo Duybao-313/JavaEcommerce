@@ -224,6 +224,18 @@ function ProductSection() {
       return;
     }
 
+    // Nếu sản phẩm có variants (options như size, color...),
+    // điều hướng đến trang chi tiết để user chọn phân loại trước khi thêm vào giỏ
+    const hasVariants =
+      Array.isArray(product?.variants) && product.variants.length > 0;
+    if (hasVariants) {
+      toast("Vui lòng chọn phân loại hàng trước khi thêm vào giỏ", {
+        icon: "🔍",
+      });
+      navigate(`/products/${product.id}`);
+      return;
+    }
+
     if (Number(product?.stock || 0) <= 0) {
       toast.error("Sản phẩm đã hết hàng");
       return;

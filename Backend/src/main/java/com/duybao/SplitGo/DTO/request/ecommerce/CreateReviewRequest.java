@@ -11,6 +11,8 @@ public class CreateReviewRequest {
     @NotNull
     private Long productId;
 
+    private Long variantId;
+
     @NotNull
     private Long orderId;
 

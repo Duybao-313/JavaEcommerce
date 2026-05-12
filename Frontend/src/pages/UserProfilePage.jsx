@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Facehash } from "facehash";
@@ -8,6 +8,9 @@ import {
   updateCurrentUser,
 } from "../services/authService";
 import { clearAuth, getAuthSession, hasRole } from "../services/sessionService";
+import SellerHeaderCard from "../components/seller/SellerHeaderCard";
+import VerificationStatusPanel from "../components/seller/VerificationStatusPanel";
+import StoreInfoForm from "../components/seller/StoreInfoForm";
 
 function UserProfilePage() {
   const [session, setSession] = useState(() => getAuthSession());
@@ -16,6 +19,7 @@ function UserProfilePage() {
   const [userDetail, setUserDetail] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [storeSaving, setStoreSaving] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -23,6 +27,8 @@ function UserProfilePage() {
     address: "",
   });
   const navigate = useNavigate();
+
+  const isSeller = hasRole(session, "SELLER");
 
   useEffect(() => {
     if (!session?.token) {
@@ -153,6 +159,20 @@ function UserProfilePage() {
       setSaving(false);
     }
   };
+
+  const handleSaveStore = useCallback(async (payload) => {
+    setStoreSaving(true);
+    try {
+      const updated = await updateCurrentUser(payload);
+      setUserDetail((prev) => ({ ...prev, ...updated }));
+      toast.success("Cập nhật cửa hàng thành công");
+    } catch (err) {
+      toast.error(err?.message || "Không thể cập nhật cửa hàng");
+      throw err;
+    } finally {
+      setStoreSaving(false);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
@@ -383,6 +403,37 @@ function UserProfilePage() {
             </div>
           </div>
         </section>
+
+        {/* ─── Seller Store Sections ─── */}
+        {isSeller && !loading && userDetail && (
+          <div className="mt-8 space-y-6">
+            <SellerHeaderCard
+              storeName={userDetail.storeName}
+              storeLogo={userDetail.storeLogo}
+              storeBanner={userDetail.storeBanner}
+              storeRating={userDetail.storeRating}
+              totalSales={userDetail.totalSales}
+              storeStatus={userDetail.storeStatus}
+              sellerVerified={userDetail.sellerVerified}
+            />
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <StoreInfoForm
+                initialData={userDetail}
+                onSave={handleSaveStore}
+                saving={storeSaving}
+                isOwner={true}
+              />
+              <VerificationStatusPanel
+                emailVerified={userDetail.emailVerified}
+                phoneVerified={userDetail.phoneVerified}
+                sellerVerified={userDetail.sellerVerified}
+                isActive={userDetail.isActive}
+                storeStatus={userDetail.storeStatus}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

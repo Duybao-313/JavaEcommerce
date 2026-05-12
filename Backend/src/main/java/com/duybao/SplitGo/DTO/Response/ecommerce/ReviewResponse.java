@@ -19,6 +19,8 @@ public class ReviewResponse {
 
     private Long orderId;
 
+    private Long variantId;
+
     private Integer rating;
 
     private String title;

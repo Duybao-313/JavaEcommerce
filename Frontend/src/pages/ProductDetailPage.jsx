@@ -128,9 +128,11 @@ function ProductDetailPage() {
   // Seller info helpers (backward compat)
   const sellerName =
     product?.seller?.storeName || product?.sellerUsername || "Người bán";
+  const sellerId = product?.seller?.id || product?.sellerId || null;
+  const sellerAvatar = product?.seller?.avatarUrl || null;
   const sellerVerified = product?.seller?.sellerVerified || false;
-  const sellerRating = product?.seller?.storeRating || null;
-  const sellerTotalSales = product?.seller?.totalSales || 0;
+  const sellerTotalSales =
+    product?.seller?.totalSales || product?.soldCount || 0;
 
   useEffect(() => {
     async function loadProduct() {
@@ -454,38 +456,84 @@ function ProductDetailPage() {
               </div>
             )}
 
-            {/* Product Info */}
-            <div className="mt-5 space-y-3 border-t border-zinc-200 pt-5">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-zinc-600">Người bán:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-zinc-900">
-                    {sellerName}
-                  </span>
-                  {sellerVerified && (
-                    <span
-                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px]"
-                      title="Đã xác thực"
-                    >
-                      ✓
-                    </span>
+            {/* Seller / Store Info */}
+            <div className="mt-5 border-t border-zinc-200 pt-5">
+              <div className="flex items-center gap-4">
+                {/* Seller Avatar */}
+                <Link
+                  to={sellerId ? `/store/${sellerId}` : "#"}
+                  className="flex-shrink-0 w-14 h-14 rounded-full border-2 border-zinc-200 overflow-hidden bg-zinc-100 hover:border-zinc-400 transition-colors"
+                >
+                  {sellerAvatar ? (
+                    <img
+                      src={sellerAvatar}
+                      alt={sellerName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-zinc-400">
+                      {sellerName?.charAt(0)?.toUpperCase() || "S"}
+                    </div>
                   )}
+                </Link>
+
+                {/* Seller Info */}
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={sellerId ? `/store/${sellerId}` : "#"}
+                    className="text-sm font-semibold text-zinc-900 hover:text-zinc-600 transition-colors"
+                  >
+                    {sellerName}
+                  </Link>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    {/* Hardcoded 5 stars */}
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className="w-4 h-4 text-yellow-400"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                      <span className="ml-1 text-xs font-medium text-zinc-500">
+                        5.0
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+                    {sellerVerified && (
+                      <span className="inline-flex items-center gap-1 text-emerald-600">
+                        <span className="text-[10px]">✓</span> Đã xác thực
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* View Store Button */}
+                {sellerId && (
+                  <Link
+                    to={`/store/${sellerId}`}
+                    className="flex-shrink-0 rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-800 hover:border-zinc-900 hover:bg-zinc-50 transition-colors"
+                  >
+                    Xem shop
+                  </Link>
+                )}
               </div>
-              {sellerRating != null && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-zinc-600">Đánh giá shop:</span>
-                  <span className="font-medium text-zinc-900">
-                    ⭐ {Number(sellerRating).toFixed(1)}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-600">Đã bán:</span>
-                <span className="font-medium text-zinc-900">
+
+              {/* Products Sold */}
+              <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-between">
+                <span className="text-sm text-zinc-600">Sản phẩm đã bán:</span>
+                <span className="font-semibold text-zinc-900">
                   {Number(sellerTotalSales).toLocaleString("vi-VN")}
                 </span>
               </div>
+            </div>
+
+            {/* Additional Product Info */}
+            <div className="mt-5 space-y-3 border-t border-zinc-200 pt-5">
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Tồn kho:</span>
                 <span className="font-medium text-zinc-900">

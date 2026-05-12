@@ -588,10 +588,42 @@ export default function MyOrdersPage() {
                           <span className="orders-drawer-item-name">
                             {item.productName}
                           </span>
+                          {item.variantAttributes && (
+                            <span className="orders-drawer-item-variant">
+                              {(() => {
+                                try {
+                                  const attrs =
+                                    typeof item.variantAttributes === "string"
+                                      ? JSON.parse(item.variantAttributes)
+                                      : item.variantAttributes;
+                                  return Object.entries(attrs)
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join(", ");
+                                } catch {
+                                  return item.variantAttributes;
+                                }
+                              })()}
+                            </span>
+                          )}
                           <span className="orders-drawer-item-seller">
                             Người bán:{" "}
                             {item.sellerUsername || `#${item.sellerId}`}
                           </span>
+                          {/* Review status per item */}
+                          {item.reviewed ? (
+                            <span className="orders-drawer-item-reviewed">
+                              ✅ Đã đánh giá
+                            </span>
+                          ) : String(
+                              selectedOrder.status || "",
+                            ).toUpperCase() === "DELIVERED" ? (
+                            <Link
+                              to={`/orders/${selectedOrder.orderId}`}
+                              className="orders-drawer-item-review-link"
+                            >
+                              ⭐ Đánh giá
+                            </Link>
+                          ) : null}
                         </div>
                         <div className="orders-drawer-item-price">
                           <span>
@@ -680,6 +712,15 @@ export default function MyOrdersPage() {
                     {confirmingId === selectedOrder.orderId
                       ? "Đang xử lý..."
                       : "✅ Xác nhận đã nhận hàng"}
+                  </button>
+                )}
+                {String(selectedOrder.status || "").toUpperCase() ===
+                  "DELIVERED" && (
+                  <button
+                    className="orders-btn-review-nav"
+                    onClick={() => navigate(`/orders/${selectedOrder.orderId}`)}
+                  >
+                    ⭐ Đánh giá sản phẩm
                   </button>
                 )}
                 <button

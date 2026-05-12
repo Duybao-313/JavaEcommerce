@@ -2,6 +2,7 @@ package com.duybao.SplitGo.Service.Impl;
 
 import com.duybao.SplitGo.DTO.Response.ecommerce.OrderItemResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.OrderResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewableItemResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CheckoutRequest;
 import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.PaymentMethod;
@@ -23,6 +24,7 @@ import com.duybao.SplitGo.Repository.OrderItemRepository;
 import com.duybao.SplitGo.Repository.OrderRepository;
 import com.duybao.SplitGo.Repository.PaymentTransactionRepository;
 import com.duybao.SplitGo.Repository.ProductRepository;
+import com.duybao.SplitGo.Repository.ReviewRepository;
 import com.duybao.SplitGo.Repository.ShippingRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.OrderService;
@@ -42,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ShippingRepository shippingRepository;
+    private final ReviewRepository reviewRepository;
 
     public OrderServiceImpl(
             CartRepository cartRepository,
@@ -51,7 +54,8 @@ public class OrderServiceImpl implements OrderService {
             PaymentTransactionRepository paymentTransactionRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
-            ShippingRepository shippingRepository) {
+            ShippingRepository shippingRepository,
+            ReviewRepository reviewRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -60,6 +64,7 @@ public class OrderServiceImpl implements OrderService {
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.shippingRepository = shippingRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     @Override
@@ -107,8 +112,14 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
+                    .variant(cartItem.getVariant())
                     .seller(product.getSeller())
                     .productName(product.getName())
+                    .variantAttributes(cartItem.getVariant() != null
+                            ? cartItem.getVariant().getAttributes() != null
+                                    ? cartItem.getVariant().getAttributes().toString()
+                                    : null
+                            : null)
                     .unitPrice(unitPrice)
                     .quantity(cartItem.getQuantity())
                     .lineTotal(lineTotal)
@@ -264,6 +275,39 @@ public class OrderServiceImpl implements OrderService {
         return toOrderResponse(saved);
     }
 
+    @Override
+    public List<ReviewableItemResponse> getReviewableItems(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        return order.getItems().stream()
+                .map(item -> {
+                    Long variantId = item.getVariant() != null ? item.getVariant().getId() : null;
+                    boolean reviewed;
+                    if (variantId != null) {
+                        reviewed = reviewRepository.existsByOrderIdAndProductIdAndVariantIdAndReviewerId(
+                                orderId, item.getProduct().getId(), variantId, buyerId);
+                    } else {
+                        reviewed = reviewRepository.existsByOrderIdAndProductIdAndReviewerId(
+                                orderId, item.getProduct().getId(), buyerId);
+                    }
+                    return ReviewableItemResponse.builder()
+                            .productId(item.getProduct().getId())
+                            .variantId(variantId)
+                            .productName(item.getProductName())
+                            .variantAttributes(item.getVariantAttributes())
+                            .productImageUrl(item.getProduct().getImageUrl())
+                            .canReview(!reviewed && order.getStatus() == OrderStatus.DELIVERED)
+                            .reviewed(reviewed)
+                            .build();
+                })
+                .toList();
+    }
+
     private void syncShippingStatus(Long orderId, OrderStatus status) {
         shippingRepository.findByOrderId(orderId).ifPresent(shipping -> {
             if (status == OrderStatus.DELIVERED) {
@@ -293,18 +337,36 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse toOrderResponse(Order order) {
+        Long buyerId = order.getBuyer().getId();
         List<OrderItemResponse> itemResponses = order.getItems().stream()
-                .map(item -> OrderItemResponse.builder()
-                        .orderItemId(item.getId())
-                        .productId(item.getProduct().getId())
-                        .productName(item.getProductName())
-                        .productImageUrl(item.getProduct().getImageUrl())
-                        .sellerId(item.getSeller().getId())
-                        .sellerUsername(item.getSeller().getUsername())
-                        .quantity(item.getQuantity())
-                        .unitPrice(item.getUnitPrice())
-                        .lineTotal(item.getLineTotal())
-                        .build())
+                .map(item -> {
+                    Long variantId = item.getVariant() != null ? item.getVariant().getId() : null;
+                    boolean reviewed;
+                    if (variantId != null) {
+                        reviewed = reviewRepository.existsByOrderIdAndProductIdAndVariantIdAndReviewerId(
+                                order.getId(), item.getProduct().getId(), variantId, buyerId);
+                    } else {
+                        reviewed = reviewRepository.existsByOrderIdAndProductIdAndReviewerId(
+                                order.getId(), item.getProduct().getId(), buyerId);
+                    }
+                    boolean canReview = !reviewed && order.getStatus() == OrderStatus.DELIVERED;
+
+                    return OrderItemResponse.builder()
+                            .orderItemId(item.getId())
+                            .productId(item.getProduct().getId())
+                            .productName(item.getProductName())
+                            .productImageUrl(item.getProduct().getImageUrl())
+                            .sellerId(item.getSeller().getId())
+                            .sellerUsername(item.getSeller().getUsername())
+                            .variantId(variantId)
+                            .variantAttributes(item.getVariantAttributes())
+                            .quantity(item.getQuantity())
+                            .unitPrice(item.getUnitPrice())
+                            .lineTotal(item.getLineTotal())
+                            .reviewed(reviewed)
+                            .canReview(canReview)
+                            .build();
+                })
                 .toList();
 
         BigDecimal finalAmount = order.getFinalAmount();
