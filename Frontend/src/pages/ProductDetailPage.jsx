@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import CartButton from "../components/CartButton";
 import CartDrawer from "../components/CartDrawer";
 import { useCart } from "../context/CartContext";
-import { getProductDetail, getProducts } from "../services/productService";
+import { getProductDetail } from "../services/productService";
 import { addToCart } from "../services/cartService";
 import { getAuthSession } from "../services/sessionService";
 
@@ -24,13 +24,53 @@ function ProductDetailPage() {
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({});
   const { refreshCart, openCart } = useCart();
 
   const session = getAuthSession();
 
   const hasVariants = product?.variants && product.variants.length > 0;
+  const hasOptions = product?.options && product.options.length > 0;
+
+  // Find matching variant from selected options
+  const matchedVariant = useMemo(() => {
+    if (!hasVariants || !hasOptions) return null;
+    if (Object.keys(selectedOptions).length === 0) return null;
+
+    return product.variants.find((v) => {
+      if (!v.attributes) return false;
+      return Object.entries(selectedOptions).every(
+        ([key, val]) => v.attributes[key] === val,
+      );
+    });
+  }, [product, selectedOptions, hasVariants, hasOptions]);
+
+  // Auto-select variant when options match
+  useEffect(() => {
+    if (matchedVariant) {
+      setSelectedVariant(matchedVariant);
+    } else if (hasVariants && !hasOptions) {
+      // No options defined — select first in-stock variant
+      if (!selectedVariant) {
+        const inStockVariant = product.variants.find((v) => v.stock > 0);
+        setSelectedVariant(inStockVariant || product.variants[0]);
+      }
+    }
+  }, [matchedVariant, hasVariants, hasOptions, product, selectedVariant]);
+
+  // Initialize default option selections
+  useEffect(() => {
+    if (hasOptions && product?.options) {
+      const defaults = {};
+      product.options.forEach((opt) => {
+        if (opt.values && opt.values.length > 0) {
+          defaults[opt.name] = opt.values[0];
+        }
+      });
+      setSelectedOptions(defaults);
+    }
+  }, [product, hasOptions]);
 
   const currentPrice = useMemo(() => {
     if (hasVariants && selectedVariant) {
@@ -60,6 +100,38 @@ function ProductDetailPage() {
     return product?.imageUrl;
   }, [product, selectedVariant, hasVariants]);
 
+  // Gallery images: variant image + product gallery
+  const galleryImages = useMemo(() => {
+    const images = [];
+    if (currentImage) images.push(currentImage);
+    if (product?.gallery && Array.isArray(product.gallery)) {
+      product.gallery.forEach((url) => {
+        if (!images.includes(url)) images.push(url);
+      });
+    }
+    return images;
+  }, [product, currentImage]);
+
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [currentImage]);
+
+  // Related products from API or fallback to empty
+  const relatedProducts = product?.relatedProducts || [];
+
+  // Category name helper (backward compat)
+  const categoryName =
+    product?.category?.name || product?.categoryName || "Danh mục";
+
+  // Seller info helpers (backward compat)
+  const sellerName =
+    product?.seller?.storeName || product?.sellerUsername || "Người bán";
+  const sellerVerified = product?.seller?.sellerVerified || false;
+  const sellerRating = product?.seller?.storeRating || null;
+  const sellerTotalSales = product?.seller?.totalSales || 0;
+
   useEffect(() => {
     async function loadProduct() {
       setLoading(true);
@@ -77,30 +149,19 @@ function ProductDetailPage() {
         setProduct(data);
         setQuantity(1);
 
-        // Auto-select first variant if available
-        if (data.variants && data.variants.length > 0) {
+        // Auto-select first variant if variants exist but no options defined
+        if (
+          data.variants &&
+          data.variants.length > 0 &&
+          (!data.options || data.options.length === 0)
+        ) {
           const inStockVariant = data.variants.find((v) => v.stock > 0);
           setSelectedVariant(inStockVariant || data.variants[0]);
-        } else {
+        } else if (!data.variants || data.variants.length === 0) {
           setSelectedVariant(null);
         }
-
-        const allProducts = await getProducts();
-        const sameCategory = allProducts
-          .filter(
-            (item) =>
-              item?.id !== data.id && item?.categoryId === data?.categoryId,
-          )
-          .sort((a, b) => {
-            const byViews =
-              Number(b?.viewCount || 0) - Number(a?.viewCount || 0);
-            if (byViews !== 0) return byViews;
-            return Number(b?.id || 0) - Number(a?.id || 0);
-          });
-        setRelatedProducts(sameCategory);
       } catch (err) {
         setError(err?.message || "Đã có lỗi khi tải sản phẩm");
-        setRelatedProducts([]);
       } finally {
         setLoading(false);
       }
@@ -127,7 +188,7 @@ function ProductDetailPage() {
     }
 
     if (hasVariants && !selectedVariant) {
-      toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
+      toast.error("Vui lòng chọn đầy đủ các tùy chọn trước khi thêm vào giỏ");
       return;
     }
 
@@ -136,7 +197,7 @@ function ProductDetailPage() {
     try {
       await addToCart(product.id, quantity, selectedVariant?.id || null);
       const variantLabel = selectedVariant
-        ? ` (${selectedVariant.attributes?.size || ""})`
+        ? ` (${Object.values(selectedVariant.attributes || {}).join(", ")})`
         : "";
       toast.success(`Đã thêm ${quantity} sản phẩm${variantLabel} vào giỏ hàng`);
       setQuantity(1);
@@ -230,27 +291,51 @@ function ProductDetailPage() {
         </div>
 
         <div className="grid gap-8 md:grid-cols-2">
-          {/* Image Section */}
-          <div className="flex items-center justify-center rounded-2xl border border-zinc-200 bg-white overflow-hidden">
-            {currentImage ? (
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="h-full w-full object-cover rounded-2xl"
-              />
-            ) : (
-              <div className="flex h-96 w-full items-center justify-center bg-gradient-to-br from-zinc-200 to-zinc-100 text-sm font-semibold text-zinc-500">
-                Chưa có ảnh sản phẩm
+          {/* Image Section with Gallery */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-center rounded-2xl border border-zinc-200 bg-white overflow-hidden aspect-square">
+              {galleryImages.length > 0 && galleryImages[activeImageIndex] ? (
+                <img
+                  src={galleryImages[activeImageIndex]}
+                  alt={product.name}
+                  className="h-full w-full object-cover rounded-2xl"
+                />
+              ) : (
+                <div className="flex h-96 w-full items-center justify-center bg-gradient-to-br from-zinc-200 to-zinc-100 text-sm font-semibold text-zinc-500">
+                  Chưa có ảnh sản phẩm
+                </div>
+              )}
+            </div>
+            {galleryImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {galleryImages.map((url, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition-all ${
+                      idx === activeImageIndex
+                        ? "border-zinc-900"
+                        : "border-zinc-200 hover:border-zinc-400"
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${product.name} ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
           {/* Details Section */}
           <div className="rounded-2xl border border-zinc-200 bg-white p-8">
+            {/* Category & Title */}
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                  {product.categoryName || "Danh mục"}
+                  {categoryName}
                 </p>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
                   {product.name}
@@ -267,8 +352,60 @@ function ProductDetailPage() {
               </p>
             )}
 
-            {/* Variant Selector */}
-            {hasVariants && (
+            {/* Variant Selector with Options */}
+            {hasVariants && hasOptions && (
+              <div className="mt-6 border-t border-zinc-200 pt-5">
+                {product.options.map((option) => (
+                  <div key={option.name} className="mb-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      Chọn {option.name}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {option.values.map((value) => {
+                        const isSelected =
+                          selectedOptions[option.name] === value;
+                        return (
+                          <button
+                            key={value}
+                            onClick={() =>
+                              setSelectedOptions((prev) => ({
+                                ...prev,
+                                [option.name]: value,
+                              }))
+                            }
+                            className={`relative rounded-xl border px-4 py-2.5 text-sm font-semibold capitalize transition-all ${
+                              isSelected
+                                ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                                : "border-zinc-300 bg-white text-zinc-800 hover:border-zinc-900"
+                            }`}
+                          >
+                            {value}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {selectedVariant && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Còn{" "}
+                    <span className="font-semibold text-zinc-800">
+                      {selectedVariant.stock}
+                    </span>{" "}
+                    sản phẩm
+                  </p>
+                )}
+                {!selectedVariant &&
+                  Object.keys(selectedOptions).length > 0 && (
+                    <p className="mt-2 text-xs text-amber-600">
+                      Không có biến thể nào khớp với lựa chọn này
+                    </p>
+                  )}
+              </div>
+            )}
+
+            {/* Variant Selector without Options (legacy - size only) */}
+            {hasVariants && !hasOptions && (
               <div className="mt-6 border-t border-zinc-200 pt-5">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                   Chọn size
@@ -319,10 +456,34 @@ function ProductDetailPage() {
 
             {/* Product Info */}
             <div className="mt-5 space-y-3 border-t border-zinc-200 pt-5">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-zinc-600">Người bán:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-zinc-900">
+                    {sellerName}
+                  </span>
+                  {sellerVerified && (
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px]"
+                      title="Đã xác thực"
+                    >
+                      ✓
+                    </span>
+                  )}
+                </div>
+              </div>
+              {sellerRating != null && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-zinc-600">Đánh giá shop:</span>
+                  <span className="font-medium text-zinc-900">
+                    ⭐ {Number(sellerRating).toFixed(1)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-sm text-zinc-600">Đã bán:</span>
                 <span className="font-medium text-zinc-900">
-                  {product.sellerUsername}
+                  {Number(sellerTotalSales).toLocaleString("vi-VN")}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -331,10 +492,23 @@ function ProductDetailPage() {
                   {currentStock} sản phẩm
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-zinc-600">ID Sản phẩm:</span>
-                <span className="font-medium text-zinc-900">#{product.id}</span>
-              </div>
+              {product.avgRating != null && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-zinc-600">Đánh giá:</span>
+                  <span className="font-medium text-zinc-900">
+                    ⭐ {Number(product.avgRating).toFixed(1)} (
+                    {product.reviewCount || 0} đánh giá)
+                  </span>
+                </div>
+              )}
+              {product.sku && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-zinc-600">SKU:</span>
+                  <span className="font-medium text-zinc-900">
+                    {product.sku}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-sm text-zinc-600">Lượt xem:</span>
                 <span className="font-medium text-zinc-900">
@@ -429,7 +603,7 @@ function ProductDetailPage() {
                 Sản phẩm liên quan
               </h2>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                Cùng danh mục, ưu tiên lượt xem cao
+                Cùng danh mục {categoryName}
               </p>
             </div>
 
@@ -458,11 +632,7 @@ function ProductDetailPage() {
                       {item.name}
                     </h3>
                     <p className="mt-1 text-sm font-semibold text-zinc-900">
-                      {formatPrice(item.salePrice || item.price)}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-600">
-                      Lượt xem:{" "}
-                      {Number(item.viewCount || 0).toLocaleString("vi-VN")}
+                      {formatPrice(item.price)}
                     </p>
                   </Link>
                 </article>

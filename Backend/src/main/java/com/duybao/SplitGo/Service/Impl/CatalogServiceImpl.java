@@ -1,8 +1,11 @@
 package com.duybao.SplitGo.Service.Impl;
 
+import com.duybao.SplitGo.DTO.Response.ecommerce.CategorySummary;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductOptionResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
+import com.duybao.SplitGo.DTO.Response.ecommerce.RelatedProductSummary;
+import com.duybao.SplitGo.DTO.Response.ecommerce.SellerSummary;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.ProductOptionRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest;
@@ -369,9 +372,52 @@ public class CatalogServiceImpl implements CatalogService {
         // Derive options from variants' attribute keys and unique values
         List<ProductOptionResponse> optionResponses = deriveOptions(variantResponses);
 
+        // Build seller summary
+        User seller = product.getSeller();
+        SellerSummary sellerSummary = SellerSummary.builder()
+                .id(seller.getId())
+                .storeName(seller.getStoreName())
+                .storeLogo(seller.getStoreLogo())
+                .sellerVerified(seller.getSellerVerified() != null
+                        && "APPROVED".equals(seller.getSellerVerified().name()))
+                .storeRating(seller.getStoreRating())
+                .totalSales(seller.getTotalSales())
+                .build();
+
+        // Build category summary
+        CategorySummary categorySummary = null;
+        if (product.getCategory() != null) {
+            categorySummary = CategorySummary.builder()
+                    .id(product.getCategory().getId())
+                    .name(product.getCategory().getName())
+                    .build();
+        }
+
+        // Build related products (same category, top by view count, exclude self)
+        List<RelatedProductSummary> related = Collections.emptyList();
+        if (product.getCategory() != null) {
+            related = productRepository
+                    .findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE).stream()
+                    .filter(p -> !p.getId().equals(product.getId())
+                            && p.getCategory() != null
+                            && p.getCategory().getId().equals(product.getCategory().getId()))
+                    .sorted((a, b) -> Long.compare(
+                            b.getViewCount() == null ? 0L : b.getViewCount(),
+                            a.getViewCount() == null ? 0L : a.getViewCount()))
+                    .limit(8)
+                    .map(p -> RelatedProductSummary.builder()
+                            .id(p.getId())
+                            .name(p.getName())
+                            .imageUrl(p.getImageUrl())
+                            .price(p.getSalePrice() != null ? p.getSalePrice() : p.getPrice())
+                            .build())
+                    .toList();
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
+                .slug(product.getSlug())
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .salePrice(product.getSalePrice())
@@ -379,18 +425,20 @@ public class CatalogServiceImpl implements CatalogService {
                 .sku(product.getSku())
                 .isFeatured(product.getIsFeatured())
                 .imageUrl(product.getImageUrl())
+                .gallery(product.getImageUrl() != null ? List.of(product.getImageUrl()) : null)
                 .stock(product.getStock())
                 .viewCount(product.getViewCount() == null ? 0L : product.getViewCount())
                 .soldCount(product.getSoldCount() == null ? 0L : product.getSoldCount())
-                .status(product.getStatus())
-                .sellerId(product.getSeller().getId())
-                .sellerUsername(product.getSeller().getUsername())
-                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
-                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
+                .status(product.getStatus() != null ? product.getStatus().name() : null)
+                .category(categorySummary)
+                .seller(sellerSummary)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .options(optionResponses.isEmpty() ? null : optionResponses)
-                .variants(variantResponses.isEmpty() ? null : variantResponses)
+                .variants(variantResponses.isEmpty() ? Collections.emptyList() : variantResponses)
+                .avgRating(null)    // TODO: integrate review service
+                .reviewCount(null)  // TODO: integrate review service
+                .relatedProducts(related)
                 .build();
     }
 

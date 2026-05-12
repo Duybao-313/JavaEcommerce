@@ -112,7 +112,9 @@ function SellerProductsPage() {
     const result = products.filter((product) => {
       const matchName =
         !keyword || normalizeText(product?.name).includes(keyword);
-      const categoryId = String(product?.categoryId || "");
+      const categoryId = String(
+        product?.category?.id || product?.categoryId || "",
+      );
       const matchCategory =
         selectedCategory === "all" || selectedCategory === categoryId;
 
@@ -171,7 +173,10 @@ function SellerProductsPage() {
       price: String(product?.price ?? ""),
       stock: String(product?.stock ?? ""),
       status: product?.status || "ACTIVE",
-      categoryId: product?.categoryId ? String(product.categoryId) : "",
+      categoryId:
+        product?.category?.id || product?.categoryId
+          ? String(product?.category?.id || product.categoryId)
+          : "",
     });
   };
 
@@ -500,7 +505,9 @@ function SellerProductsPage() {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                            {product.categoryName || "Chưa có danh mục"}
+                            {product?.category?.name ||
+                              product.categoryName ||
+                              "Chưa có danh mục"}
                           </p>
                           <h2 className="mt-1 text-xl font-semibold text-zinc-900">
                             {product.name}
