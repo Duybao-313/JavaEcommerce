@@ -126,3 +126,98 @@ export async function getShippingByOrderId(orderId) {
   const payload = await parseApiResponse(response);
   return payload?.data || null;
 }
+
+// ==================== User Management ====================
+
+export async function getAdminUsers(params = {}) {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.role) query.set("role", params.role);
+  if (
+    params.isActive !== undefined &&
+    params.isActive !== null &&
+    params.isActive !== ""
+  )
+    query.set("isActive", params.isActive);
+  if (params.page) query.set("page", String(params.page));
+  if (params.size) query.set("size", String(params.size));
+  if (params.sortBy) query.set("sortBy", params.sortBy);
+  if (params.sortDir) query.set("sortDir", params.sortDir);
+
+  const qs = query.toString();
+  const response = await authFetch(`/admin/users${qs ? `?${qs}` : ""}`);
+  const payload = await parseApiResponse(response);
+  return (
+    payload?.data || {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      currentPage: 1,
+    }
+  );
+}
+
+export async function getAdminUserDetail(userId) {
+  const response = await authFetch(`/admin/users/${userId}`);
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function updateAdminUser(userId, body) {
+  const response = await authFetch(`/admin/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function assignUserRole(userId, role) {
+  const response = await authFetch(`/admin/users/${userId}/role`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function verifySeller(userId, status) {
+  const response = await authFetch(`/admin/users/${userId}/seller/verify`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function updateStoreStatus(userId, status) {
+  const response = await authFetch(`/admin/users/${userId}/store/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function toggleUserActive(userId, isActive) {
+  const response = await authFetch(`/admin/users/${userId}/active`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isActive }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function deleteAdminUser(userId) {
+  const response = await authFetch(`/admin/users/${userId}`, {
+    method: "DELETE",
+  });
+  if (response.status !== 204) {
+    await parseApiResponse(response);
+  }
+}
