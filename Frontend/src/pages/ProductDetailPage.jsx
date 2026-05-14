@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import toast from "react-hot-toast";
 import CartButton from "../components/CartButton";
 import CartDrawer from "../components/CartDrawer";
@@ -20,6 +25,8 @@ function formatPrice(value) {
 function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isSellerView = searchParams.get("sellerView") === "1";
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -241,7 +248,7 @@ function ProductDetailPage() {
               API URL: http://localhost:8080/products/{productId}
             </p>
             <Link
-              to="/products"
+              to={isSellerView ? "/seller/products" : "/products"}
               className="mt-4 inline-block rounded-full border border-red-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-red-700 hover:border-red-500"
             >
               Quay lại danh sách
@@ -259,7 +266,7 @@ function ProductDetailPage() {
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center">
             <p className="text-sm text-zinc-600">Không tìm thấy sản phẩm này</p>
             <Link
-              to="/products"
+              to={isSellerView ? "/seller/products" : "/products"}
               className="mt-4 inline-block rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
             >
               Quay lại danh sách
@@ -275,7 +282,7 @@ function ProductDetailPage() {
       <div className="mx-auto w-full max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
-            to="/products"
+            to={isSellerView ? "/seller/products" : "/products"}
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900 transition-colors"
           >
             ← Quay lại
@@ -619,59 +626,92 @@ function ProductDetailPage() {
               )}
             </div>
 
-            {/* Quantity Selector */}
-            <div className="mt-5 border-t border-zinc-200 pt-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                Số lượng
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleQuantityChange(quantity - 1)}
-                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
-                  disabled={quantity <= 1}
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) =>
-                    handleQuantityChange(parseInt(e.target.value) || 1)
-                  }
-                  className="w-16 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-center font-medium text-zinc-900"
-                  min="1"
-                  max={currentStock}
-                />
-                <button
-                  onClick={() => handleQuantityChange(quantity + 1)}
-                  className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
-                  disabled={quantity >= currentStock}
-                >
-                  +
-                </button>
+            {/* Quantity Selector — hidden in seller view */}
+            {!isSellerView && (
+              <div className="mt-5 border-t border-zinc-200 pt-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  Số lượng
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) =>
+                      handleQuantityChange(parseInt(e.target.value) || 1)
+                    }
+                    className="w-16 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-center font-medium text-zinc-900"
+                    min="1"
+                    max={currentStock}
+                  />
+                  <button
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    className="h-10 w-10 rounded-full border border-zinc-300 bg-white hover:border-zinc-900 hover:bg-zinc-50 flex items-center justify-center font-semibold text-zinc-900 transition-colors"
+                    disabled={quantity >= currentStock}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={adding || currentStock === 0}
-              className="mt-6 w-full rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {adding
-                ? "Đang thêm..."
-                : currentStock === 0
-                  ? "Hết hàng"
-                  : "Thêm vào giỏ hàng"}
-            </button>
+            {/* Add to Cart Button — hidden in seller view */}
+            {!isSellerView && (
+              <button
+                onClick={handleAddToCart}
+                disabled={adding || currentStock === 0}
+                className="mt-6 w-full rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {adding
+                  ? "Đang thêm..."
+                  : currentStock === 0
+                    ? "Hết hàng"
+                    : "Thêm vào giỏ hàng"}
+              </button>
+            )}
 
-            {!session?.token && (
+            {!session?.token && !isSellerView && (
               <Link
                 to="/login"
                 className="mt-3 block w-full rounded-full border border-zinc-300 bg-white px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 hover:bg-zinc-50 transition-colors"
               >
                 Đăng nhập để mua
               </Link>
+            )}
+
+            {/* Seller view actions */}
+            {isSellerView && (
+              <div className="mt-5 border-t border-zinc-200 pt-5 space-y-3">
+                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-amber-600 shrink-0"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <p className="text-xs text-amber-700">
+                    Bạn đang xem với tư cách người bán — nút mua hàng bị ẩn
+                  </p>
+                </div>
+                <Link
+                  to="/seller/products"
+                  className="block w-full rounded-full border border-zinc-300 bg-white px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 hover:bg-zinc-50 transition-colors"
+                >
+                  ← Quay lại quản lý sản phẩm
+                </Link>
+              </div>
             )}
           </div>
         </div>

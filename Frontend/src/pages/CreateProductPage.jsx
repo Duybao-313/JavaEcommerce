@@ -10,9 +10,13 @@ const initialForm = {
   name: "",
   description: "",
   price: "",
+  salePrice: "",
   stock: "",
+  weight: "",
+  sku: "",
   categoryId: "",
   categoryName: "",
+  isFeatured: false,
 };
 
 const emptyOption = () => ({ name: "", values: "" });
@@ -244,6 +248,10 @@ function CreateProductPage() {
       stock: Number(form.stock),
       categoryId: useCustomCategory ? null : Number(form.categoryId || 0),
       categoryName: useCustomCategory ? form.categoryName.trim() : "",
+      salePrice: form.salePrice ? Number(form.salePrice) : null,
+      weight: form.weight ? Number(form.weight) : null,
+      sku: form.sku.trim() || null,
+      isFeatured: form.isFeatured,
     };
 
     if (
@@ -398,6 +406,55 @@ function CreateProductPage() {
                 />
               </label>
             )}
+
+            <label className="text-sm text-zinc-700">
+              Giá khuyến mại (VND)
+              <input
+                name="salePrice"
+                type="number"
+                min="0"
+                value={form.salePrice}
+                onChange={handleChange}
+                className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 transition-colors"
+              />
+            </label>
+
+            <label className="text-sm text-zinc-700">
+              Khối lượng (kg)
+              <input
+                name="weight"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.weight}
+                onChange={handleChange}
+                className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 transition-colors"
+              />
+            </label>
+
+            <label className="text-sm text-zinc-700">
+              SKU
+              <input
+                name="sku"
+                type="text"
+                value={form.sku}
+                onChange={handleChange}
+                className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 transition-colors font-mono"
+              />
+            </label>
+
+            <label className="flex items-center gap-2 text-sm text-zinc-700">
+              <input
+                type="checkbox"
+                name="isFeatured"
+                checked={form.isFeatured}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, isFeatured: e.target.checked }))
+                }
+                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"
+              />
+              <span>Đánh dấu sản phẩm nổi bật</span>
+            </label>
 
             <label className="text-sm text-zinc-700">
               Danh mục
