@@ -267,6 +267,19 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
+    public ProductResponse updateProductStatus(Long productId, String status, Long actorId, boolean isAdmin) {
+        Product product = resolveMutableProduct(productId, actorId, isAdmin);
+        try {
+            ProductStatus newStatus = ProductStatus.valueOf(status.toUpperCase());
+            product.setStatus(newStatus);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        return toProductResponse(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional
     public ProductResponse updateProductImage(Long productId, Long actorId, boolean isAdmin, MultipartFile imageFile) {
         Product product = resolveMutableProduct(productId, actorId, isAdmin);
 

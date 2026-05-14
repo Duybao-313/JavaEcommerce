@@ -5,6 +5,7 @@ import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
+import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductStatusRequest;
 import com.duybao.SplitGo.Enum.Role;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -182,6 +184,22 @@ public class ProductController {
                 .success(true)
                 .code(200)
                 .message("Ẩn sản phẩm thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ProductResponse> updateProductStatus(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateProductStatusRequest request) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        return ApiResponse.<ProductResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Cập nhật trạng thái sản phẩm thành công")
+                .data(catalogService.updateProductStatus(id, request.getStatus(), user.getId(), isAdmin))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

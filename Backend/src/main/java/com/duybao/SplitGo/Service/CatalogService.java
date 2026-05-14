@@ -24,6 +24,8 @@ public interface CatalogService {
 
     void deleteProduct(Long productId, Long actorId, boolean isAdmin);
 
+    ProductResponse updateProductStatus(Long productId, String status, Long actorId, boolean isAdmin);
+
     List<ProductVariantResponse> getVariantsByProductId(Long productId);
 }
 

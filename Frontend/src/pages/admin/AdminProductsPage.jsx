@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import ConfirmationModal from "../../components/admin/ConfirmationModal";
 import PaginationBar from "../../components/admin/PaginationBar";
@@ -8,16 +9,31 @@ import {
   deleteAdminProduct,
   getAdminProducts,
   updateAdminProduct,
+  updateProductStatus,
 } from "../../services/adminService";
-import { formatPrice, normalizeText, paginate, formatDateTime } from "./adminHelpers";
+import {
+  formatPrice,
+  normalizeText,
+  paginate,
+  formatDateTime,
+} from "./adminHelpers";
 
 const pageSize = 10;
 
 const STATUS_MAP = {
-  ACTIVE: { label: "Kích hoạt", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  INACTIVE: { label: "Tạm khóa", cls: "bg-zinc-100 text-zinc-600 border-zinc-200" },
+  ACTIVE: {
+    label: "Kích hoạt",
+    cls: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  INACTIVE: {
+    label: "Tạm khóa",
+    cls: "bg-zinc-100 text-zinc-600 border-zinc-200",
+  },
   DRAFT: { label: "Nháp", cls: "bg-amber-100 text-amber-800 border-amber-200" },
-  OUT_OF_STOCK: { label: "Hết hàng", cls: "bg-red-100 text-red-800 border-red-200" },
+  OUT_OF_STOCK: {
+    label: "Hết hàng",
+    cls: "bg-red-100 text-red-800 border-red-200",
+  },
 };
 
 const TABS = [
@@ -121,7 +137,10 @@ function AdminProductsPage() {
     });
   }, [products, search, statusFilter]);
 
-  const pageItems = useMemo(() => paginate(filtered, page, pageSize), [filtered, page]);
+  const pageItems = useMemo(
+    () => paginate(filtered, page, pageSize),
+    [filtered, page],
+  );
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -268,7 +287,10 @@ function AdminProductsPage() {
     // Build cartesian product
     function cartesian(arrays) {
       return arrays.reduce(
-        (acc, curr) => acc.flatMap((a) => curr.map((c) => ({ ...a, [curr[0]?.__key || ""]: c }))),
+        (acc, curr) =>
+          acc.flatMap((a) =>
+            curr.map((c) => ({ ...a, [curr[0]?.__key || ""]: c })),
+          ),
         [{}],
       );
     }
@@ -336,7 +358,7 @@ function AdminProductsPage() {
       price: form.price ? Number(form.price) : null,
       stock: form.stock ? Number(form.stock) : 0,
       salePrice: form.salePrice ? Number(form.salePrice) : null,
-      sku: hasVariants ? null : (form.sku.trim() || null),
+      sku: hasVariants ? null : form.sku.trim() || null,
       weight: form.weight ? Number(form.weight) : null,
       isFeatured: form.isFeatured,
       status: form.status,
@@ -360,10 +382,7 @@ function AdminProductsPage() {
     if (hasVariants) {
       const invalidVariant = variants.find(
         (v) =>
-          !v.price ||
-          Number(v.price) <= 0 ||
-          !v.stock ||
-          Number(v.stock) < 0,
+          !v.price || Number(v.price) <= 0 || !v.stock || Number(v.stock) < 0,
       );
       if (invalidVariant) {
         toast.error("Mỗi biến thể cần có giá > 0 và tồn kho >= 0");
@@ -392,7 +411,9 @@ function AdminProductsPage() {
         }
         const updated = await updateAdminProduct(editingId, updateBody);
         setProducts((p) =>
-          p.map((item) => (item.id === editingId ? { ...item, ...updated } : item)),
+          p.map((item) =>
+            item.id === editingId ? { ...item, ...updated } : item,
+          ),
         );
         toast.success("Cập nhật sản phẩm thành công");
       } else {
@@ -401,13 +422,18 @@ function AdminProductsPage() {
         formData.append("description", payload.description || "");
         formData.append("price", String(payload.price));
         formData.append("stock", String(payload.stock ?? 0));
-        if (payload.categoryId) formData.append("categoryId", String(payload.categoryId));
-        if (payload.categoryName) formData.append("categoryName", payload.categoryName);
-        if (payload.ownerId) formData.append("ownerId", String(payload.ownerId));
-        if (payload.salePrice) formData.append("salePrice", String(payload.salePrice));
+        if (payload.categoryId)
+          formData.append("categoryId", String(payload.categoryId));
+        if (payload.categoryName)
+          formData.append("categoryName", payload.categoryName);
+        if (payload.ownerId)
+          formData.append("ownerId", String(payload.ownerId));
+        if (payload.salePrice)
+          formData.append("salePrice", String(payload.salePrice));
         if (payload.weight) formData.append("weight", String(payload.weight));
         if (payload.sku) formData.append("sku", payload.sku);
-        if (payload.isFeatured != null) formData.append("isFeatured", String(payload.isFeatured));
+        if (payload.isFeatured != null)
+          formData.append("isFeatured", String(payload.isFeatured));
         if (payload.imageUrl) formData.append("imageUrl", payload.imageUrl);
 
         if (variantPayload && variantPayload.length > 0) {
@@ -441,16 +467,103 @@ function AdminProductsPage() {
     }
   }
 
-  // --- Status badge renderer ---
-  function StatusBadge({ status, stock }) {
-    const displayStatus = stock === 0 && status === "ACTIVE" ? "OUT_OF_STOCK" : status;
+  // Quick status toggle
+  async function handleStatusToggle(product, newStatus) {
+    if (product.status === newStatus) return;
+    const prevProducts = [...products];
+    setProducts((p) =>
+      p.map((item) =>
+        item.id === product.id ? { ...item, status: newStatus } : item,
+      ),
+    );
+    try {
+      await updateProductStatus(product.id, newStatus);
+      toast.success(
+        `Trạng thái → ${STATUS_MAP[newStatus]?.label || newStatus}`,
+      );
+    } catch (err) {
+      setProducts(prevProducts);
+      toast.error(err?.message || "Cập nhật trạng thái thất bại");
+    }
+  }
+
+  // Safe seller display name
+  function sellerDisplay(product) {
+    const name = product?.sellerUsername;
+    if (!name || name === "undefined" || name === "null") {
+      return product?.sellerId ? `#${product.sellerId}` : "—";
+    }
+    return name;
+  }
+
+  // --- Status badge with quick toggle ---
+  function StatusBadge({ status, stock, product, onToggle }) {
+    const displayStatus =
+      stock === 0 && status === "ACTIVE" ? "OUT_OF_STOCK" : status;
     const cfg = STATUS_MAP[displayStatus] || STATUS_MAP.INACTIVE;
+
+    if (!onToggle || !product) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${cfg.cls}`}
+        >
+          {cfg.label}
+        </span>
+      );
+    }
+
+    const nextStatuses =
+      status === "ACTIVE"
+        ? ["INACTIVE", "DRAFT"]
+        : status === "INACTIVE"
+          ? ["ACTIVE", "DRAFT"]
+          : status === "DRAFT"
+            ? ["ACTIVE", "INACTIVE"]
+            : ["ACTIVE"];
+
     return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${cfg.cls}`}
-      >
-        {cfg.label}
-      </span>
+      <div className="relative inline-block group/status">
+        <button
+          type="button"
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:opacity-80 transition-opacity ${cfg.cls}`}
+          title="Nhấn để đổi trạng thái"
+        >
+          {cfg.label}
+          <svg
+            className="h-2.5 w-2.5 opacity-60"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        <div className="absolute left-0 top-full mt-1 z-10 hidden group-hover/status:block">
+          <div className="rounded-lg border border-zinc-200 bg-white py-1 shadow-lg min-w-[110px]">
+            {nextStatuses.map((ns) => {
+              const nc = STATUS_MAP[ns] || STATUS_MAP.INACTIVE;
+              return (
+                <button
+                  key={ns}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle(product, ns);
+                  }}
+                  className={`block w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-zinc-50 transition-colors ${nc.cls.replace(/bg-\S+/g, "").replace(/border-\S+/g, "")}`}
+                >
+                  {nc.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -460,7 +573,9 @@ function AdminProductsPage() {
       const discount = Math.round(((price - salePrice) / price) * 100);
       return (
         <div className="flex flex-col">
-          <span className="text-xs text-zinc-400 line-through">{formatPrice(price)}</span>
+          <span className="text-xs text-zinc-400 line-through">
+            {formatPrice(price)}
+          </span>
           <span className="font-semibold text-zinc-900">
             {formatPrice(salePrice)}
             <span className="ml-1 text-[11px] font-medium text-emerald-700">
@@ -470,7 +585,9 @@ function AdminProductsPage() {
         </div>
       );
     }
-    return <span className="font-medium text-zinc-900">{formatPrice(price)}</span>;
+    return (
+      <span className="font-medium text-zinc-900">{formatPrice(price)}</span>
+    );
   }
 
   // --- Render ---
@@ -480,15 +597,27 @@ function AdminProductsPage() {
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Sản phẩm</h1>
-          <p className="mt-1 text-sm text-zinc-500">{filtered.length} sản phẩm</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {filtered.length} sản phẩm
+          </p>
         </div>
         <button
           type="button"
           onClick={startCreate}
           className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors md:w-auto"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Tạo sản phẩm
         </button>
@@ -497,20 +626,36 @@ function AdminProductsPage() {
       {/* ═══════════ SEARCH & FILTER BAR ═══════════ */}
       <div className="flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+          <svg
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
+            />
           </svg>
           <input
             type="text"
             placeholder="Tìm theo tên, SKU, danh mục, chủ sở hữu..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full rounded-lg border border-zinc-300 py-2.5 pl-9 pr-4 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors md:w-44"
         >
           <option value="">Tất cả trạng thái</option>
@@ -534,8 +679,18 @@ function AdminProductsPage() {
                 className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
                 aria-label="Đóng"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -605,7 +760,9 @@ function AdminProductsPage() {
                       >
                         <option value="">Chọn danh mục</option>
                         {categories.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -637,7 +794,9 @@ function AdminProductsPage() {
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none transition-colors disabled:bg-zinc-100 disabled:text-zinc-400"
                       />
                       {variants.length > 0 && (
-                        <p className="mt-1 text-[11px] text-zinc-400">SKU được quản lý theo từng biến thể</p>
+                        <p className="mt-1 text-[11px] text-zinc-400">
+                          SKU được quản lý theo từng biến thể
+                        </p>
                       )}
                     </div>
                     <div>
@@ -676,7 +835,10 @@ function AdminProductsPage() {
                         onChange={handleFormChange}
                         className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
                       />
-                      <label htmlFor="isFeatured" className="text-sm font-medium text-zinc-700 select-none">
+                      <label
+                        htmlFor="isFeatured"
+                        className="text-sm font-medium text-zinc-700 select-none"
+                      >
                         ⭐ Sản phẩm nổi bật
                       </label>
                     </div>
@@ -731,11 +893,20 @@ function AdminProductsPage() {
                         placeholder="Để trống nếu không KM"
                         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                       />
-                      {form.price && form.salePrice && Number(form.salePrice) > 0 && Number(form.salePrice) < Number(form.price) && (
-                        <p className="mt-1 text-[11px] text-emerald-700 font-medium">
-                          Giảm {Math.round(((Number(form.price) - Number(form.salePrice)) / Number(form.price)) * 100)}%
-                        </p>
-                      )}
+                      {form.price &&
+                        form.salePrice &&
+                        Number(form.salePrice) > 0 &&
+                        Number(form.salePrice) < Number(form.price) && (
+                          <p className="mt-1 text-[11px] text-emerald-700 font-medium">
+                            Giảm{" "}
+                            {Math.round(
+                              ((Number(form.price) - Number(form.salePrice)) /
+                                Number(form.price)) *
+                                100,
+                            )}
+                            %
+                          </p>
+                        )}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 mb-1.5">
@@ -753,7 +924,12 @@ function AdminProductsPage() {
                       />
                       {variants.length > 0 && (
                         <p className="mt-1 text-[11px] text-zinc-400">
-                          Tự động = tổng tồn kho biến thể ({variants.reduce((s, v) => s + (Number(v.stock) || 0), 0)})
+                          Tự động = tổng tồn kho biến thể (
+                          {variants.reduce(
+                            (s, v) => s + (Number(v.stock) || 0),
+                            0,
+                          )}
+                          )
                         </p>
                       )}
                     </div>
@@ -791,9 +967,10 @@ function AdminProductsPage() {
                   </div>
 
                   {variants.map((variant, idx) => {
-                    const attrSummary = Object.entries(variant.attributes || {})
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(" · ") || "Chưa có thuộc tính";
+                    const attrSummary =
+                      Object.entries(variant.attributes || {})
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(" · ") || "Chưa có thuộc tính";
                     const isExpanded = variantExpanded === idx;
                     return (
                       <div
@@ -811,18 +988,29 @@ function AdminProductsPage() {
                               {idx + 1}
                             </span>
                             <div className="truncate">
-                              <span className="text-sm font-medium text-zinc-900">{attrSummary}</span>
+                              <span className="text-sm font-medium text-zinc-900">
+                                {attrSummary}
+                              </span>
                               {variant.price && (
-                                <span className="ml-2 text-xs text-zinc-500">{formatPrice(Number(variant.price))}</span>
+                                <span className="ml-2 text-xs text-zinc-500">
+                                  {formatPrice(Number(variant.price))}
+                                </span>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <svg
                               className={`h-4 w-4 text-zinc-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 9l-7 7-7-7"
+                              />
                             </svg>
                           </div>
                         </button>
@@ -831,87 +1019,148 @@ function AdminProductsPage() {
                         {isExpanded && (
                           <div className="border-t border-zinc-200 px-4 py-4 space-y-3 bg-zinc-50/50">
                             {/* Attributes from option definitions */}
-                            {optionDefs.filter(o => o.name.trim()).length > 0 && (
+                            {optionDefs.filter((o) => o.name.trim()).length >
+                              0 && (
                               <div className="grid gap-3 md:grid-cols-2">
-                                {optionDefs.filter(o => o.name.trim()).map((opt) => (
-                                  <div key={opt.name}>
-                                    <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
-                                      {opt.name}
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={variant.attributes?.[opt.name.trim()] || ""}
-                                      onChange={(e) => handleVariantAttrChange(idx, opt.name.trim(), e.target.value)}
-                                      placeholder={`Giá trị ${opt.name}`}
-                                      className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
-                                    />
-                                  </div>
-                                ))}
+                                {optionDefs
+                                  .filter((o) => o.name.trim())
+                                  .map((opt) => (
+                                    <div key={opt.name}>
+                                      <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                        {opt.name}
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={
+                                          variant.attributes?.[
+                                            opt.name.trim()
+                                          ] || ""
+                                        }
+                                        onChange={(e) =>
+                                          handleVariantAttrChange(
+                                            idx,
+                                            opt.name.trim(),
+                                            e.target.value,
+                                          )
+                                        }
+                                        placeholder={`Giá trị ${opt.name}`}
+                                        className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
+                                      />
+                                    </div>
+                                  ))}
                               </div>
                             )}
 
                             <div className="grid gap-3 md:grid-cols-3">
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">SKU</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  SKU
+                                </label>
                                 <input
                                   type="text"
                                   value={variant.sku}
-                                  onChange={(e) => handleVariantChange(idx, "sku", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "sku",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="SKU"
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">Giá *</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  Giá *
+                                </label>
                                 <input
                                   type="number"
                                   min="1"
                                   value={variant.price}
-                                  onChange={(e) => handleVariantChange(idx, "price", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "price",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0"
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">Tồn kho *</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  Tồn kho *
+                                </label>
                                 <input
                                   type="number"
                                   min="0"
                                   value={variant.stock}
-                                  onChange={(e) => handleVariantChange(idx, "stock", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "stock",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0"
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">Giá KM</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  Giá KM
+                                </label>
                                 <input
                                   type="number"
                                   min="0"
                                   value={variant.salePrice}
-                                  onChange={(e) => handleVariantChange(idx, "salePrice", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "salePrice",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="Tùy chọn"
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">Cân nặng (kg)</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  Cân nặng (kg)
+                                </label>
                                 <input
                                   type="number"
                                   step="0.01"
                                   min="0"
                                   value={variant.weight}
-                                  onChange={(e) => handleVariantChange(idx, "weight", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "weight",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="0.00"
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">URL ảnh</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
+                                  URL ảnh
+                                </label>
                                 <input
                                   type="text"
                                   value={variant.imageUrl}
-                                  onChange={(e) => handleVariantChange(idx, "imageUrl", e.target.value)}
+                                  onChange={(e) =>
+                                    handleVariantChange(
+                                      idx,
+                                      "imageUrl",
+                                      e.target.value,
+                                    )
+                                  }
                                   placeholder="https://..."
                                   className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                                 />
@@ -951,12 +1200,16 @@ function AdminProductsPage() {
 
                   {optionDefs.length === 0 && (
                     <div className="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-400">
-                      Chưa có tùy chọn nào. Thêm tùy chọn để tạo biến thể tự động.
+                      Chưa có tùy chọn nào. Thêm tùy chọn để tạo biến thể tự
+                      động.
                     </div>
                   )}
 
                   {optionDefs.map((opt, idx) => (
-                    <div key={idx} className="rounded-lg border border-zinc-200 p-4">
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-zinc-200 p-4"
+                    >
                       <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto] items-end">
                         <div>
                           <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1">
@@ -965,7 +1218,9 @@ function AdminProductsPage() {
                           <input
                             type="text"
                             value={opt.name}
-                            onChange={(e) => handleOptionChange(idx, "name", e.target.value)}
+                            onChange={(e) =>
+                              handleOptionChange(idx, "name", e.target.value)
+                            }
                             placeholder="vd: Màu sắc"
                             className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                           />
@@ -977,7 +1232,13 @@ function AdminProductsPage() {
                           <input
                             type="text"
                             value={opt.valuesText}
-                            onChange={(e) => handleOptionChange(idx, "valuesText", e.target.value)}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                idx,
+                                "valuesText",
+                                e.target.value,
+                              )
+                            }
                             placeholder="vd: Đỏ, Xanh, Vàng, Đen"
                             className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
                           />
@@ -996,8 +1257,10 @@ function AdminProductsPage() {
                   {optionDefs.length > 0 && (
                     <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-3">
                       <p className="text-xs text-zinc-500">
-                        💡 Sau khi định nghĩa tùy chọn, vào tab <strong>Biến thể</strong> và bấm{" "}
-                        <strong>"Tạo từ tùy chọn"</strong> để tự động sinh tất cả tổ hợp biến thể.
+                        💡 Sau khi định nghĩa tùy chọn, vào tab{" "}
+                        <strong>Biến thể</strong> và bấm{" "}
+                        <strong>"Tạo từ tùy chọn"</strong> để tự động sinh tất
+                        cả tổ hợp biến thể.
                       </p>
                     </div>
                   )}
@@ -1011,7 +1274,11 @@ function AdminProductsPage() {
                   disabled={saving}
                   className="flex-1 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 transition-colors"
                 >
-                  {saving ? "Đang lưu..." : editingId ? "Cập nhật" : "Tạo sản phẩm"}
+                  {saving
+                    ? "Đang lưu..."
+                    : editingId
+                      ? "Cập nhật"
+                      : "Tạo sản phẩm"}
                 </button>
                 <button
                   type="button"
@@ -1034,11 +1301,23 @@ function AdminProductsPage() {
           </div>
         ) : pageItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <svg className="h-10 w-10 text-zinc-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <svg
+              className="h-10 w-10 text-zinc-300 mb-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              />
             </svg>
             <p className="text-sm font-medium text-zinc-500">
-              {search || statusFilter ? "Không tìm thấy sản phẩm nào" : "Chưa có sản phẩm nào"}
+              {search || statusFilter
+                ? "Không tìm thấy sản phẩm nào"
+                : "Chưa có sản phẩm nào"}
             </p>
             {!search && !statusFilter && (
               <button
@@ -1056,18 +1335,42 @@ function AdminProductsPage() {
             <table className="hidden w-full text-left text-sm md:table">
               <thead>
                 <tr className="border-b border-zinc-200 bg-zinc-50/80">
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Ảnh</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Tên / SKU</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Giá</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Kho</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Trạng thái</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">NB</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Seller</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">DM</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">Xem</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">Bán</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">Ngày tạo</th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">Hành động</th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Ảnh
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Tên / SKU
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Giá
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Kho
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Trạng thái
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    NB
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Seller
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    DM
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
+                    Xem
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
+                    Bán
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                    Ngày tạo
+                  </th>
+                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
+                    Hành động
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1086,20 +1389,45 @@ function AdminProductsPage() {
                         />
                       ) : (
                         <div className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-300">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                            />
                           </svg>
                         </div>
                       )}
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="max-w-[180px]">
-                        <p className="font-medium text-zinc-900 truncate">
-                          {product.isFeatured && <span className="mr-1 text-amber-500" title="Nổi bật">⭐</span>}
+                        <Link
+                          to={`/products/${product.id}?adminPreview=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-zinc-900 truncate hover:text-blue-700 hover:underline transition-colors"
+                          title="Xem như người mua (tab mới)"
+                        >
+                          {product.isFeatured && (
+                            <span
+                              className="mr-1 text-amber-500"
+                              title="Nổi bật"
+                            >
+                              ⭐
+                            </span>
+                          )}
                           {product.name}
-                        </p>
+                        </Link>
                         {product.sku && (
-                          <p className="text-[11px] text-zinc-400 truncate font-mono">{product.sku}</p>
+                          <p className="text-[11px] text-zinc-400 truncate font-mono">
+                            {product.sku}
+                          </p>
                         )}
                         {product.variants?.length > 0 && (
                           <span className="inline-block mt-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
@@ -1109,25 +1437,37 @@ function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <PriceCell price={product.price} salePrice={product.salePrice} />
+                      <PriceCell
+                        price={product.price}
+                        salePrice={product.salePrice}
+                      />
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className={`font-semibold ${product.stock === 0 ? "text-red-600" : "text-zinc-900"}`}>
+                      <span
+                        className={`font-semibold ${product.stock === 0 ? "text-red-600" : "text-zinc-900"}`}
+                      >
                         {product.stock}
                       </span>
                     </td>
                     <td className="px-3 py-2.5">
-                      <StatusBadge status={product.status} stock={product.stock} />
+                      <StatusBadge
+                        status={product.status}
+                        stock={product.stock}
+                        product={product}
+                        onToggle={handleStatusToggle}
+                      />
                     </td>
                     <td className="px-3 py-2.5">
                       {product.isFeatured ? (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">NB</span>
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                          NB
+                        </span>
                       ) : (
                         <span className="text-zinc-300">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-zinc-600 text-xs max-w-[100px] truncate">
-                      {product.sellerUsername || `#${product.sellerId}`}
+                      {sellerDisplay(product)}
                     </td>
                     <td className="px-3 py-2.5 text-xs text-zinc-500 max-w-[100px] truncate">
                       {product.categoryName || "—"}
@@ -1170,22 +1510,55 @@ function AdminProductsPage() {
                 <div key={product.id} className="px-4 py-3 space-y-2">
                   <div className="flex items-start gap-3">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded-md border border-zinc-200 object-cover flex-shrink-0" loading="lazy" />
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="h-10 w-10 rounded-md border border-zinc-200 object-cover flex-shrink-0"
+                        loading="lazy"
+                      />
                     ) : (
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-300">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                          />
                         </svg>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        {product.isFeatured && <span className="text-amber-500 text-xs">⭐</span>}
-                        <p className="font-semibold text-sm text-zinc-900 truncate">{product.name}</p>
+                        {product.isFeatured && (
+                          <span className="text-amber-500 text-xs">⭐</span>
+                        )}
+                        <Link
+                          to={`/products/${product.id}?adminPreview=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-sm text-zinc-900 truncate hover:text-blue-700 hover:underline transition-colors"
+                          title="Xem như người mua (tab mới)"
+                        >
+                          {product.name}
+                        </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <PriceCell price={product.price} salePrice={product.salePrice} />
-                        <StatusBadge status={product.status} stock={product.stock} />
+                        <PriceCell
+                          price={product.price}
+                          salePrice={product.salePrice}
+                        />
+                        <StatusBadge
+                          status={product.status}
+                          stock={product.stock}
+                          product={product}
+                          onToggle={handleStatusToggle}
+                        />
                         {product.variants?.length > 0 && (
                           <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
                             {product.variants.length} BT
@@ -1195,8 +1568,17 @@ function AdminProductsPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-zinc-500">
-                    <span>Kho: <strong className={product.stock === 0 ? "text-red-600" : "text-zinc-900"}>{product.stock}</strong></span>
-                    <span>{product.sellerUsername || `#${product.sellerId}`}</span>
+                    <span>
+                      Kho:{" "}
+                      <strong
+                        className={
+                          product.stock === 0 ? "text-red-600" : "text-zinc-900"
+                        }
+                      >
+                        {product.stock}
+                      </strong>
+                    </span>
+                    <span>{sellerDisplay(product)}</span>
                     <span>{product.categoryName || "—"}</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-zinc-400">
@@ -1227,7 +1609,12 @@ function AdminProductsPage() {
 
       {/* ═══════════ PAGINATION ═══════════ */}
       {!loading && pageItems.length > 0 && (
-        <PaginationBar page={page} pageSize={pageSize} totalItems={filtered.length} onPageChange={setPage} />
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          totalItems={filtered.length}
+          onPageChange={setPage}
+        />
       )}
 
       {/* ═══════════ DELETE CONFIRMATION ═══════════ */}
@@ -1247,6 +1634,3 @@ function AdminProductsPage() {
 }
 
 export default AdminProductsPage;
-
-
-

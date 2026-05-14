@@ -30,6 +30,16 @@ export async function updateAdminProduct(productId, body) {
   return payload?.data || null;
 }
 
+export async function updateProductStatus(productId, status) {
+  const response = await authFetch(`/products/${productId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
 export async function deleteAdminProduct(productId) {
   const response = await authFetch(`/products/${productId}`, {
     method: "DELETE",

@@ -28,6 +28,7 @@ function ProductDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isSellerView = searchParams.get("sellerView") === "1";
+  const isAdminPreview = searchParams.get("adminPreview") === "1";
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -280,10 +281,38 @@ function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7f7f4_0%,#f4f4ef_45%,#ffffff_100%)] px-6 py-10">
+      {/* Admin Preview Banner */}
+      {isAdminPreview && (
+        <div className="mx-auto w-full max-w-6xl mb-4">
+          <div className="flex items-center gap-3 rounded-xl border-2 border-dashed border-zinc-400 bg-zinc-100/80 px-5 py-3">
+            <span className="text-lg">🔒</span>
+            <div>
+              <p className="text-sm font-semibold text-zinc-700">
+                Chế độ xem Admin
+              </p>
+              <p className="text-xs text-zinc-500">
+                Bạn đang xem sản phẩm như người mua — nút mua hàng đã bị khóa
+              </p>
+            </div>
+            <button
+              onClick={() => window.close()}
+              className="ml-auto rounded-lg border border-zinc-400 px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-200 transition-colors"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link
-            to={isSellerView ? "/seller/products" : "/products"}
+            to={
+              isSellerView
+                ? "/seller/products"
+                : isAdminPreview
+                  ? "/admin/products"
+                  : "/products"
+            }
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:text-zinc-900 transition-colors"
           >
             ← Quay lại
@@ -668,18 +697,29 @@ function ProductDetailPage() {
               </div>
             )}
 
-            {/* Add to Cart Button — hidden in seller view */}
+            {/* Add to Cart Button — hidden in seller view, locked in admin preview */}
             {!isSellerView && (
               <button
-                onClick={handleAddToCart}
-                disabled={adding || currentStock === 0}
-                className="mt-6 w-full rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed transition-colors"
+                onClick={isAdminPreview ? undefined : handleAddToCart}
+                disabled={isAdminPreview || adding || currentStock === 0}
+                className={`mt-6 w-full rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  isAdminPreview
+                    ? "bg-zinc-200 text-zinc-500 cursor-not-allowed border-2 border-dashed border-zinc-400"
+                    : "bg-zinc-900 text-white hover:bg-zinc-700 disabled:bg-zinc-400 disabled:cursor-not-allowed"
+                }`}
+                title={
+                  isAdminPreview
+                    ? "Đang xem dưới dạng Admin — không thể mua"
+                    : undefined
+                }
               >
-                {adding
-                  ? "Đang thêm..."
-                  : currentStock === 0
-                    ? "Hết hàng"
-                    : "Thêm vào giỏ hàng"}
+                {isAdminPreview
+                  ? "🔒 Admin Preview"
+                  : adding
+                    ? "Đang thêm..."
+                    : currentStock === 0
+                      ? "Hết hàng"
+                      : "Thêm vào giỏ hàng"}
               </button>
             )}
 
