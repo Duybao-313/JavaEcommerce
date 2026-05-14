@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import toast from "react-hot-toast";
 import CartButton from "../components/CartButton";
+import WishlistButton from "../components/WishlistButton";
 import CartDrawer from "../components/CartDrawer";
 import ReviewSummaryBlock from "../components/review/ReviewSummaryBlock";
 import { useCart } from "../context/CartContext";
@@ -289,12 +290,15 @@ function ProductDetailPage() {
           </Link>
           <div className="flex items-center gap-3">
             {session?.token && (
-              <Link
-                to="/orders"
-                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 transition-colors"
-              >
-                Đơn hàng
-              </Link>
+              <>
+                <WishlistButton productId={Number(productId)} />
+                <Link
+                  to="/orders"
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 transition-colors"
+                >
+                  Đơn hàng
+                </Link>
+              </>
             )}
             {session?.token && <CartButton />}
           </div>
@@ -351,9 +355,12 @@ function ProductDetailPage() {
                   {product.name}
                 </h1>
               </div>
-              <span className="rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-zinc-600">
-                {product.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <WishlistButton productId={product.id} />
+                <span className="rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-zinc-600">
+                  {product.status}
+                </span>
+              </div>
             </div>
 
             {product.description && (

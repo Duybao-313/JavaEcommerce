@@ -7,6 +7,7 @@ import { addToCart } from "../services/cartService";
 import { getProducts } from "../services/productService";
 import { getCategories } from "../services/categoryService";
 import { getAuthSession } from "../services/sessionService";
+import WishlistButton from "./WishlistButton";
 
 const listVariants = {
   hidden: {},
@@ -622,9 +623,9 @@ function ProductSection() {
               key={product.id}
               variants={itemVariants}
               onClick={() => navigate(`/products/${product.id}`)}
-              className="cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-white"
             >
-              <div className="h-36 bg-zinc-100">
+              <div className="relative h-36 bg-zinc-100">
                 {product.imageUrl ? (
                   <img
                     src={product.imageUrl}
@@ -636,6 +637,11 @@ function ProductSection() {
                     Chưa có ảnh sản phẩm
                   </div>
                 )}
+
+                {/* Wishlist heart — top-right of image */}
+                <div className="absolute right-1.5 top-1.5 z-10">
+                  <WishlistButton productId={product.id} size="sm" />
+                </div>
               </div>
 
               <div className="p-4">

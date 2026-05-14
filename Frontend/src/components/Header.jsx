@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import './Header.css'
+import React, { useState } from "react";
+import "./Header.css";
+import WishlistIconHeader from "./WishlistIconHeader";
 
 export default function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="header">
@@ -19,16 +20,30 @@ export default function Header() {
             ☰
           </button>
 
-          <ul className={`nav-menu ${isMobileMenuOpen ? 'active' : ''}`}>
-            <li><a href="#home">Home</a></li>
-            <li><a href="#products">Products</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#contact">Contact</a></li>
-            <li><a href="#" className="btn-login">Login</a></li>
+          <ul className={`nav-menu ${isMobileMenuOpen ? "active" : ""}`}>
+            <li>
+              <a href="#home">Home</a>
+            </li>
+            <li>
+              <a href="#products">Products</a>
+            </li>
+            <li>
+              <a href="#features">Features</a>
+            </li>
+            <li>
+              <a href="#contact">Contact</a>
+            </li>
+            <li className="flex items-center">
+              <WishlistIconHeader />
+            </li>
+            <li>
+              <a href="#" className="btn-login">
+                Login
+              </a>
+            </li>
           </ul>
         </nav>
       </div>
     </header>
-  )
+  );
 }
-
