@@ -131,9 +131,17 @@ function LoginPage() {
             >
               Chưa có tài khoản? Đăng ký
             </Link>
-            <Link to="/" className="hover:text-zinc-900">
-              Về trang chủ
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/register-seller"
+                className="text-amber-700 font-medium hover:underline"
+              >
+                Đăng ký Seller
+              </Link>
+              <Link to="/" className="hover:text-zinc-900">
+                Về trang chủ
+              </Link>
+            </div>
           </div>
         </section>
 

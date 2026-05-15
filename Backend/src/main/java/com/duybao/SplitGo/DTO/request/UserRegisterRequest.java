@@ -28,4 +28,28 @@ public class UserRegisterRequest {
     @NotBlank(message = "EMAIL_NOT_NULL")
     @Email(message = "EMAIL_INVALID")
     private String email;
+
+    // ─── Seller registration fields ───
+    private Boolean isSeller;
+
+    @Size(max = 255, message = "STORE_NAME_TOO_LONG")
+    private String storeName;
+
+    @Size(max = 500, message = "STORE_ADDRESS_TOO_LONG")
+    private String storeAddress;
+
+    @Size(max = 255)
+    private String businessLicense;
+
+    @Size(max = 255)
+    private String taxCode;
+
+    @Size(max = 255)
+    private String bankAccount;
+
+    @Size(max = 255)
+    private String bankName;
+
+    @Pattern(regexp = "^(0)([35789])\\d{8}$", message = "PHONE_INVALID")
+    private String phone;
 }

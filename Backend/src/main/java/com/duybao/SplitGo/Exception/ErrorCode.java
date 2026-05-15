@@ -65,6 +65,10 @@ public enum ErrorCode {
     VARIANT_OUT_OF_STOCK(2016, "Biến thể sản phẩm đã hết hàng", HttpStatus.BAD_REQUEST),
     VARIANT_SKU_DUPLICATE(2017, "Mã SKU biến thể đã tồn tại", HttpStatus.BAD_REQUEST),
     VARIANT_REQUIRED(2018, "Vui lòng chọn biến thể sản phẩm (size, color...)", HttpStatus.BAD_REQUEST),
+    STORE_NAME_REQUIRED(2019, "Vui lòng nhập tên cửa hàng", HttpStatus.BAD_REQUEST),
+    STORE_ADDRESS_REQUIRED(2020, "Vui lòng nhập địa chỉ cửa hàng", HttpStatus.BAD_REQUEST),
+    STORE_NAME_TOO_LONG(2021, "Tên cửa hàng quá dài (tối đa 255 ký tự)", HttpStatus.BAD_REQUEST),
+    STORE_ADDRESS_TOO_LONG(2022, "Địa chỉ cửa hàng quá dài (tối đa 500 ký tự)", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
 
     private final int code;

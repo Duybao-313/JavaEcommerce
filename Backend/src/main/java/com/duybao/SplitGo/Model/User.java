@@ -75,6 +75,12 @@ public class User implements UserDetails {
     @Column(length = 255)
     private String bankName;
 
+    @Column(length = 255)
+    private String businessLicense;
+
+    @Column(length = 255)
+    private String taxCode;
+
     @Enumerated(EnumType.STRING)
     private SellerVerificationStatus sellerVerified;
 

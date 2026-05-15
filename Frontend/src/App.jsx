@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import SellerRegisterPage from "./pages/SellerRegisterPage";
 import ProductsPage from "./pages/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CreateProductPage from "./pages/CreateProductPage";
@@ -68,6 +69,7 @@ function App() {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register-seller" element={<SellerRegisterPage />} />
       <Route path="/me" element={<UserProfilePage />} />
       <Route path="/profile" element={<UserProfilePage />} />
       <Route path="/orders" element={<MyOrdersPage />} />

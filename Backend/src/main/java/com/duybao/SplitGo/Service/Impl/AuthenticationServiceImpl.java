@@ -21,6 +21,8 @@ import com.duybao.SplitGo.DTO.request.LogoutRequest;
 import com.duybao.SplitGo.DTO.request.UserLoginRequest;
 import com.duybao.SplitGo.DTO.request.UserRegisterRequest;
 import com.duybao.SplitGo.Enum.Role;
+import com.duybao.SplitGo.Enum.SellerVerificationStatus;
+import com.duybao.SplitGo.Enum.StoreStatus;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
 import com.duybao.SplitGo.Mappers.UserMapper;
@@ -56,11 +58,39 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (userRepository.findByEmail(a.getEmail()).isPresent()) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+
+        // Seller-specific validation
+        if (Boolean.TRUE.equals(a.getIsSeller())) {
+            if (a.getStoreName() == null || a.getStoreName().isBlank()) {
+                throw new AppException(ErrorCode.STORE_NAME_REQUIRED);
+            }
+            if (a.getStoreAddress() == null || a.getStoreAddress().isBlank()) {
+                throw new AppException(ErrorCode.STORE_ADDRESS_REQUIRED);
+            }
+        }
+
         User user = new User();
         user = userMapper.toEntity(a);
         user.setPassword(passwordEncoder.encode(a.getPassword()));
-        user.setRole(Role.ROLE_USER);
-        // Lưu user
+
+        if (Boolean.TRUE.equals(a.getIsSeller())) {
+            user.setRole(Role.ROLE_SELLER);
+            user.setStoreName(a.getStoreName());
+            user.setStoreAddress(a.getStoreAddress());
+            user.setBusinessLicense(a.getBusinessLicense());
+            user.setTaxCode(a.getTaxCode());
+            user.setBankAccount(a.getBankAccount());
+            user.setBankName(a.getBankName());
+            user.setSellerVerified(SellerVerificationStatus.PENDING);
+            user.setStoreStatus(StoreStatus.ACTIVE);
+        } else {
+            user.setRole(Role.ROLE_USER);
+        }
+
+        if (a.getPhone() != null && !a.getPhone().isBlank()) {
+            user.setPhone(a.getPhone());
+        }
+
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);

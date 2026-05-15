@@ -38,6 +38,8 @@ public class UserDTO {
     private String storeAddress;
     private String bankAccount;
     private String bankName;
+    private String businessLicense;
+    private String taxCode;
     private SellerVerificationStatus sellerVerified;
     private BigDecimal storeRating;
     private Integer totalSales;
