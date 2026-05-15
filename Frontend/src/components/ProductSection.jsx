@@ -614,8 +614,7 @@ function ProductSection() {
         <motion.div
           variants={listVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          animate="visible"
           className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         >
           {filteredProducts.map((product) => (

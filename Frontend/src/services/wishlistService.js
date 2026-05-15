@@ -28,7 +28,11 @@ export async function getWishlist() {
 }
 
 export async function checkWishlist(productId) {
-  const res = await authFetch(`${BASE}/check/${productId}`);
-  const payload = await parseApiResponse(res);
-  return payload?.data === true;
+  try {
+    const res = await authFetch(`${BASE}/check/${productId}`);
+    const payload = await parseApiResponse(res);
+    return payload?.data === true;
+  } catch {
+    return false;
+  }
 }

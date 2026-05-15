@@ -110,7 +110,7 @@ function LandingPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="grid gap-8 border-y border-zinc-200 py-12 md:grid-cols-[1.15fr_0.85fr]"
+          className="relative grid gap-8 border-y border-zinc-200 py-12 md:grid-cols-[1.15fr_0.85fr]"
         >
           <motion.div style={{ y: heroTextY }}>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
