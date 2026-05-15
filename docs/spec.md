@@ -85,6 +85,40 @@ Xac dinh dac ta chuc nang cho he thong web ban hang (buyer + seller + admin), la
 - Hien thi trang thai con hang/het hang theo variant
 - Options duoc derive tu variant attributes, tra ve cung ProductResponse
 
+### UC-PROD-CAT-01 Xem trang danh mục (Category Landing Page)
+
+Mục đích
+
+- Khi user bấm "Xem thêm" hoặc click vào một danh mục từ CategoriesStrip, điều hướng đến trang danh mục chi tiết.
+- Trang này hiển thị: breadcrumb, danh mục hiện tại + ảnh/mô tả, danh mục con (subcategories) dạng grid icon+name, danh sách sản phẩm.
+
+Dữ liệu / API
+
+- `GET /categories` — danh sách flat có `parentId` để frontend tự build tree
+- `GET /products?categoryId={id}` — lọc sản phẩm theo category
+- Route: `/categories` (tất cả danh mục), `/categories/:slug` (danh mục cụ thể), `/categories/:slug?subcategoryId=X`
+
+Giao diện
+
+- Breadcrumb: Trang chủ / Sản phẩm / [Danh mục]
+- Category header: tên (h1), ảnh banner (16:9, rounded-2xl), mô tả (max 65ch)
+- Subcategories strip: grid 8 cột desktop, scroll mobile, click → filter sản phẩm
+- Product grid: kế thừa ProductSection với preselectedCategory
+
+Visual / Motion theo "impeccable"
+
+- Color: restrained (tinted neutral + amber accent cho selected)
+- Motion: easing ease-out-quart, duration 180–260ms, không animate layout properties
+- Tránh gradient text, side-stripe borders, identical-card-grid
+
+Acceptance criteria
+
+- Click danh mục từ CategoriesStrip → `/categories/{slug}`
+- "Xem thêm" → `/categories` (tất cả danh mục)
+- Hiển thị breadcrumb, category header, subcategories (nếu có), products
+- Click subcategory → filter sản phẩm
+- Mobile responsive, a11y keyboard navigable, focus visible
+
 ---
 
 ## 4.3 Cart — Phan tich nghiep vu chi tiet

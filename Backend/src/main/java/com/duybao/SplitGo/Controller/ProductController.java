@@ -48,12 +48,22 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> getProducts() {
+    public ApiResponse<List<ProductResponse>> getProducts(
+            @RequestParam(required = false) Long categoryId) {
+        List<ProductResponse> products;
+        String message;
+        if (categoryId != null) {
+            products = catalogService.getProductsByCategoryId(categoryId);
+            message = "Lấy danh sách sản phẩm theo danh mục thành công";
+        } else {
+            products = catalogService.getPublicProducts();
+            message = "Lấy danh sách sản phẩm thành công";
+        }
         return ApiResponse.<List<ProductResponse>>builder()
                 .success(true)
                 .code(200)
-                .message("Lấy danh sách sản phẩm thành công")
-                .data(catalogService.getPublicProducts())
+                .message(message)
+                .data(products)
                 .timestamp(LocalDateTime.now())
                 .build();
     }

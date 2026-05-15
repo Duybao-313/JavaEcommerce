@@ -83,6 +83,31 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
+        Set<Long> categoryIds = new HashSet<>();
+        collectCategoryIds(categoryId, categoryIds);
+        if (categoryIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return productRepository.findByCategoryIdInAndStatusOrderByCreatedAtDesc(
+                new ArrayList<>(categoryIds), ProductStatus.ACTIVE).stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
+
+    /**
+     * Recursively collects the given category ID and all its descendant IDs.
+     */
+    private void collectCategoryIds(Long categoryId, Set<Long> result) {
+        if (categoryId == null || result.contains(categoryId)) return;
+        result.add(categoryId);
+        List<Category> children = categoryRepository.findByParentId(categoryId);
+        for (Category child : children) {
+            collectCategoryIds(child.getId(), result);
+        }
+    }
+
+    @Override
     @Transactional
     public ProductResponse getProductDetail(Long productId) {
         Product product = productRepository

@@ -35,6 +35,17 @@ public class CategoryController {
                 .build();
     }
 
+    @GetMapping("/roots")
+    public ApiResponse<List<CategoryResponse>> getRootCategories() {
+        return ApiResponse.<List<CategoryResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách danh mục gốc thành công")
+                .data(categoryService.getRootCategories())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<CategoryResponse> createCategory(@RequestBody @Valid CreateCategoryRequest request) {

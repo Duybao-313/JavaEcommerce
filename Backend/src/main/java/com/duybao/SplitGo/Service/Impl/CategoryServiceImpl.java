@@ -25,6 +25,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public List<CategoryResponse> getRootCategories() {
+        return categoryRepository.findByParentIsNull().stream().map(this::toCategoryResponse).toList();
+    }
+
+    @Override
     @Transactional
     public CategoryResponse createCategory(CreateCategoryRequest request) {
         if (categoryRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
@@ -72,7 +77,11 @@ public class CategoryServiceImpl implements CategoryService {
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
+                .slug(category.getSlug())
                 .description(category.getDescription())
+                .imageUrl(category.getImageUrl())
+                .parentId(category.getParent() != null ? category.getParent().getId() : null)
+                .isActive(category.getIsActive())
                 .createdAt(category.getCreatedAt())
                 .build();
     }

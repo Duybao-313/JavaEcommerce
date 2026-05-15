@@ -14,6 +14,8 @@ public interface CatalogService {
 
     List<ProductResponse> getProductsBySellerId(Long sellerId);
 
+    List<ProductResponse> getProductsByCategoryId(Long categoryId);
+
     ProductResponse getProductDetail(Long productId);
 
     ProductResponse createProduct(CreateProductRequest request, Long actorId, boolean isAdmin, MultipartFile imageFile);

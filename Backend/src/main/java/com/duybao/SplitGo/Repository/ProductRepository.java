@@ -14,5 +14,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
 
     Optional<Product> findByIdAndSellerId(Long id, Long sellerId);
+
+    List<Product> findByCategoryIdAndStatusOrderByCreatedAtDesc(Long categoryId, ProductStatus status);
+
+    List<Product> findByCategoryIdInAndStatusOrderByCreatedAtDesc(List<Long> categoryIds, ProductStatus status);
 }
 

@@ -7,6 +7,12 @@ export async function getProducts() {
   return Array.isArray(payload?.data) ? payload.data : [];
 }
 
+export async function getProductsByCategory(categoryId) {
+  const response = await request(`/products?categoryId=${categoryId}`);
+  const payload = await parseApiResponse(response);
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
 export async function getProductDetail(productId) {
   const response = await request(`/products/${productId}`);
   const payload = await parseApiResponse(response);

@@ -7,6 +7,8 @@ import java.util.List;
 public interface CategoryService {
     List<CategoryResponse> getAllCategories();
 
+    List<CategoryResponse> getRootCategories();
+
     CategoryResponse createCategory(CreateCategoryRequest request);
 
     CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest request);
