@@ -6,6 +6,7 @@ import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.RelatedProductSummary;
 import com.duybao.SplitGo.DTO.Response.ecommerce.SellerSummary;
+import com.duybao.SplitGo.DTO.Response.PageResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.ProductOptionRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.ProductVariantRequest;
@@ -34,6 +35,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -62,37 +65,79 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public List<ProductResponse> getPublicProducts() {
-        return productRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE).stream()
+    public PageResponse<ProductResponse> getPublicProducts(int page, int size) {
+        Page<Product> productPage = productRepository
+                .findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE, PageRequest.of(page, size));
+        List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::toProductResponse)
                 .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
     }
 
     @Override
-    public List<ProductResponse> getAllProducts() {
-        return productRepository.findAllByOrderByCreatedAtDesc().stream()
+    public PageResponse<ProductResponse> getAllProducts(int page, int size) {
+        Page<Product> productPage = productRepository
+                .findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+        List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::toProductResponse)
                 .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
     }
 
     @Override
-    public List<ProductResponse> getProductsBySellerId(Long sellerId) {
-        return productRepository.findBySellerIdOrderByCreatedAtDesc(sellerId).stream()
+    public PageResponse<ProductResponse> getProductsBySellerId(Long sellerId, int page, int size) {
+        Page<Product> productPage = productRepository
+                .findBySellerIdOrderByCreatedAtDesc(sellerId, PageRequest.of(page, size));
+        List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::toProductResponse)
                 .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
     }
 
     @Override
-    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
+    public PageResponse<ProductResponse> getProductsByCategoryId(Long categoryId, int page, int size) {
         Set<Long> categoryIds = new HashSet<>();
         collectCategoryIds(categoryId, categoryIds);
         if (categoryIds.isEmpty()) {
-            return Collections.emptyList();
+            return PageResponse.<ProductResponse>builder()
+                    .content(Collections.emptyList())
+                    .page(page)
+                    .size(size)
+                    .totalElements(0)
+                    .totalPages(0)
+                    .build();
         }
-        return productRepository.findByCategoryIdInAndStatusOrderByCreatedAtDesc(
-                new ArrayList<>(categoryIds), ProductStatus.ACTIVE).stream()
+        Page<Product> productPage = productRepository
+                .findByCategoryIdInAndStatusOrderByCreatedAtDesc(
+                        new ArrayList<>(categoryIds), ProductStatus.ACTIVE, PageRequest.of(page, size));
+        List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::toProductResponse)
                 .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
     }
 
     /**

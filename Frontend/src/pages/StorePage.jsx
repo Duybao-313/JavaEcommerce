@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { authFetch } from "../services/authService";
 import { parseApiResponse } from "../services/apiClient";
+import { getProductsBySeller } from "../services/productService";
 import SellerHeaderCard from "../components/seller/SellerHeaderCard";
 
 function formatPrice(value) {
@@ -21,6 +22,12 @@ function StorePage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("products");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const pageSize = 12;
+
   const fetchStoreData = useCallback(async () => {
     if (!sellerId) return;
 
@@ -31,13 +38,13 @@ function StorePage() {
       const sellerResp = await authFetch(`/auth/sellers/${sellerId}`);
       const sellerPayload = await parseApiResponse(sellerResp);
 
-      let productsData = [];
+      let productsData = { content: [], totalPages: 0, totalElements: 0 };
       try {
-        const productsResp = await authFetch(`/products/seller/${sellerId}`);
-        const productsPayload = await parseApiResponse(productsResp);
-        productsData = Array.isArray(productsPayload?.data)
-          ? productsPayload.data
-          : productsPayload?.data?.content || [];
+        productsData = await getProductsBySeller(
+          sellerId,
+          currentPage,
+          pageSize,
+        );
       } catch {
         // Products fetch may fail if not authenticated; that's ok for public view
       }
@@ -45,13 +52,15 @@ function StorePage() {
       if (sellerPayload?.data) {
         setSeller(sellerPayload.data);
       }
-      setProducts(productsData);
+      setProducts(productsData?.content || []);
+      setTotalPages(productsData?.totalPages || 0);
+      setTotalElements(productsData?.totalElements || 0);
     } catch (err) {
       setError(err?.message || "Không thể tải thông tin cửa hàng");
     } finally {
       setLoading(false);
     }
-  }, [sellerId]);
+  }, [sellerId, currentPage]);
 
   useEffect(() => {
     fetchStoreData();
@@ -220,6 +229,66 @@ function StorePage() {
                     )}
                   </Link>
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage === 0}
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ← Trước
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => {
+                  const showPage =
+                    i === 0 ||
+                    i === totalPages - 1 ||
+                    Math.abs(i - currentPage) <= 1;
+                  if (!showPage) {
+                    if (i === 1 || i === totalPages - 2) {
+                      return (
+                        <span key={i} className="px-1 text-xs text-zinc-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setCurrentPage(i)}
+                      className={`min-w-[36px] rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
+                        i === currentPage
+                          ? "border-zinc-900 bg-zinc-900 text-white"
+                          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                  }
+                  className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Sau →
+                </button>
+
+                <span className="ml-3 text-xs text-zinc-500">
+                  {totalElements.toLocaleString("vi-VN")} sản phẩm
+                </span>
               </div>
             )}
           </div>

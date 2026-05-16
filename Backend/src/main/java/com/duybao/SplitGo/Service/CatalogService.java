@@ -2,19 +2,20 @@ package com.duybao.SplitGo.Service;
 
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
+import com.duybao.SplitGo.DTO.Response.PageResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
 import com.duybao.SplitGo.DTO.request.ecommerce.UpdateProductRequest;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface CatalogService {
-    List<ProductResponse> getPublicProducts();
+    PageResponse<ProductResponse> getPublicProducts(int page, int size);
 
-    List<ProductResponse> getAllProducts();
+    PageResponse<ProductResponse> getAllProducts(int page, int size);
 
-    List<ProductResponse> getProductsBySellerId(Long sellerId);
+    PageResponse<ProductResponse> getProductsBySellerId(Long sellerId, int page, int size);
 
-    List<ProductResponse> getProductsByCategoryId(Long categoryId);
+    PageResponse<ProductResponse> getProductsByCategoryId(Long categoryId, int page, int size);
 
     ProductResponse getProductDetail(Long productId);
 

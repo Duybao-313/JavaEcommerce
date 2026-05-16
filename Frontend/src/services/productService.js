@@ -1,16 +1,34 @@
 import { parseApiResponse, request } from "./apiClient";
 import { authFetch } from "./authService";
 
-export async function getProducts() {
-  const response = await request("/products");
+export async function getProducts(page = 0, size = 12) {
+  const response = await request(`/products?page=${page}&size=${size}`);
   const payload = await parseApiResponse(response);
-  return Array.isArray(payload?.data) ? payload.data : [];
+  return (
+    payload?.data || {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+      size,
+    }
+  );
 }
 
-export async function getProductsByCategory(categoryId) {
-  const response = await request(`/products?categoryId=${categoryId}`);
+export async function getProductsByCategory(categoryId, page = 0, size = 12) {
+  const response = await request(
+    `/products?categoryId=${categoryId}&page=${page}&size=${size}`,
+  );
   const payload = await parseApiResponse(response);
-  return Array.isArray(payload?.data) ? payload.data : [];
+  return (
+    payload?.data || {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+      size,
+    }
+  );
 }
 
 export async function getProductDetail(productId) {
@@ -19,10 +37,20 @@ export async function getProductDetail(productId) {
   return payload?.data || null;
 }
 
-export async function getProductsBySeller(sellerId) {
-  const response = await authFetch(`/products/seller/${sellerId}`);
+export async function getProductsBySeller(sellerId, page = 0, size = 12) {
+  const response = await authFetch(
+    `/products/seller/${sellerId}?page=${page}&size=${size}`,
+  );
   const payload = await parseApiResponse(response);
-  return Array.isArray(payload?.data) ? payload.data : [];
+  return (
+    payload?.data || {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+      size,
+    }
+  );
 }
 
 export async function createProductWithImage(payload, imageFile) {

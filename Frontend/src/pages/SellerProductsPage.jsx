@@ -266,7 +266,7 @@ function SellerProductsPage() {
           getCategories().catch(() => []),
         ]);
         if (!cancelled) {
-          setProducts(sellerProducts);
+          setProducts(sellerProducts?.content || sellerProducts || []);
           setCategories(categoryList);
         }
       } catch (error) {

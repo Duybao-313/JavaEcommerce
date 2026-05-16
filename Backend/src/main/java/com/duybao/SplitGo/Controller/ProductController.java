@@ -1,6 +1,7 @@
 package com.duybao.SplitGo.Controller;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
+import com.duybao.SplitGo.DTO.Response.PageResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ProductVariantResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CreateProductRequest;
@@ -48,18 +49,20 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> getProducts(
-            @RequestParam(required = false) Long categoryId) {
-        List<ProductResponse> products;
+    public ApiResponse<PageResponse<ProductResponse>> getProducts(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        PageResponse<ProductResponse> products;
         String message;
         if (categoryId != null) {
-            products = catalogService.getProductsByCategoryId(categoryId);
+            products = catalogService.getProductsByCategoryId(categoryId, page, size);
             message = "Lấy danh sách sản phẩm theo danh mục thành công";
         } else {
-            products = catalogService.getPublicProducts();
+            products = catalogService.getPublicProducts(page, size);
             message = "Lấy danh sách sản phẩm thành công";
         }
-        return ApiResponse.<List<ProductResponse>>builder()
+        return ApiResponse.<PageResponse<ProductResponse>>builder()
                 .success(true)
                 .code(200)
                 .message(message)
@@ -70,29 +73,34 @@ public class ProductController {
 
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<ProductResponse>> getAllProductsForAdmin() {
-        return ApiResponse.<List<ProductResponse>>builder()
+    public ApiResponse<PageResponse<ProductResponse>> getAllProductsForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ApiResponse.<PageResponse<ProductResponse>>builder()
                 .success(true)
                 .code(200)
                 .message("Lấy danh sách toàn bộ sản phẩm thành công")
-                .data(catalogService.getAllProducts())
+                .data(catalogService.getAllProducts(page, size))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
 
     @GetMapping("/seller/{sellerId}")
     @PreAuthorize("hasRole('SELLER')")
-    public ApiResponse<List<ProductResponse>> getProductsBySeller(
-            @AuthenticationPrincipal User user, @PathVariable Long sellerId) {
+    public ApiResponse<PageResponse<ProductResponse>> getProductsBySeller(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long sellerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
         if (!user.getId().equals(sellerId)) {
             throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
         }
 
-        return ApiResponse.<List<ProductResponse>>builder()
+        return ApiResponse.<PageResponse<ProductResponse>>builder()
                 .success(true)
                 .code(200)
                 .message("Lấy danh sách sản phẩm của seller thành công")
-                .data(catalogService.getProductsBySellerId(sellerId))
+                .data(catalogService.getProductsBySellerId(sellerId, page, size))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

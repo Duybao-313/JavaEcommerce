@@ -6,9 +6,12 @@ async function parseListResponse(response) {
   return Array.isArray(payload?.data) ? payload.data : [];
 }
 
-export async function getAdminProducts() {
-  const response = await authFetch("/products/admin");
-  return parseListResponse(response);
+export async function getAdminProducts(page = 0, size = 12) {
+  const response = await authFetch(`/products/admin?page=${page}&size=${size}`);
+  const payload = await parseApiResponse(response);
+  return (
+    payload?.data || { content: [], totalElements: 0, totalPages: 0, page: 0 }
+  );
 }
 
 export async function createAdminProduct(formData) {

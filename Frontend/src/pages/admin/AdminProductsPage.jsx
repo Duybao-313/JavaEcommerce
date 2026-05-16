@@ -11,12 +11,7 @@ import {
   updateAdminProduct,
   updateProductStatus,
 } from "../../services/adminService";
-import {
-  formatPrice,
-  normalizeText,
-  paginate,
-  formatDateTime,
-} from "./adminHelpers";
+import { formatPrice, normalizeText, formatDateTime } from "./adminHelpers";
 
 const pageSize = 10;
 
@@ -83,7 +78,9 @@ function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(defaultForm);
   const [variants, setVariants] = useState([]);
@@ -93,18 +90,20 @@ function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState("basic");
   const [variantExpanded, setVariantExpanded] = useState(null);
 
-  // --- Data loading ---
+  // --- Data loading (server-side pagination) ---
   useEffect(() => {
     let isMounted = true;
     (async () => {
       setLoading(true);
       try {
-        const [data, cats] = await Promise.all([
-          getAdminProducts(),
+        const [pageData, cats] = await Promise.all([
+          getAdminProducts(page, pageSize),
           getCategories().catch(() => []),
         ]);
         if (isMounted) {
-          setProducts(data || []);
+          setProducts(pageData?.content || []);
+          setTotalElements(pageData?.totalElements || 0);
+          setTotalPages(pageData?.totalPages || 0);
           setCategories(cats || []);
         }
       } catch (err) {
@@ -120,32 +119,24 @@ function AdminProductsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page]);
 
-  // --- Filtering ---
+  // --- Client-side filtering on current page ---
   const filtered = useMemo(() => {
     const keyword = normalizeText(search);
     return products.filter((item) => {
       const matchKeyword =
         !keyword ||
         normalizeText(item?.name || "").includes(keyword) ||
-        normalizeText(item?.sellerUsername || "").includes(keyword) ||
+        normalizeText(item?.seller?.storeName || "").includes(keyword) ||
         normalizeText(item?.sku || "").includes(keyword) ||
-        normalizeText(item?.categoryName || "").includes(keyword);
+        normalizeText(item?.category?.name || "").includes(keyword);
       const matchStatus = !statusFilter || item?.status === statusFilter;
       return matchKeyword && matchStatus;
     });
   }, [products, search, statusFilter]);
 
-  const pageItems = useMemo(
-    () => paginate(filtered, page, pageSize),
-    [filtered, page],
-  );
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
-    if (page > maxPage) setPage(maxPage);
-  }, [filtered.length, page]);
+  const pageItems = filtered;
 
   // --- Derive options from variants ---
   const deriveOptionsFromVariants = useCallback((variantList) => {
@@ -191,9 +182,9 @@ function AdminProductsPage() {
       isFeatured: product?.isFeatured || false,
       status: product?.status || "ACTIVE",
       imageUrl: product?.imageUrl || "",
-      categoryId: product?.categoryId ? String(product.categoryId) : "",
+      categoryId: product?.category?.id ? String(product.category.id) : "",
       categoryName: "",
-      ownerId: product?.sellerId ? String(product.sellerId) : "",
+      ownerId: product?.seller?.id ? String(product.seller.id) : "",
     });
     const existingVariants = (product?.variants || []).map((v) => ({
       id: v.id || null,
@@ -489,9 +480,9 @@ function AdminProductsPage() {
 
   // Safe seller display name
   function sellerDisplay(product) {
-    const name = product?.sellerUsername;
+    const name = product?.seller?.storeName;
     if (!name || name === "undefined" || name === "null") {
-      return product?.sellerId ? `#${product.sellerId}` : "—";
+      return product?.seller?.id ? `#${product.seller.id}` : "—";
     }
     return name;
   }
@@ -598,7 +589,7 @@ function AdminProductsPage() {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Sản phẩm</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {filtered.length} sản phẩm
+            {totalElements} sản phẩm (trang {page + 1} / {totalPages || 1})
           </p>
         </div>
         <button
@@ -645,7 +636,6 @@ function AdminProductsPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(1);
             }}
             className="w-full rounded-lg border border-zinc-300 py-2.5 pl-9 pr-4 text-sm focus:border-zinc-900 focus:outline-none transition-colors"
           />
@@ -654,7 +644,6 @@ function AdminProductsPage() {
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);
-            setPage(1);
           }}
           className="rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm focus:border-zinc-900 focus:outline-none transition-colors md:w-44"
         >
@@ -1332,177 +1321,167 @@ function AdminProductsPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <table className="hidden w-full text-left text-sm md:table">
-              <thead>
-                <tr className="border-b border-zinc-200 bg-zinc-50/80">
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Ảnh
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Tên / SKU
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Giá
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Kho
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Trạng thái
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    NB
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Seller
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    DM
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
-                    Xem
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
-                    Bán
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
-                    Ngày tạo
-                  </th>
-                  <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right">
-                    Hành động
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="border-b border-zinc-100 hover:bg-zinc-50/70 transition-colors group"
-                  >
-                    <td className="px-3 py-2.5">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="h-9 w-9 rounded-md border border-zinc-200 object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-300">
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="max-w-[180px]">
-                        <Link
-                          to={`/products/${product.id}?adminPreview=1`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-zinc-900 truncate hover:text-blue-700 hover:underline transition-colors"
-                          title="Xem như người mua (tab mới)"
-                        >
-                          {product.isFeatured && (
-                            <span
-                              className="mr-1 text-amber-500"
-                              title="Nổi bật"
+            <div className="hidden md:block overflow-x-auto -mx-2">
+              <table className="w-full text-left text-sm min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50/80">
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 w-12">
+                      Ảnh
+                    </th>
+                    <th className="sticky top-0 px-3 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                      Tên / SKU
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 w-[100px]">
+                      Giá
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-center w-14">
+                      Kho
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 w-[110px]">
+                      Trạng thái
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 max-w-[100px]">
+                      Seller
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 max-w-[100px]">
+                      Danh mục
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-center w-[70px]">
+                      Xem / Bán
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 w-[100px]">
+                      Ngày tạo
+                    </th>
+                    <th className="sticky top-0 px-2 py-3 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500 text-right w-[90px]">
+                      Hành động
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="border-b border-zinc-100 hover:bg-zinc-50/70 transition-colors group"
+                    >
+                      <td className="px-3 py-2.5">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="h-9 w-9 rounded-md border border-zinc-200 object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-300">
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={1.5}
                             >
-                              ⭐
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <div className="min-w-0">
+                          <Link
+                            to={`/products/${product.id}?adminPreview=1`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-zinc-900 line-clamp-2 hover:text-blue-700 hover:underline transition-colors text-sm"
+                            title="Xem như người mua (tab mới)"
+                          >
+                            {product.isFeatured && (
+                              <span
+                                className="mr-1 text-amber-500"
+                                title="Nổi bật"
+                              >
+                                ⭐
+                              </span>
+                            )}
+                            {product.name}
+                          </Link>
+                          {product.sku && (
+                            <p className="text-[11px] text-zinc-400 truncate font-mono">
+                              {product.sku}
+                            </p>
+                          )}
+                          {product.variants?.length > 0 && (
+                            <span className="inline-block mt-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                              {product.variants.length} biến thể
                             </span>
                           )}
-                          {product.name}
-                        </Link>
-                        {product.sku && (
-                          <p className="text-[11px] text-zinc-400 truncate font-mono">
-                            {product.sku}
-                          </p>
-                        )}
-                        {product.variants?.length > 0 && (
-                          <span className="inline-block mt-0.5 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                            {product.variants.length} biến thể
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <PriceCell
-                        price={product.price}
-                        salePrice={product.salePrice}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span
-                        className={`font-semibold ${product.stock === 0 ? "text-red-600" : "text-zinc-900"}`}
-                      >
-                        {product.stock}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge
-                        status={product.status}
-                        stock={product.stock}
-                        product={product}
-                        onToggle={handleStatusToggle}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {product.isFeatured ? (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
-                          NB
+                        </div>
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <PriceCell
+                          price={product.price}
+                          salePrice={product.salePrice}
+                        />
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        <span
+                          className={`font-semibold text-sm ${product.stock === 0 ? "text-red-600" : "text-zinc-900"}`}
+                        >
+                          {product.stock}
                         </span>
-                      ) : (
-                        <span className="text-zinc-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 text-zinc-600 text-xs max-w-[100px] truncate">
-                      {sellerDisplay(product)}
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-zinc-500 max-w-[100px] truncate">
-                      {product.categoryName || "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-xs text-zinc-500 tabular-nums">
-                      {product.viewCount?.toLocaleString() || "0"}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-xs text-zinc-500 tabular-nums">
-                      {product.soldCount?.toLocaleString() || "0"}
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-zinc-400 whitespace-nowrap">
-                      {formatDateTime(product.createdAt)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => startEdit(product)}
-                          className="rounded-md px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
-                          aria-label="Sửa sản phẩm"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(product)}
-                          className="rounded-md px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                          aria-label="Xóa sản phẩm"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <StatusBadge
+                          status={product.status}
+                          stock={product.stock}
+                          product={product}
+                          onToggle={handleStatusToggle}
+                        />
+                      </td>
+                      <td className="px-2 py-2.5 text-zinc-600 text-xs max-w-[100px] truncate">
+                        {sellerDisplay(product)}
+                      </td>
+                      <td className="px-2 py-2.5 text-xs text-zinc-500 max-w-[100px] truncate">
+                        {product.category?.name || "—"}
+                      </td>
+                      <td className="px-2 py-2.5 text-center text-xs text-zinc-500 tabular-nums">
+                        <span title="Lượt xem">
+                          👁 {product.viewCount?.toLocaleString() || "0"}
+                        </span>
+                        <span className="mx-1 text-zinc-300">|</span>
+                        <span title="Đã bán">
+                          💰 {product.soldCount?.toLocaleString() || "0"}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-xs text-zinc-400 whitespace-nowrap">
+                        {formatDateTime(product.createdAt)}
+                      </td>
+                      <td className="px-2 py-2.5 text-right">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => startEdit(product)}
+                            className="rounded-md px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                            aria-label="Sửa sản phẩm"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(product)}
+                            className="rounded-md px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                            aria-label="Xóa sản phẩm"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Mobile card layout */}
             <div className="md:hidden divide-y divide-zinc-100">
@@ -1579,7 +1558,7 @@ function AdminProductsPage() {
                       </strong>
                     </span>
                     <span>{sellerDisplay(product)}</span>
-                    <span>{product.categoryName || "—"}</span>
+                    <span>{product.category?.name || "—"}</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-zinc-400">
                     <span>👁 {product.viewCount?.toLocaleString() || "0"}</span>
@@ -1608,12 +1587,12 @@ function AdminProductsPage() {
       </div>
 
       {/* ═══════════ PAGINATION ═══════════ */}
-      {!loading && pageItems.length > 0 && (
+      {!loading && totalElements > 0 && (
         <PaginationBar
-          page={page}
+          page={page + 1}
           pageSize={pageSize}
-          totalItems={filtered.length}
-          onPageChange={setPage}
+          totalItems={totalElements}
+          onPageChange={(p) => setPage(p - 1)}
         />
       )}
 

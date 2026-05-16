@@ -64,6 +64,12 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
   const [topSellingIndex, setTopSellingIndex] = useState(0);
   const [topViewedIndex, setTopViewedIndex] = useState(0);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const pageSize = 12;
+
   const session = getAuthSession();
 
   // Sync preselected category from parent (e.g. CategoryPage)
@@ -128,17 +134,25 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       try {
         const hasPreselected =
           preselectedCategory != null && preselectedCategory !== "all";
-        const items = hasPreselected
-          ? await getProductsByCategory(preselectedCategory)
-          : await getProducts();
+        const pageData = hasPreselected
+          ? await getProductsByCategory(
+              preselectedCategory,
+              currentPage,
+              pageSize,
+            )
+          : await getProducts(currentPage, pageSize);
 
         if (!cancelled) {
-          setProducts(items);
+          setProducts(pageData?.content || []);
+          setTotalPages(pageData?.totalPages || 0);
+          setTotalElements(pageData?.totalElements || 0);
         }
       } catch (err) {
         if (!cancelled) {
           setError(err?.message || "Đã có lỗi khi tải sản phẩm");
           setProducts([]);
+          setTotalPages(0);
+          setTotalElements(0);
         }
       } finally {
         if (!cancelled) {
@@ -152,7 +166,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [preselectedCategory]);
+  }, [preselectedCategory, currentPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -707,6 +721,66 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
             </motion.article>
           ))}
         </motion.div>
+      )}
+
+      {/* Pagination */}
+      {!loading && !error && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            disabled={currentPage === 0}
+            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            ← Trước
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => {
+            // Show first, last, current, and neighbors
+            const showPage =
+              i === 0 || i === totalPages - 1 || Math.abs(i - currentPage) <= 1;
+            if (!showPage) {
+              // Show ellipsis only once between ranges
+              if (i === 1 || i === totalPages - 2) {
+                return (
+                  <span key={i} className="px-1 text-xs text-zinc-400">
+                    ...
+                  </span>
+                );
+              }
+              return null;
+            }
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrentPage(i)}
+                className={`min-w-[36px] rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
+                  i === currentPage
+                    ? "border-zinc-900 bg-zinc-900 text-white"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+                }`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            disabled={currentPage >= totalPages - 1}
+            onClick={() =>
+              setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+            }
+            className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Sau →
+          </button>
+
+          <span className="ml-3 text-xs text-zinc-500">
+            {totalElements.toLocaleString("vi-VN")} sản phẩm
+          </span>
+        </div>
       )}
     </section>
   );

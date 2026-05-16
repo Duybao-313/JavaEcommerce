@@ -39,16 +39,16 @@ public class ApplicationInitConfig {
             ProductRepository productRepository) {
 
         return args -> {
-//            if (userRepository.findByUsername("admin").isEmpty()) {
-//
-//                User user = User.builder()
-//                        .username("admin")
-//                        .email("admin@admin.com")
-//                        .password(passwordEncoder.encode("admin"))
-//                        .role(Role.ROLE_ADMIN)
-//                        .build();
-//                userRepository.save(user);
-//            }
+            if (userRepository.findByUsername("admin0").isEmpty()) {
+
+                User user = User.builder()
+                        .username("admin0")
+                        .email("admin@admin.com")
+                        .password(passwordEncoder.encode("admin"))
+                        .role(Role.ROLE_ADMIN)
+                        .build();
+                userRepository.save(user);
+            }
 //            if (userRepository.findByUsername("user").isEmpty()) {
 //
 //                User user = User.builder()
@@ -59,16 +59,16 @@ public class ApplicationInitConfig {
 //                        .build();
 //                userRepository.save(user);
 //            }
-//            if (userRepository.findByUsername("seller").isEmpty()) {
-//
-//                User user = User.builder()
-//                        .username("seller")
-//                        .email("seller@seller.com")
-//                        .password(passwordEncoder.encode("seller"))
-//                        .role(Role.ROLE_SELLER)
-//                        .build();
-//                userRepository.save(user);
-//            }
+            if (userRepository.findByUsername("seller").isEmpty()) {
+
+                User user = User.builder()
+                        .username("seller")
+                        .email("seller@seller.com")
+                        .password(passwordEncoder.encode("seller"))
+                        .role(Role.ROLE_SELLER)
+                        .build();
+                userRepository.save(user);
+            }
 
 //            User seller = userRepository.findByUsername("seller")
 //                    .orElseThrow(() -> new IllegalStateException("Seller account must exist before seeding products"));
