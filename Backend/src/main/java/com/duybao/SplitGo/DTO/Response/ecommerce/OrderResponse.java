@@ -15,6 +15,8 @@ public class OrderResponse {
     private String orderCode;
     private Long buyerId;
     private String buyerUsername;
+    private Long sellerId;
+    private SellerSummary seller;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
     private String shippingAddress;
@@ -31,5 +33,13 @@ public class OrderResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
+
+    @Data
+    @Builder
+    public static class SellerSummary {
+        private Long id;
+        private String username;
+        private String storeName;
+    }
 }
 

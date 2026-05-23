@@ -2,6 +2,7 @@ package com.duybao.SplitGo.Controller;
 
 import com.duybao.SplitGo.DTO.Response.ApiResponse;
 import com.duybao.SplitGo.DTO.Response.User.UserDTO;
+import com.duybao.SplitGo.DTO.Response.ecommerce.OrderResponse;
 import com.duybao.SplitGo.DTO.request.UpdateUserRequest;
 import com.duybao.SplitGo.DTO.request.admin.AssignRoleRequest;
 import com.duybao.SplitGo.DTO.request.admin.StoreStatusRequest;
@@ -9,6 +10,7 @@ import com.duybao.SplitGo.DTO.request.admin.ToggleActiveRequest;
 import com.duybao.SplitGo.DTO.request.admin.VerifySellerRequest;
 import com.duybao.SplitGo.Enum.Role;
 import com.duybao.SplitGo.Service.AdminService;
+import com.duybao.SplitGo.Service.OrderService;
 import jakarta.validation.Valid;
 
 import java.time.LocalDateTime;
@@ -37,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     private final AdminService adminService;
+    private final OrderService orderService;
 
     // ==================== User Listing ====================
 
@@ -176,6 +179,19 @@ public class AdminController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         adminService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ==================== Order Detail (Admin) ====================
+
+    @GetMapping("/orders/{orderId}")
+    public ApiResponse<OrderResponse> getOrderDetailForAdmin(@PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy chi tiết đơn hàng thành công")
+                .data(orderService.getOrderByIdAdmin(orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }
 

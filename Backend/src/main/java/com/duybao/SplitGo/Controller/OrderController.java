@@ -53,15 +53,19 @@ public class OrderController {
     }
 
     @GetMapping("/orders/{orderId}")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN') or hasRole('SELLER')")
     public ApiResponse<OrderResponse> getOrderById(
             @AuthenticationPrincipal User user,
             @PathVariable Long orderId) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        OrderResponse data = isAdmin
+                ? orderService.getOrderByIdAdmin(orderId)
+                : orderService.getOrderById(user.getId(), orderId);
         return ApiResponse.<OrderResponse>builder()
                 .success(true)
                 .code(200)
                 .message("Lấy chi tiết đơn hàng thành công")
-                .data(orderService.getOrderById(user.getId(), orderId))
+                .data(data)
                 .timestamp(LocalDateTime.now())
                 .build();
     }

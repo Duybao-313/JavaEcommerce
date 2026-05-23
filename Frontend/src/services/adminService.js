@@ -50,9 +50,34 @@ export async function deleteAdminProduct(productId) {
   await parseApiResponse(response);
 }
 
-export async function getAdminOrders() {
-  const response = await authFetch("/orders");
-  return parseListResponse(response);
+export async function getAdminOrders(params = {}) {
+  const query = new URLSearchParams();
+  if (params.status && params.status !== "ALL")
+    query.set("status", params.status);
+  if (params.sellerId) query.set("sellerId", String(params.sellerId));
+  if (params.q) query.set("q", params.q);
+  if (params.page !== undefined && params.page !== null)
+    query.set("page", String(params.page));
+  if (params.size) query.set("size", String(params.size));
+  if (params.sort) query.set("sort", params.sort);
+
+  const qs = query.toString();
+  const response = await authFetch(`/orders${qs ? `?${qs}` : ""}`);
+  const payload = await parseApiResponse(response);
+  // Support both paginated and non-paginated responses
+  if (
+    payload?.data &&
+    typeof payload.data === "object" &&
+    "content" in payload.data
+  ) {
+    return payload.data;
+  }
+  return {
+    content: Array.isArray(payload?.data) ? payload.data : [],
+    totalElements: Array.isArray(payload?.data) ? payload.data.length : 0,
+    totalPages: 1,
+    page: params.page || 0,
+  };
 }
 
 export async function updateOrderStatus(orderId, status) {
@@ -61,6 +86,22 @@ export async function updateOrderStatus(orderId, status) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function bulkUpdateOrderStatus(orderIds, status) {
+  const response = await authFetch("/orders/bulk/status", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderIds, status }),
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
+export async function getOrderDetail(orderId) {
+  const response = await authFetch(`/admin/orders/${orderId}`);
   const payload = await parseApiResponse(response);
   return payload?.data || null;
 }

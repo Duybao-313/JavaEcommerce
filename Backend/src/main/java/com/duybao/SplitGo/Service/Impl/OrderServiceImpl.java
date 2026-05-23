@@ -175,6 +175,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public OrderResponse getOrderByIdAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        return toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
     public List<OrderResponse> getSellerOrders(Long sellerId) {
         return orderRepository.findOrdersBySellerId(sellerId).stream()
                 .map(this::toOrderResponse)
@@ -387,11 +395,22 @@ public class OrderServiceImpl implements OrderService {
                     .add(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO);
         }
 
+        OrderResponse.SellerSummary sellerSummary = null;
+        if (order.getSeller() != null) {
+            sellerSummary = OrderResponse.SellerSummary.builder()
+                    .id(order.getSeller().getId())
+                    .username(order.getSeller().getUsername())
+                    .storeName(order.getSeller().getStoreName())
+                    .build();
+        }
+
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
                 .buyerId(order.getBuyer().getId())
                 .buyerUsername(order.getBuyer().getUsername())
+                .sellerId(order.getSeller() != null ? order.getSeller().getId() : null)
+                .seller(sellerSummary)
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
                 .shippingAddress(order.getShippingAddress())

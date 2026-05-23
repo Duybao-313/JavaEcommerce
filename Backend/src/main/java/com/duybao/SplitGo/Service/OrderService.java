@@ -13,6 +13,8 @@ public interface OrderService {
 
     OrderResponse getOrderById(Long buyerId, Long orderId);
 
+    OrderResponse getOrderByIdAdmin(Long orderId);
+
     List<OrderResponse> getSellerOrders(Long sellerId);
 
     List<OrderResponse> getAllOrders();

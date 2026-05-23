@@ -9,6 +9,7 @@ const navItems = [
   { to: "/admin/reviews", label: "Đánh giá" },
   { to: "/admin/shippings", label: "Vận chuyển" },
   { to: "/admin/users", label: "Người dùng" },
+  { to: "/admin/profile", label: "Tài khoản" },
 ];
 
 function AdminLayout() {

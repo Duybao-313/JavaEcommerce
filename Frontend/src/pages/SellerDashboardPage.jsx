@@ -22,7 +22,7 @@ const navItems = [
   },
   {
     label: "Hồ sơ cửa hàng",
-    to: "/profile",
+    to: "/seller/profile",
   },
   {
     label: "Sản phẩm của tôi",
@@ -101,7 +101,7 @@ function SellerDashboardHome() {
             </p>
           </Link>
           <Link
-            to="/profile"
+            to="/seller/profile"
             className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 hover:border-zinc-400 transition-colors"
           >
             <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">

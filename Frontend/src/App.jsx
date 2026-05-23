@@ -18,6 +18,7 @@ import CategoryPage from "./pages/CategoryPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import WishlistPage from "./pages/WishlistPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
+import SellerProfilePage from "./pages/SellerProfilePage";
 import SellerLayout, { SellerDashboardHome } from "./pages/SellerDashboardPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
@@ -25,6 +26,7 @@ import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 import AdminShippingsPage from "./pages/admin/AdminShippingsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminProfilePage from "./pages/admin/AdminProfilePage";
 import { getAuthSession, hasRole } from "./services/sessionService";
 import "./App.css";
 
@@ -87,6 +89,7 @@ function App() {
           <Route path="orders" element={<SellerOrdersPage />} />
           <Route path="products" element={<SellerProductsPage />} />
           <Route path="products/create" element={<CreateProductPage />} />
+          <Route path="profile" element={<SellerProfilePage />} />
         </Route>
         <Route
           path="/products/create"
@@ -106,6 +109,7 @@ function App() {
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="shippings" element={<AdminShippingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
         </Route>
       </Route>
 
