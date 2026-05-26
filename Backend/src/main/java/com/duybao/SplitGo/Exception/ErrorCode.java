@@ -69,6 +69,7 @@ public enum ErrorCode {
     STORE_ADDRESS_REQUIRED(2020, "Vui lòng nhập địa chỉ cửa hàng", HttpStatus.BAD_REQUEST),
     STORE_NAME_TOO_LONG(2021, "Tên cửa hàng quá dài (tối đa 255 ký tự)", HttpStatus.BAD_REQUEST),
     STORE_ADDRESS_TOO_LONG(2022, "Địa chỉ cửa hàng quá dài (tối đa 500 ký tự)", HttpStatus.BAD_REQUEST),
+    STATUS_REASON_REQUIRED(2023, "Vui lòng cung cấp lý do từ chối / yêu cầu chỉnh sửa (tối thiểu 10 ký tự)", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
 
     private final int code;

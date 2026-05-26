@@ -26,6 +26,9 @@ public class ProductResponse {
     private Long viewCount;
     private Long soldCount;
     private String status;
+    private String adminNote;
+    private Long statusUpdatedBy;
+    private LocalDateTime statusUpdatedAt;
     private CategorySummary category;
     private SellerSummary seller;
     private List<ProductOptionResponse> options;

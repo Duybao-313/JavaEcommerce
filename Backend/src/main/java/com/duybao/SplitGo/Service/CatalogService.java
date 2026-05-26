@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface CatalogService {
     PageResponse<ProductResponse> getPublicProducts(int page, int size);
 
-    PageResponse<ProductResponse> getAllProducts(int page, int size);
+    PageResponse<ProductResponse> getAllProducts(int page, int size, String statusFilter);
 
     PageResponse<ProductResponse> getProductsBySellerId(Long sellerId, int page, int size);
 
@@ -27,7 +27,7 @@ public interface CatalogService {
 
     void deleteProduct(Long productId, Long actorId, boolean isAdmin);
 
-    ProductResponse updateProductStatus(Long productId, String status, Long actorId, boolean isAdmin);
+    ProductResponse updateProductStatus(Long productId, String status, String reason, Long actorId, boolean isAdmin);
 
     List<ProductVariantResponse> getVariantsByProductId(Long productId);
 }

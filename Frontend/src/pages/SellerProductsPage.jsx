@@ -9,6 +9,8 @@ import {
 } from "../services/productService";
 import { getProductReviews } from "../services/reviewService";
 import { getAuthSession } from "../services/sessionService";
+import { getReviewStatusInfo } from "./admin/adminHelpers";
+import "../components/seller/products-seller.css";
 
 // ─── Helpers ────────────────────────────────────────────────────────
 function formatPrice(value) {
@@ -1102,6 +1104,11 @@ function SellerProductsPage() {
               const isLowStock =
                 Number(product?.stock || 0) > 0 &&
                 Number(product?.stock || 0) <= 10;
+              const reviewStatus = getReviewStatusInfo(product.status);
+              const showAdminNote =
+                product.adminNote &&
+                (product.status === "REJECTED" ||
+                  product.status === "PENDING_CHANGES");
 
               return (
                 <article
@@ -1152,6 +1159,15 @@ function SellerProductsPage() {
                             >
                               {isHidden ? <IconEyeOff /> : <IconEye />}
                               {isHidden ? "Đã ẩn" : "Đang hiển thị"}
+                            </span>
+                            {/* Review status badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${reviewStatus.cls}`}
+                            >
+                              <span aria-hidden="true">
+                                {reviewStatus.icon}
+                              </span>
+                              {reviewStatus.label}
                             </span>
                             {isLowStock && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-orange-300 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-orange-700">
@@ -1204,6 +1220,18 @@ function SellerProductsPage() {
                           <p className="text-sm text-zinc-600 line-clamp-2 mb-3">
                             {product.description || "—"}
                           </p>
+
+                          {/* Admin note for rejected / changes requested */}
+                          {showAdminNote && (
+                            <div className="product-card-status__reason">
+                              <div className="product-card-status__reason-label">
+                                {product.status === "REJECTED"
+                                  ? "Lý do từ chối:"
+                                  : "Yêu cầu từ Admin:"}
+                              </div>
+                              {product.adminNote}
+                            </div>
+                          )}
 
                           <div className="grid gap-x-4 gap-y-1.5 text-xs sm:grid-cols-2 lg:grid-cols-4">
                             <p>

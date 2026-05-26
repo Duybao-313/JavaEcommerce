@@ -75,12 +75,13 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<PageResponse<ProductResponse>> getAllProductsForAdmin(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size) {
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String status) {
         return ApiResponse.<PageResponse<ProductResponse>>builder()
                 .success(true)
                 .code(200)
                 .message("Lấy danh sách toàn bộ sản phẩm thành công")
-                .data(catalogService.getAllProducts(page, size))
+                .data(catalogService.getAllProducts(page, size, status))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -217,7 +218,7 @@ public class ProductController {
                 .success(true)
                 .code(200)
                 .message("Cập nhật trạng thái sản phẩm thành công")
-                .data(catalogService.updateProductStatus(id, request.getStatus(), user.getId(), isAdmin))
+                .data(catalogService.updateProductStatus(id, request.getStatus(), request.getReason(), user.getId(), isAdmin))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

@@ -1,6 +1,7 @@
+
 spring:
   application:
-    name: SplitGo
+   name: SplitGo
   datasource:
     url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/ecommerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC }
     username: ${DBMS_USERNAME:root}
@@ -11,11 +12,8 @@ spring:
       ddl-auto: update
     show-sql: true
 
+
 jwt:
   secret: "q9v8G3s2r4Yt1KfVb6s9X2mQp7L0uH8nZ5yR0wVxC1aB7dE4fG6hJkL9mN0oPqR2sT3uVwXyZ+AbCdEfGhIjKlMBaoBaoBao"
   token-duration: 6000
   refresh-duration: 600000
-
-google:
-  maps:
-    api-key: ${GOOGLE_MAPS_API_KEY:AIzaSyDr4lAb51Thn7_Cc1V5ePAL3ey1pAa2mdc}

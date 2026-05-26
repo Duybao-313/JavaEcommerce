@@ -81,9 +81,22 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public PageResponse<ProductResponse> getAllProducts(int page, int size) {
-        Page<Product> productPage = productRepository
-                .findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+    public PageResponse<ProductResponse> getAllProducts(int page, int size, String statusFilter) {
+        Page<Product> productPage;
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            try {
+                ProductStatus filterStatus = ProductStatus.valueOf(statusFilter.toUpperCase());
+                productPage = productRepository
+                        .findByStatusOrderByCreatedAtDesc(filterStatus, PageRequest.of(page, size));
+            } catch (IllegalArgumentException e) {
+                // Invalid status value → fallback to all
+                productPage = productRepository
+                        .findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+            }
+        } else {
+            productPage = productRepository
+                    .findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+        }
         List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::toProductResponse)
                 .toList();
@@ -214,7 +227,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
                 .stock(productStock)
                 .imageUrl(imageUrl)
-                .status(ProductStatus.ACTIVE)
+                .status(isAdmin ? ProductStatus.ACTIVE : ProductStatus.PENDING_REVIEW)
                 .seller(seller)
                 .category(resolveCategory(request.getCategoryId(), request.getCategoryName()))
                 .build();
@@ -270,9 +283,8 @@ public class CatalogServiceImpl implements CatalogService {
         if (request.getStock() != null) {
             product.setStock(request.getStock());
         }
-        if (request.getStatus() != null) {
-            product.setStatus(request.getStatus());
-        }
+        product.setStatus(ProductStatus.PENDING_REVIEW);
+
         if (request.getCategoryId() != null) {
             Category category = categoryRepository
                     .findById(request.getCategoryId())
@@ -337,11 +349,23 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     @Transactional
-    public ProductResponse updateProductStatus(Long productId, String status, Long actorId, boolean isAdmin) {
+    public ProductResponse updateProductStatus(Long productId, String status, String reason, Long actorId, boolean isAdmin) {
         Product product = resolveMutableProduct(productId, actorId, isAdmin);
         try {
             ProductStatus newStatus = ProductStatus.valueOf(status.toUpperCase());
+
+            // Validate: reason is required when rejecting or requesting changes
+            if ((newStatus == ProductStatus.REJECTED || newStatus == ProductStatus.PENDING_CHANGES)
+                    && (reason == null || reason.trim().length() < 10)) {
+                throw new AppException(ErrorCode.STATUS_REASON_REQUIRED);
+            }
+
             product.setStatus(newStatus);
+            if (reason != null && !reason.isBlank()) {
+                product.setAdminNote(reason.trim());
+            }
+            product.setStatusUpdatedBy(actorId);
+            product.setStatusUpdatedAt(java.time.LocalDateTime.now());
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
@@ -517,6 +541,9 @@ public class CatalogServiceImpl implements CatalogService {
                 .viewCount(product.getViewCount() == null ? 0L : product.getViewCount())
                 .soldCount(product.getSoldCount() == null ? 0L : product.getSoldCount())
                 .status(product.getStatus() != null ? product.getStatus().name() : null)
+                .adminNote(product.getAdminNote())
+                .statusUpdatedBy(product.getStatusUpdatedBy())
+                .statusUpdatedAt(product.getStatusUpdatedAt())
                 .category(categorySummary)
                 .seller(sellerSummary)
                 .createdAt(product.getCreatedAt())

@@ -46,3 +46,47 @@ export function resolveImageUrl(url) {
 export function getItemImageUrl(item) {
   return item?.productImageUrl || item?.imageUrl || item?.productImage || null;
 }
+
+// ─── Product review status map ─────────────────────────────────────
+export const REVIEW_STATUS_MAP = {
+  PENDING_REVIEW: {
+    label: "Chờ duyệt",
+    cls: "bg-amber-100 text-amber-800 border-amber-200",
+    icon: "⏳",
+  },
+  APPROVED: {
+    label: "Đã duyệt",
+    cls: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    icon: "✓",
+  },
+  ACTIVE: {
+    label: "Đã duyệt",
+    cls: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    icon: "✓",
+  },
+  REJECTED: {
+    label: "Từ chối",
+    cls: "bg-red-100 text-red-800 border-red-200",
+    icon: "✕",
+  },
+  PENDING_CHANGES: {
+    label: "Cần chỉnh sửa",
+    cls: "bg-orange-100 text-orange-800 border-orange-200",
+    icon: "↩",
+  },
+  INACTIVE: {
+    label: "Đã khóa",
+    cls: "bg-zinc-100 text-zinc-600 border-zinc-200",
+    icon: "⊘",
+  },
+};
+
+export function getReviewStatusInfo(status) {
+  return (
+    REVIEW_STATUS_MAP[status] || {
+      label: status || "Không rõ",
+      cls: "bg-zinc-100 text-zinc-600 border-zinc-200",
+      icon: "?",
+    }
+  );
+}

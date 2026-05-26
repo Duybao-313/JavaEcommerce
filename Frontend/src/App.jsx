@@ -27,6 +27,7 @@ import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 import AdminShippingsPage from "./pages/admin/AdminShippingsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminProfilePage from "./pages/admin/AdminProfilePage";
+import AdminProductReviewPage from "./pages/admin/AdminProductReviewPage";
 import { getAuthSession, hasRole } from "./services/sessionService";
 import "./App.css";
 
@@ -105,6 +106,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/products" replace />} />
           <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/review" element={<AdminProductReviewPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="shippings" element={<AdminShippingsPage />} />

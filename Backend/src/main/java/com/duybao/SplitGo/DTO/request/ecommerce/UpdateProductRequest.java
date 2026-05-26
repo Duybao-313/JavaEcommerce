@@ -28,7 +28,6 @@ public class UpdateProductRequest {
     @Min(0)
     private Integer stock;
 
-    private ProductStatus status;
     private Long categoryId;
 
     private List<ProductOptionRequest> options;

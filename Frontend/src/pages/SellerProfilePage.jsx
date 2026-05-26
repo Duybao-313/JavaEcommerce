@@ -11,30 +11,14 @@ import { uploadImage } from "../services/uploadService";
 /* ─── Constants ─── */
 
 const STATUS_BADGE = {
-  ACTIVE: {
-    label: "Đang hoạt động",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-  SUSPENDED: {
-    label: "Tạm khóa",
-    cls: "bg-red-50 text-red-700 border-red-200",
-  },
-  APPROVED: {
-    label: "Đã xác thực",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-  PENDING: {
-    label: "Chờ xác thực",
-    cls: "bg-amber-50 text-amber-700 border-amber-200",
-  },
+  ACTIVE: { label: "Đang hoạt động", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  SUSPENDED: { label: "Tạm khóa", cls: "bg-red-50 text-red-700 border-red-200" },
+  APPROVED: { label: "Đã xác thực", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  PENDING: { label: "Chờ xác thực", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   REJECTED: { label: "Từ chối", cls: "bg-red-50 text-red-700 border-red-200" },
 };
 
-const VERIFIED_LABEL = {
-  APPROVED: "Đã xác thực",
-  PENDING: "Chờ xác thực",
-  REJECTED: "Từ chối",
-};
+const VERIFIED_LABEL = { APPROVED: "Đã xác thực", PENDING: "Chờ xác thực", REJECTED: "Từ chối" };
 const STORE_LABEL = { ACTIVE: "Đang hoạt động", SUSPENDED: "Tạm khóa" };
 
 /* ─── Helpers ─── */
@@ -157,16 +141,7 @@ function SellerProfilePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {};
-    const textFields = [
-      "fullName",
-      "email",
-      "phone",
-      "address",
-      "storeName",
-      "storeAddress",
-      "bankName",
-      "bankAccount",
-    ];
+    const textFields = ["fullName", "email", "phone", "address", "storeName", "storeAddress", "bankName", "bankAccount"];
     textFields.forEach((k) => {
       if (form[k]?.trim()) payload[k] = form[k].trim();
     });
@@ -324,18 +299,13 @@ function SellerProfilePage() {
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {statusBadge && (
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusBadge.cls}`}
-                  >
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusBadge.cls}`}>
                     {STORE_LABEL[user?.storeStatus] || user?.storeStatus}
                   </span>
                 )}
                 {verifiedBadge && (
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${verifiedBadge.cls}`}
-                  >
-                    {VERIFIED_LABEL[user?.sellerVerified] ||
-                      user?.sellerVerified}
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${verifiedBadge.cls}`}>
+                    {VERIFIED_LABEL[user?.sellerVerified] || user?.sellerVerified}
                   </span>
                 )}
               </div>
@@ -343,23 +313,15 @@ function SellerProfilePage() {
 
             <div className="flex items-center gap-5 text-sm text-zinc-600">
               <div className="text-right">
-                <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-zinc-400">
-                  Đánh giá
-                </p>
+                <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-zinc-400">Đánh giá</p>
                 <p className="font-semibold text-zinc-800">
-                  {user?.storeRating != null
-                    ? `★ ${Number(user.storeRating).toFixed(1)}`
-                    : "Chưa có"}
+                  {user?.storeRating != null ? `★ ${Number(user.storeRating).toFixed(1)}` : "Chưa có"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-zinc-400">
-                  Đã bán
-                </p>
+                <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-zinc-400">Đã bán</p>
                 <p className="font-semibold text-zinc-800">
-                  {user?.totalSales != null
-                    ? user.totalSales.toLocaleString("vi-VN")
-                    : "0"}
+                  {user?.totalSales != null ? user.totalSales.toLocaleString("vi-VN") : "0"}
                 </p>
               </div>
             </div>
@@ -390,12 +352,8 @@ function SellerProfilePage() {
         <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="text-lg font-semibold text-zinc-900">
-                Thông tin cửa hàng
-              </h3>
-              <p className="mt-0.5 text-sm text-zinc-500">
-                Quản lý hình ảnh và thông tin hiển thị của gian hàng
-              </p>
+              <h3 className="text-lg font-semibold text-zinc-900">Thông tin cửa hàng</h3>
+              <p className="mt-0.5 text-sm text-zinc-500">Quản lý hình ảnh và thông tin hiển thị của gian hàng</p>
             </div>
           </div>
 
@@ -434,9 +392,7 @@ function SellerProfilePage() {
                 {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
               {dirty && (
-                <span className="text-xs text-amber-600">
-                  Có thay đổi chưa lưu
-                </span>
+                <span className="text-xs text-amber-600">Có thay đổi chưa lưu</span>
               )}
             </div>
           </form>
@@ -447,12 +403,8 @@ function SellerProfilePage() {
       {activeTab === "personal" && (
         <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
           <div className="mb-5">
-            <h3 className="text-lg font-semibold text-zinc-900">
-              Thông tin cá nhân
-            </h3>
-            <p className="mt-0.5 text-sm text-zinc-500">
-              Cập nhật hồ sơ người bán của bạn
-            </p>
+            <h3 className="text-lg font-semibold text-zinc-900">Thông tin cá nhân</h3>
+            <p className="mt-0.5 text-sm text-zinc-500">Cập nhật hồ sơ người bán của bạn</p>
           </div>
 
           {/* Avatar row */}
@@ -465,20 +417,12 @@ function SellerProfilePage() {
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-zinc-100">
-                <Facehash
-                  {...facehashProps}
-                  size="100%"
-                  className="rounded-full"
-                />
+                <Facehash {...facehashProps} size="100%" className="rounded-full" />
               </div>
             )}
             <div>
-              <p className="text-base font-semibold text-zinc-900">
-                {displayName}
-              </p>
-              <p className="text-sm text-zinc-500">
-                @{user?.username || "unknown"}
-              </p>
+              <p className="text-base font-semibold text-zinc-900">{displayName}</p>
+              <p className="text-sm text-zinc-500">@{user?.username || "unknown"}</p>
             </div>
           </div>
 
@@ -540,9 +484,7 @@ function SellerProfilePage() {
                 {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
               {dirty && (
-                <span className="text-xs text-amber-600">
-                  Có thay đổi chưa lưu
-                </span>
+                <span className="text-xs text-amber-600">Có thay đổi chưa lưu</span>
               )}
             </div>
           </form>
@@ -553,12 +495,8 @@ function SellerProfilePage() {
       {activeTab === "banking" && (
         <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
           <div className="mb-5">
-            <h3 className="text-lg font-semibold text-zinc-900">
-              Thông tin ngân hàng
-            </h3>
-            <p className="mt-0.5 text-sm text-zinc-500">
-              Tài khoản nhận thanh toán từ đơn hàng
-            </p>
+            <h3 className="text-lg font-semibold text-zinc-900">Thông tin ngân hàng</h3>
+            <p className="mt-0.5 text-sm text-zinc-500">Tài khoản nhận thanh toán từ đơn hàng</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -596,9 +534,7 @@ function SellerProfilePage() {
                 {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
               {dirty && (
-                <span className="text-xs text-amber-600">
-                  Có thay đổi chưa lưu
-                </span>
+                <span className="text-xs text-amber-600">Có thay đổi chưa lưu</span>
               )}
             </div>
           </form>
@@ -607,9 +543,7 @@ function SellerProfilePage() {
 
       {/* ─── Verification Status ─── */}
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
-        <h3 className="text-lg font-semibold text-zinc-900">
-          Trạng thái xác thực
-        </h3>
+        <h3 className="text-lg font-semibold text-zinc-900">Trạng thái xác thực</h3>
         <p className="mt-0.5 text-sm text-zinc-500">
           Các bước xác thực giúp tăng độ tin cậy cho gian hàng của bạn
         </p>
@@ -617,20 +551,12 @@ function SellerProfilePage() {
           <StatusDot
             label="Email"
             ok={user?.emailVerified}
-            description={
-              user?.emailVerified
-                ? "Email đã được xác nhận"
-                : "Xác nhận email để bảo vệ tài khoản"
-            }
+            description={user?.emailVerified ? "Email đã được xác nhận" : "Xác nhận email để bảo vệ tài khoản"}
           />
           <StatusDot
             label="Số điện thoại"
             ok={user?.phoneVerified}
-            description={
-              user?.phoneVerified
-                ? "Số điện thoại đã xác thực"
-                : "Xác thực số điện thoại để tăng bảo mật"
-            }
+            description={user?.phoneVerified ? "Số điện thoại đã xác thực" : "Xác thực số điện thoại để tăng bảo mật"}
           />
           <StatusDot
             label="Người bán"
@@ -648,11 +574,7 @@ function SellerProfilePage() {
           <StatusDot
             label="Tài khoản"
             ok={user?.isActive}
-            description={
-              user?.isActive
-                ? "Tài khoản đang hoạt động bình thường"
-                : "Tài khoản đang bị vô hiệu hóa"
-            }
+            description={user?.isActive ? "Tài khoản đang hoạt động bình thường" : "Tài khoản đang bị vô hiệu hóa"}
           />
         </div>
       </section>

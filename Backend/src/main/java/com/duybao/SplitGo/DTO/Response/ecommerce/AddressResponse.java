@@ -16,22 +16,6 @@ public class AddressResponse {
 
     private String phone;
 
-    private String fullAddress;
-
-    private String street;
-
-    private String ward;
-
-    private String district;
-
-    private String city;
-
-    private Double latitude;
-
-    private Double longitude;
-
-    private String placeId;
-
     private String detail;
 
     private AddressType type;

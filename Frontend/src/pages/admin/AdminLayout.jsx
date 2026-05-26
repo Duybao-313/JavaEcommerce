@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 
 const navItems = [
   { to: "/admin/products", label: "Sản phẩm" },
+  { to: "/admin/products/review", label: "Duyệt sản phẩm" },
   { to: "/admin/orders", label: "Đơn hàng" },
   { to: "/admin/reviews", label: "Đánh giá" },
   { to: "/admin/shippings", label: "Vận chuyển" },

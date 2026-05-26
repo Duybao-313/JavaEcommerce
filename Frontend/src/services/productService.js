@@ -132,3 +132,30 @@ export async function updateSellerProductImage(productId, imageFile) {
   const apiPayload = await parseApiResponse(response);
   return apiPayload?.data || null;
 }
+
+// ─── Admin review ──────────────────────────────────────────────────
+export async function getPendingProducts(params = {}) {
+  const query = new URLSearchParams();
+  if (params.status) query.set("status", params.status);
+  if (params.search) query.set("search", params.search);
+  if (params.sellerId) query.set("sellerId", String(params.sellerId));
+  if (params.page !== undefined && params.page !== null)
+    query.set("page", String(params.page));
+  if (params.size) query.set("size", String(params.size));
+  const qs = query.toString();
+  const response = await authFetch(`/products/admin${qs ? `?${qs}` : ""}`);
+  const payload = await parseApiResponse(response);
+  return (
+    payload?.data || { content: [], totalElements: 0, totalPages: 0, page: 0 }
+  );
+}
+
+export async function updateProductStatus(productId, payload) {
+  const response = await authFetch(`/products/${productId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const apiPayload = await parseApiResponse(response);
+  return apiPayload?.data || null;
+}

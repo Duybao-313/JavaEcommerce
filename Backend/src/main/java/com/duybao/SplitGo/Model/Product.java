@@ -85,6 +85,16 @@ public class Product {
     @Builder.Default
     private Boolean isFeatured = false;
 
+    /** Lý do admin từ chối / yêu cầu chỉnh sửa. Hiển thị cho seller. */
+    @Column(length = 1000)
+    private String adminNote;
+
+    /** ID của admin đã cập nhật trạng thái gần nhất */
+    private Long statusUpdatedBy;
+
+    /** Thời điểm admin cập nhật trạng thái gần nhất */
+    private LocalDateTime statusUpdatedAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
