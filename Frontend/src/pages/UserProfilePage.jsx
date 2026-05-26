@@ -8,6 +8,7 @@ import {
   updateCurrentUser,
 } from "../services/authService";
 import { clearAuth, getAuthSession, hasRole } from "../services/sessionService";
+import AddressPicker from "../components/AddressPicker";
 
 function UserProfilePage() {
   const [session, setSession] = useState(() => getAuthSession());
@@ -22,6 +23,7 @@ function UserProfilePage() {
     phone: "",
     address: "",
   });
+  const [addressPickerData, setAddressPickerData] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -290,16 +292,22 @@ function UserProfilePage() {
                     required
                   />
                 </label>
-                <label className="text-sm text-zinc-700">
-                  Địa chỉ
-                  <input
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
-                    required
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-zinc-700 mb-2">
+                    Cập nhật địa chỉ giao hàng
+                  </p>
+                  <AddressPicker
+                    initialAddress={{
+                      fullAddress: form.address || "",
+                    }}
+                    onAddressChange={(data) => {
+                      setAddressPickerData(data);
+                      if (data?.fullAddress) {
+                        setForm((prev) => ({ ...prev, address: data.fullAddress }));
+                      }
+                    }}
                   />
-                </label>
+                </div>
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <button
@@ -383,7 +391,6 @@ function UserProfilePage() {
             </div>
           </div>
         </section>
-
       </div>
     </div>
   );

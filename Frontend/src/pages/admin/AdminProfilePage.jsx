@@ -142,13 +142,19 @@ function AdminProfilePage() {
             />
           ) : (
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
-              <Facehash {...facehashProps} size="100%" className="rounded-2xl" />
+              <Facehash
+                {...facehashProps}
+                size="100%"
+                className="rounded-2xl"
+              />
             </div>
           )}
 
           <div className="min-w-0">
             <p className="text-xl font-semibold text-zinc-900">{displayName}</p>
-            <p className="text-sm text-zinc-500">@{user?.username || "unknown"}</p>
+            <p className="text-sm text-zinc-500">
+              @{user?.username || "unknown"}
+            </p>
             <div className="mt-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-900 px-2.5 py-0.5 text-xs font-semibold text-white">
                 Quản trị viên
@@ -162,7 +168,9 @@ function AdminProfilePage() {
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
         <div className="mb-5">
           <h3 className="text-lg font-semibold text-zinc-900">Hồ sơ cá nhân</h3>
-          <p className="mt-0.5 text-sm text-zinc-500">Thông tin tài khoản quản trị hệ thống</p>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            Thông tin tài khoản quản trị hệ thống
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,18 +179,19 @@ function AdminProfilePage() {
           <InfoCard label="Email" value={user?.email} />
           <InfoCard label="Số điện thoại" value={user?.phone} />
           <InfoCard label="Địa chỉ" value={user?.address} />
-          <InfoCard
-            label="Cập nhật lần cuối"
-            value={user?.updatedAt}
-          />
+          <InfoCard label="Cập nhật lần cuối" value={user?.updatedAt} />
         </div>
       </section>
 
       {/* ─── Edit Form ─── */}
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/60">
         <div className="mb-5">
-          <h3 className="text-lg font-semibold text-zinc-900">Chỉnh sửa thông tin</h3>
-          <p className="mt-0.5 text-sm text-zinc-500">Cập nhật hồ sơ quản trị viên</p>
+          <h3 className="text-lg font-semibold text-zinc-900">
+            Chỉnh sửa thông tin
+          </h3>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            Cập nhật hồ sơ quản trị viên
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -243,7 +252,9 @@ function AdminProfilePage() {
               {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
             {dirty && (
-              <span className="text-xs text-amber-600">Có thay đổi chưa lưu</span>
+              <span className="text-xs text-amber-600">
+                Có thay đổi chưa lưu
+              </span>
             )}
           </div>
         </form>

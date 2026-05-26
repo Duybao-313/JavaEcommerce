@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
-import { clearAuth, getAuthSession, hasRole } from "../../services/sessionService";
+import {
+  clearAuth,
+  getAuthSession,
+  hasRole,
+} from "../../services/sessionService";
 import toast from "react-hot-toast";
 
 const navItems = [
@@ -125,4 +129,3 @@ function AdminLayout() {
 }
 
 export default AdminLayout;
-
