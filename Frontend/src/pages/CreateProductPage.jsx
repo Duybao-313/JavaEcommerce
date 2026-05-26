@@ -1,10 +1,56 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "motion/react";
 import { getCategories } from "../services/categoryService";
 import { createProductWithImage } from "../services/productService";
 import { getAuthSession, isSellerSession } from "../services/sessionService";
 import { uploadImage } from "../services/uploadService";
+
+// ── Helpers ──────────────────────────────────────────────
+
+function buildTree(flatList) {
+  const map = new Map();
+  const roots = [];
+
+  for (const cat of flatList) {
+    map.set(cat.id, { ...cat, children: [] });
+  }
+
+  for (const cat of map.values()) {
+    if (cat.parentId != null && map.has(cat.parentId)) {
+      map.get(cat.parentId).children.push(cat);
+    } else {
+      roots.push(cat);
+    }
+  }
+
+  return roots;
+}
+
+// ── Motion variants ─────────────────────────────────────
+
+const childrenMotion = {
+  hidden: { opacity: 0, height: 0 },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: { duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
+const chevronMotion = {
+  collapsed: { rotate: 0 },
+  expanded: {
+    rotate: 90,
+    transition: { duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
 
 const initialForm = {
   name: "",
@@ -15,7 +61,6 @@ const initialForm = {
   weight: "",
   sku: "",
   categoryId: "",
-  categoryName: "",
   isFeatured: false,
 };
 
@@ -44,9 +89,21 @@ function CreateProductPage() {
   const [hasVariants, setHasVariants] = useState(false);
   const [options, setOptions] = useState([]);
   const [variants, setVariants] = useState([]);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState(new Set());
 
   const isSeller = useMemo(() => isSellerSession(session), [session]);
-  const useCustomCategory = form.categoryId === "custom";
+
+  // Build category tree (only parent categories shown at root)
+  const categoryTree = useMemo(() => buildTree(categories), [categories]);
+
+  // Find selected category name for display
+  const selectedCategoryName = useMemo(() => {
+    if (!form.categoryId) return "";
+    const found = categories.find(
+      (c) => String(c.id) === String(form.categoryId),
+    );
+    return found ? found.name : "";
+  }, [categories, form.categoryId]);
 
   useEffect(() => {
     const nextSession = getAuthSession();
@@ -95,6 +152,118 @@ function CreateProductPage() {
     const file = event.target.files?.[0] || null;
     setImageFile(file);
   };
+
+  // ── Category tree handlers ────────────────────────────
+
+  const handleCategoryToggle = useCallback((id) => {
+    setExpandedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleCategorySelect = useCallback((cat) => {
+    setForm((prev) => ({ ...prev, categoryId: String(cat.id) }));
+  }, []);
+
+  const handleClearCategory = useCallback(() => {
+    setForm((prev) => ({ ...prev, categoryId: "" }));
+  }, []);
+
+  // ── Render a single category node in the picker ──────
+
+  const renderCategoryNode = useCallback(
+    (cat, level = 0) => {
+      const hasChildren = cat.children && cat.children.length > 0;
+      const isExpanded = expandedCategoryIds.has(cat.id);
+      const isSelected = String(form.categoryId) === String(cat.id);
+
+      return (
+        <div key={cat.id} className="select-none">
+          <div
+            className={`group flex items-center gap-1.5 rounded-lg transition-colors duration-150 ${
+              isSelected ? "bg-amber-50" : "hover:bg-zinc-50"
+            }`}
+            style={{ paddingLeft: `${level * 16 + 4}px` }}
+          >
+            {/* Expand/collapse chevron */}
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCategoryToggle(cat.id);
+                }}
+                aria-label={isExpanded ? "Thu gọn" : "Mở rộng"}
+                className="flex-shrink-0 p-1 rounded text-zinc-400 hover:text-zinc-600 focus:outline-none"
+              >
+                <motion.svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-3.5 w-3.5"
+                  variants={chevronMotion}
+                  animate={isExpanded ? "expanded" : "collapsed"}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
+                </motion.svg>
+              </button>
+            ) : (
+              <span className="w-[22px] flex-shrink-0" aria-hidden="true" />
+            )}
+
+            {/* Category name button */}
+            <button
+              type="button"
+              onClick={() => handleCategorySelect(cat)}
+              className={`flex-1 text-left py-2 pr-2 text-sm font-medium rounded-r-lg focus:outline-none transition-colors duration-150 ${
+                isSelected
+                  ? "text-zinc-900"
+                  : "text-zinc-600 group-hover:text-zinc-900"
+              }`}
+            >
+              <span className="line-clamp-1">{cat.name}</span>
+            </button>
+
+            {/* Selected indicator dot */}
+            {isSelected && (
+              <span className="mr-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400" />
+            )}
+          </div>
+
+          {/* Children */}
+          <AnimatePresence initial={false}>
+            {hasChildren && isExpanded && (
+              <motion.div
+                variants={childrenMotion}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {cat.children.map((child) =>
+                  renderCategoryNode(child, level + 1),
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    },
+    [
+      expandedCategoryIds,
+      form.categoryId,
+      handleCategoryToggle,
+      handleCategorySelect,
+    ],
+  );
 
   // --- Option management ---
   const handleOptionChange = (index, field, value) => {
@@ -246,8 +415,7 @@ function CreateProductPage() {
       description: form.description.trim(),
       price: Number(form.price),
       stock: Number(form.stock),
-      categoryId: useCustomCategory ? null : Number(form.categoryId || 0),
-      categoryName: useCustomCategory ? form.categoryName.trim() : "",
+      categoryId: Number(form.categoryId || 0),
       salePrice: form.salePrice ? Number(form.salePrice) : null,
       weight: form.weight ? Number(form.weight) : null,
       sku: form.sku.trim() || null,
@@ -263,13 +431,8 @@ function CreateProductPage() {
       return;
     }
 
-    if (!useCustomCategory && !payload.categoryId) {
+    if (!payload.categoryId) {
       toast.error("Vui lòng chọn danh mục");
-      return;
-    }
-
-    if (useCustomCategory && !payload.categoryName) {
-      toast.error("Vui lòng nhập tên danh mục mới");
       return;
     }
 
@@ -456,36 +619,69 @@ function CreateProductPage() {
               <span>Đánh dấu sản phẩm nổi bật</span>
             </label>
 
-            <label className="text-sm text-zinc-700">
+            <label className="text-sm text-zinc-700 md:col-span-2">
               Danh mục
-              <select
-                name="categoryId"
-                value={form.categoryId}
-                onChange={handleChange}
-                disabled={loadingCategories}
-                className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 transition-colors bg-white"
-              >
-                <option value="">Chọn danh mục</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={String(category.id)}>
-                    {category.name}
-                  </option>
-                ))}
-                <option value="custom">Tự nhập danh mục mới</option>
-              </select>
-            </label>
+              {loadingCategories ? (
+                <div className="mt-1 flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-400">
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="opacity-25"
+                    />
+                    <path
+                      d="M4 12a8 8 0 018-8"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className="opacity-75"
+                    />
+                  </svg>
+                  Đang tải danh mục...
+                </div>
+              ) : (
+                <div className="mt-1 rounded-xl border border-zinc-300 bg-white overflow-hidden">
+                  {/* Selected category display */}
+                  {selectedCategoryName && (
+                    <div className="flex items-center justify-between gap-2 border-b border-zinc-100 bg-amber-50/60 px-3 py-2">
+                      <span className="text-xs font-medium text-zinc-700">
+                        Đã chọn:{" "}
+                        <span className="text-amber-700">
+                          {selectedCategoryName}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearCategory}
+                        className="text-xs text-zinc-400 hover:text-red-500 transition-colors"
+                      >
+                        ✕ Bỏ chọn
+                      </button>
+                    </div>
+                  )}
 
-            {useCustomCategory && (
-              <label className="text-sm text-zinc-700 md:col-span-2">
-                Danh mục mới
-                <input
-                  name="categoryName"
-                  value={form.categoryName}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 transition-colors"
-                />
-              </label>
-            )}
+                  {/* Category tree */}
+                  <div className="max-h-64 overflow-y-auto p-2">
+                    {categoryTree.length === 0 ? (
+                      <p className="px-2 py-3 text-xs text-zinc-400">
+                        Chưa có danh mục nào
+                      </p>
+                    ) : (
+                      categoryTree
+                        .filter((c) => c.isActive !== false)
+                        .map((cat) => renderCategoryNode(cat, 0))
+                    )}
+                  </div>
+                </div>
+              )}
+            </label>
           </div>
 
           <label className="mt-4 block text-sm text-zinc-700">
