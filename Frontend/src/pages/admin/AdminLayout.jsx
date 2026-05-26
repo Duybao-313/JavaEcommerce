@@ -14,6 +14,7 @@ const navItems = [
   { to: "/admin/reviews", label: "Đánh giá" },
   { to: "/admin/shippings", label: "Vận chuyển" },
   { to: "/admin/users", label: "Người dùng" },
+  { to: "/admin/categories", label: "Danh mục" },
   { to: "/admin/profile", label: "Tài khoản" },
 ];
 

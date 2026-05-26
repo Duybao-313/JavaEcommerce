@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -46,14 +47,44 @@ public class CategoryController {
                 .build();
     }
 
+    @GetMapping("/tree")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<CategoryResponse>> getCategoryTree() {
+        return ApiResponse.<List<CategoryResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy cây danh mục thành công")
+                .data(categoryService.getCategoryTree())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/{id}/product-count")
+    public ApiResponse<Long> getProductCount(@PathVariable Long id) {
+        return ApiResponse.<Long>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy số lượng sản phẩm thành công")
+                .data(categoryService.getProductCountByCategory(id))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<CategoryResponse> createCategory(@RequestBody @Valid CreateCategoryRequest request) {
+    public ApiResponse<CategoryResponse> createCategory(@RequestBody @Valid CreateCategoryRequest request,
+            @RequestParam(required = false) Long parentId) {
+        CategoryResponse result;
+        if (parentId != null) {
+            result = categoryService.createCategoryWithParent(request, parentId);
+        } else {
+            result = categoryService.createCategory(request);
+        }
         return ApiResponse.<CategoryResponse>builder()
                 .success(true)
                 .code(201)
                 .message("Tạo danh mục thành công")
-                .data(categoryService.createCategory(request))
+                .data(result)
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -66,7 +97,7 @@ public class CategoryController {
                 .success(true)
                 .code(200)
                 .message("Cập nhật danh mục thành công")
-                .data(categoryService.updateCategory(id, request))
+                .data(categoryService.updateCategoryFull(id, request))
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -74,7 +105,7 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
+        categoryService.deleteCategoryWithValidation(id);
         return ApiResponse.<Void>builder()
                 .success(true)
                 .code(200)

@@ -14,5 +14,16 @@ public interface CategoryService {
     CategoryResponse updateCategory(Long categoryId, CreateCategoryRequest request);
 
     void deleteCategory(Long categoryId);
+
+    // Admin tree management
+    List<CategoryResponse> getCategoryTree();
+
+    long getProductCountByCategory(Long categoryId);
+
+    CategoryResponse createCategoryWithParent(CreateCategoryRequest request, Long parentId);
+
+    CategoryResponse updateCategoryFull(Long categoryId, CreateCategoryRequest request);
+
+    void deleteCategoryWithValidation(Long categoryId);
 }
 

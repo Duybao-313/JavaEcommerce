@@ -30,5 +30,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategoryIdInAndStatusOrderByCreatedAtDesc(List<Long> categoryIds, ProductStatus status);
 
     Page<Product> findByCategoryIdInAndStatusOrderByCreatedAtDesc(List<Long> categoryIds, ProductStatus status, Pageable pageable);
+
+    long countByCategoryId(Long categoryId);
 }
 

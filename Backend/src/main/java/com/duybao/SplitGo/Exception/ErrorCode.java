@@ -23,6 +23,8 @@ public enum ErrorCode {
     INTERNAL_ERROR(1013, "Lỗi nội bộ", HttpStatus.INTERNAL_SERVER_ERROR),
     CATEGORY_EXIST(1014, "Danh mục đã tồn tại", HttpStatus.BAD_REQUEST),
     CATEGORY_ALREADY_ASSIGNED(1015, "Đã gán danh mục này", HttpStatus.CONFLICT),
+    CATEGORY_HAS_PRODUCTS(1016, "Không thể xóa danh mục có sản phẩm. Vui lòng xóa hoặc di chuyển hết sản phẩm trước.", HttpStatus.BAD_REQUEST),
+    CATEGORY_HAS_CHILDREN(1017, "Danh mục này có danh mục con. Bạn có chắc chắn muốn xóa?", HttpStatus.BAD_REQUEST),
     AMOUNT_NOT_NEGATIVE(1016, "Số tiền phải >0", HttpStatus.BAD_REQUEST),
     READ_FILE_ERROR(1017, "Lỗi khi đọc file", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_REQUEST(1018, "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),

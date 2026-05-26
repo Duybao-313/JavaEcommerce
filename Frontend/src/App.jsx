@@ -28,6 +28,7 @@ import AdminShippingsPage from "./pages/admin/AdminShippingsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminProfilePage from "./pages/admin/AdminProfilePage";
 import AdminProductReviewPage from "./pages/admin/AdminProductReviewPage";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
 import { getAuthSession, hasRole } from "./services/sessionService";
 import "./App.css";
 
@@ -111,6 +112,7 @@ function App() {
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="shippings" element={<AdminShippingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
         </Route>
       </Route>
