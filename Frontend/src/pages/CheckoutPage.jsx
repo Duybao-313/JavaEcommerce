@@ -100,7 +100,12 @@ function CheckoutPage() {
     async (code) => {
       if (!code) {
         setSelectedCouponCode("");
-        setCouponValidation({ valid: false, discountAmount: 0, reason: null, coupon: null });
+        setCouponValidation({
+          valid: false,
+          discountAmount: 0,
+          reason: null,
+          coupon: null,
+        });
         return;
       }
 
@@ -173,7 +178,12 @@ function CheckoutPage() {
   const handleClearCoupon = useCallback(() => {
     setSelectedCouponCode("");
     setCouponCodeInput("");
-    setCouponValidation({ valid: false, discountAmount: 0, reason: null, coupon: null });
+    setCouponValidation({
+      valid: false,
+      discountAmount: 0,
+      reason: null,
+      coupon: null,
+    });
   }, []);
 
   // ── Derived values ──────────────────────────────────────────────────
@@ -330,8 +340,12 @@ function CheckoutPage() {
                 <div className="mt-1 flex gap-2">
                   <input
                     value={couponCodeInput}
-                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleCouponCodeSubmit(); }}
+                    onChange={(e) =>
+                      setCouponCodeInput(e.target.value.toUpperCase())
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCouponCodeSubmit();
+                    }}
                     placeholder="Nhập mã coupon"
                     disabled={couponLoading}
                     className="min-h-[44px] flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 disabled:bg-zinc-100 disabled:cursor-not-allowed"
@@ -350,10 +364,23 @@ function CheckoutPage() {
                   <div className="mt-1.5">
                     {couponValidation.valid ? (
                       <div className="flex items-center gap-2 text-xs text-emerald-700">
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
-                        <span>Đã áp dụng: giảm {formatPrice(couponValidation.discountAmount)}</span>
+                        <span>
+                          Đã áp dụng: giảm{" "}
+                          {formatPrice(couponValidation.discountAmount)}
+                        </span>
                         <button
                           type="button"
                           onClick={handleClearCoupon}
@@ -363,7 +390,9 @@ function CheckoutPage() {
                         </button>
                       </div>
                     ) : couponValidation.reason ? (
-                      <p className="text-xs text-red-600">{couponValidation.reason}</p>
+                      <p className="text-xs text-red-600">
+                        {couponValidation.reason}
+                      </p>
                     ) : null}
                   </div>
                 )}

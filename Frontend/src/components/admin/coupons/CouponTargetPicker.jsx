@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { COUPON_SCOPE_LABEL } from "../../../services/couponService";
+import CategoryPickerModal from "./CategoryPickerModal";
 
 const SCOPE_OPTIONS = [
   { value: "ALL", label: "Toàn bộ" },
@@ -20,9 +21,15 @@ const SCOPE_OPTIONS = [
  *
  * When scope is "ALL", the target input is hidden.
  */
-function CouponTargetPicker({ scope = "ALL", targetIds = "", onChange, disabled = false }) {
+function CouponTargetPicker({
+  scope = "ALL",
+  targetIds = "",
+  onChange,
+  disabled = false,
+}) {
   const [localScope, setLocalScope] = useState(scope);
   const [localIds, setLocalIds] = useState(targetIds);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     setLocalScope(scope);
@@ -57,7 +64,10 @@ function CouponTargetPicker({ scope = "ALL", targetIds = "", onChange, disabled 
   return (
     <div className="space-y-2">
       {/* Scope selector */}
-      <label className="text-sm font-medium text-zinc-700" id="coupon-target-scope-label">
+      <label
+        className="text-sm font-medium text-zinc-700"
+        id="coupon-target-scope-label"
+      >
         Phạm vi áp dụng
       </label>
       <div
@@ -97,11 +107,37 @@ function CouponTargetPicker({ scope = "ALL", targetIds = "", onChange, disabled 
       {/* Target IDs input — hidden when scope is ALL */}
       {localScope !== "ALL" && (
         <div className="transition-all duration-200 ease-out-quart">
+          {/* Category picker button — only for CATEGORY scope */}
+          {localScope === "CATEGORY" && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setPickerOpen(true)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors duration-180 ease-out-quart hover:border-zinc-900 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
+              Chọn danh mục
+            </button>
+          )}
+
           <label
             htmlFor="coupon-target-ids"
             className="block text-xs font-medium text-zinc-500 mt-2 mb-1"
           >
-            ID {COUPON_SCOPE_LABEL[localScope] || "đối tượng"} (phân cách bằng dấu phẩy)
+            ID {COUPON_SCOPE_LABEL[localScope] || "đối tượng"} (phân cách bằng
+            dấu phẩy)
           </label>
           <input
             id="coupon-target-ids"
@@ -118,6 +154,27 @@ function CouponTargetPicker({ scope = "ALL", targetIds = "", onChange, disabled 
           </p>
         </div>
       )}
+
+      {/* Category picker modal */}
+      <CategoryPickerModal
+        open={pickerOpen}
+        selectedIds={
+          localIds
+            ? localIds
+                .split(",")
+                .map((s) => Number(s.trim()))
+                .filter((n) => !isNaN(n))
+            : []
+        }
+        onClose={() => setPickerOpen(false)}
+        onConfirm={(ids) => {
+          const idsStr = ids.join(", ");
+          setLocalIds(idsStr);
+          if (onChange) {
+            onChange(localScope, idsStr);
+          }
+        }}
+      />
     </div>
   );
 }

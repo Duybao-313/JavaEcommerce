@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { COUPON_TYPE_LABEL, COUPON_SCOPE_LABEL } from "../../../services/couponService";
+import {
+  COUPON_TYPE_LABEL,
+  COUPON_SCOPE_LABEL,
+} from "../../../services/couponService";
 import CouponTargetPicker from "./CouponTargetPicker";
 
 const COUPON_TYPES = [
@@ -41,7 +44,13 @@ const emptyForm = {
  *   - value: PERCENT => 1-100, FIXED/FREE_SHIPPING => >0
  *   - startAt < endAt
  */
-function CouponForm({ initialData, saving = false, serverError = null, onSubmit, onCancel }) {
+function CouponForm({
+  initialData,
+  saving = false,
+  serverError = null,
+  onSubmit,
+  onCancel,
+}) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
 
@@ -55,16 +64,25 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
         type: initialData.type || "PERCENT",
         value: initialData.value != null ? String(initialData.value) : "",
         maxDiscountAmount:
-          initialData.maxDiscountAmount != null ? String(initialData.maxDiscountAmount) : "",
-        minOrderValue: initialData.minOrderValue != null ? String(initialData.minOrderValue) : "",
+          initialData.maxDiscountAmount != null
+            ? String(initialData.maxDiscountAmount)
+            : "",
+        minOrderValue:
+          initialData.minOrderValue != null
+            ? String(initialData.minOrderValue)
+            : "",
         scope: initialData.scope || "ALL",
         targetIds: Array.isArray(initialData.targetIds)
           ? initialData.targetIds.join(", ")
           : initialData.targetIds || "",
         startAt: initialData.startAt ? initialData.startAt.slice(0, 16) : "",
         endAt: initialData.endAt ? initialData.endAt.slice(0, 16) : "",
-        usageLimit: initialData.usageLimit != null ? String(initialData.usageLimit) : "",
-        perUserLimit: initialData.perUserLimit != null ? String(initialData.perUserLimit) : "",
+        usageLimit:
+          initialData.usageLimit != null ? String(initialData.usageLimit) : "",
+        perUserLimit:
+          initialData.perUserLimit != null
+            ? String(initialData.perUserLimit)
+            : "",
         isActive: initialData.isActive !== false,
       });
     } else {
@@ -120,34 +138,47 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
       errs.value = "Vui lòng nhập giá trị hợp lệ";
     } else if (form.type === "PERCENT" && (val <= 0 || val > 100)) {
       errs.value = "Phần trăm giảm giá phải từ 1 đến 100";
-    } else if ((form.type === "FIXED" || form.type === "FREE_SHIPPING") && val <= 0) {
+    } else if (
+      (form.type === "FIXED" || form.type === "FREE_SHIPPING") &&
+      val <= 0
+    ) {
       errs.value = "Giá trị giảm giá phải lớn hơn 0";
     }
 
     if (form.maxDiscountAmount && form.type === "PERCENT") {
       const max = Number(form.maxDiscountAmount);
-      if (isNaN(max) || max <= 0) errs.maxDiscountAmount = "Giá trị tối đa phải lớn hơn 0";
+      if (isNaN(max) || max <= 0)
+        errs.maxDiscountAmount = "Giá trị tối đa phải lớn hơn 0";
     }
 
     if (form.minOrderValue) {
       const min = Number(form.minOrderValue);
-      if (isNaN(min) || min < 0) errs.minOrderValue = "Giá trị tối thiểu không được âm";
+      if (isNaN(min) || min < 0)
+        errs.minOrderValue = "Giá trị tối thiểu không được âm";
     }
 
     if (!start) errs.startAt = "Vui lòng chọn ngày bắt đầu";
     if (!end) errs.endAt = "Vui lòng chọn ngày kết thúc";
-    if (start && end && start >= end) errs.endAt = "Ngày kết thúc phải sau ngày bắt đầu";
+    if (start && end && start >= end)
+      errs.endAt = "Ngày kết thúc phải sau ngày bắt đầu";
 
     if (form.usageLimit) {
       const limit = Number(form.usageLimit);
-      if (isNaN(limit) || limit < 1) errs.usageLimit = "Giới hạn lượt dùng phải lớn hơn 0";
+      if (isNaN(limit) || limit < 1)
+        errs.usageLimit = "Giới hạn lượt dùng phải lớn hơn 0";
     }
     if (form.perUserLimit) {
       const limit = Number(form.perUserLimit);
-      if (isNaN(limit) || limit < 1) errs.perUserLimit = "Giới hạn mỗi người phải lớn hơn 0";
+      if (isNaN(limit) || limit < 1)
+        errs.perUserLimit = "Giới hạn mỗi người phải lớn hơn 0";
     }
-    if (form.usageLimit && form.perUserLimit && Number(form.perUserLimit) > Number(form.usageLimit)) {
-      errs.perUserLimit = "Giới hạn mỗi người không được vượt quá tổng lượt dùng";
+    if (
+      form.usageLimit &&
+      form.perUserLimit &&
+      Number(form.perUserLimit) > Number(form.usageLimit)
+    ) {
+      errs.perUserLimit =
+        "Giới hạn mỗi người không được vượt quá tổng lượt dùng";
     }
 
     setErrors(errs);
@@ -165,7 +196,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
         description: form.description.trim() || null,
         type: form.type,
         value: Number(form.value),
-        maxDiscountAmount: form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null,
+        maxDiscountAmount: form.maxDiscountAmount
+          ? Number(form.maxDiscountAmount)
+          : null,
         minOrderValue: form.minOrderValue ? Number(form.minOrderValue) : null,
         scope: form.scope,
         targetIds:
@@ -192,9 +225,11 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
   const isEdit = !!initialData;
 
   const valueHint = useMemo(() => {
-    if (form.type === "PERCENT") return "Nhập số từ 1 đến 100 (vd: 20 = giảm 20%)";
+    if (form.type === "PERCENT")
+      return "Nhập số từ 1 đến 100 (vd: 20 = giảm 20%)";
     if (form.type === "FIXED") return "Số tiền giảm cố định (VNĐ)";
-    if (form.type === "FREE_SHIPPING") return "Số tiền miễn phí vận chuyển tối đa (VNĐ)";
+    if (form.type === "FREE_SHIPPING")
+      return "Số tiền miễn phí vận chuyển tối đa (VNĐ)";
     return "";
   }, [form.type]);
 
@@ -232,7 +267,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
       <div className="grid gap-4 md:grid-cols-2">
         {/* Code */}
         <div>
-          <label htmlFor="coupon-code" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-code"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Mã coupon <span className="text-red-500">*</span>
           </label>
           <input
@@ -249,11 +287,17 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             aria-invalid={!!errors.code}
             aria-describedby={errors.code ? "coupon-code-error" : undefined}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.code ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.code
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.code && (
-            <p id="coupon-code-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p
+              id="coupon-code-error"
+              role="alert"
+              className="mt-1 text-xs text-red-600"
+            >
               {errors.code}
             </p>
           )}
@@ -261,7 +305,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Type */}
         <div>
-          <label htmlFor="coupon-type" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-type"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Loại coupon <span className="text-red-500">*</span>
           </label>
           <select
@@ -283,7 +330,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Title */}
         <div className="md:col-span-2">
-          <label htmlFor="coupon-title" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-title"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Tiêu đề <span className="text-red-500">*</span>
           </label>
           <input
@@ -299,11 +349,17 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             aria-invalid={!!errors.title}
             aria-describedby={errors.title ? "coupon-title-error" : undefined}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.title ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.title
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.title && (
-            <p id="coupon-title-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p
+              id="coupon-title-error"
+              role="alert"
+              className="mt-1 text-xs text-red-600"
+            >
               {errors.title}
             </p>
           )}
@@ -311,7 +367,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label htmlFor="coupon-desc" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-desc"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Mô tả
           </label>
           <textarea
@@ -328,7 +387,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Value */}
         <div>
-          <label htmlFor="coupon-value" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-value"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Giá trị <span className="text-red-500">*</span>
           </label>
           <input
@@ -344,16 +406,24 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             placeholder={form.type === "PERCENT" ? "20" : "50000"}
             aria-required="true"
             aria-invalid={!!errors.value}
-            aria-describedby={errors.value ? "coupon-value-error" : "coupon-value-hint"}
+            aria-describedby={
+              errors.value ? "coupon-value-error" : "coupon-value-hint"
+            }
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.value ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.value
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           <p id="coupon-value-hint" className="mt-1 text-xs text-zinc-400">
             {valueHint}
           </p>
           {errors.value && (
-            <p id="coupon-value-error" role="alert" className="mt-1 text-xs text-red-600">
+            <p
+              id="coupon-value-error"
+              role="alert"
+              className="mt-1 text-xs text-red-600"
+            >
               {errors.value}
             </p>
           )}
@@ -362,7 +432,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
         {/* Max discount amount (percent only) */}
         {form.type === "PERCENT" && (
           <div>
-            <label htmlFor="coupon-max-discount" className="block text-sm font-medium text-zinc-700 mb-1">
+            <label
+              htmlFor="coupon-max-discount"
+              className="block text-sm font-medium text-zinc-700 mb-1"
+            >
               Giảm tối đa (VNĐ)
             </label>
             <input
@@ -376,16 +449,26 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
               disabled={saving}
               placeholder="VD: 200000"
               aria-invalid={!!errors.maxDiscountAmount}
-              aria-describedby={errors.maxDiscountAmount ? "coupon-max-error" : "coupon-max-hint"}
+              aria-describedby={
+                errors.maxDiscountAmount
+                  ? "coupon-max-error"
+                  : "coupon-max-hint"
+              }
               className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-                errors.maxDiscountAmount ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+                errors.maxDiscountAmount
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-zinc-300 focus:border-zinc-900"
               }`}
             />
             <p id="coupon-max-hint" className="mt-1 text-xs text-zinc-400">
               Số tiền giảm tối đa khi dùng coupon phần trăm
             </p>
             {errors.maxDiscountAmount && (
-              <p id="coupon-max-error" role="alert" className="mt-1 text-xs text-red-600">
+              <p
+                id="coupon-max-error"
+                role="alert"
+                className="mt-1 text-xs text-red-600"
+              >
                 {errors.maxDiscountAmount}
               </p>
             )}
@@ -394,7 +477,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Min order value */}
         <div>
-          <label htmlFor="coupon-min-order" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-min-order"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Giá trị đơn tối thiểu (VNĐ)
           </label>
           <input
@@ -409,7 +495,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             placeholder="VD: 100000"
             aria-invalid={!!errors.minOrderValue}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.minOrderValue ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.minOrderValue
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.minOrderValue && (
@@ -421,7 +509,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Usage limit */}
         <div>
-          <label htmlFor="coupon-usage-limit" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-usage-limit"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Tổng lượt dùng
           </label>
           <input
@@ -435,7 +526,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             placeholder="Để trống nếu không giới hạn"
             aria-invalid={!!errors.usageLimit}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.usageLimit ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.usageLimit
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.usageLimit && (
@@ -447,7 +540,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Per user limit */}
         <div>
-          <label htmlFor="coupon-per-user-limit" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-per-user-limit"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Giới hạn mỗi người
           </label>
           <input
@@ -461,7 +557,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             placeholder="Để trống nếu không giới hạn"
             aria-invalid={!!errors.perUserLimit}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.perUserLimit ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.perUserLimit
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.perUserLimit && (
@@ -473,7 +571,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* Start date */}
         <div>
-          <label htmlFor="coupon-start" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-start"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Ngày bắt đầu <span className="text-red-500">*</span>
           </label>
           <input
@@ -486,7 +587,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             aria-required="true"
             aria-invalid={!!errors.startAt}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.startAt ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.startAt
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.startAt && (
@@ -498,7 +601,10 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
 
         {/* End date */}
         <div>
-          <label htmlFor="coupon-end" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label
+            htmlFor="coupon-end"
+            className="block text-sm font-medium text-zinc-700 mb-1"
+          >
             Ngày kết thúc <span className="text-red-500">*</span>
           </label>
           <input
@@ -511,7 +617,9 @@ function CouponForm({ initialData, saving = false, serverError = null, onSubmit,
             aria-required="true"
             aria-invalid={!!errors.endAt}
             className={`w-full min-h-[40px] rounded-lg border bg-white px-3 py-2 text-sm outline-none transition-colors duration-180 ease-out-quart focus:ring-1 focus:ring-zinc-900/20 disabled:cursor-not-allowed disabled:bg-zinc-100 ${
-              errors.endAt ? "border-red-400 focus:border-red-500" : "border-zinc-300 focus:border-zinc-900"
+              errors.endAt
+                ? "border-red-400 focus:border-red-500"
+                : "border-zinc-300 focus:border-zinc-900"
             }`}
           />
           {errors.endAt && (

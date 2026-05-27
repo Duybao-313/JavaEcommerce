@@ -1,4 +1,7 @@
-import { COUPON_TYPE_LABEL, COUPON_SCOPE_LABEL } from "../../../services/couponService";
+import {
+  COUPON_TYPE_LABEL,
+  COUPON_SCOPE_LABEL,
+} from "../../../services/couponService";
 
 /**
  * Format a date string for display. Handles both LocalDateTime and Instant formats.
@@ -30,16 +33,32 @@ function formatPrice(value) {
 }
 
 const STATUS_CONFIG = {
-  ACTIVE: { label: "Đang chạy", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  EXPIRED: { label: "Hết hạn", cls: "bg-zinc-100 text-zinc-500 border-zinc-200" },
-  DISABLED: { label: "Đã tắt", cls: "bg-zinc-100 text-zinc-500 border-zinc-200" },
-  EXHAUSTED: { label: "Hết lượt", cls: "bg-amber-100 text-amber-800 border-amber-200" },
-  UPCOMING: { label: "Sắp diễn ra", cls: "bg-blue-100 text-blue-800 border-blue-200" },
+  ACTIVE: {
+    label: "Đang chạy",
+    cls: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  },
+  EXPIRED: {
+    label: "Hết hạn",
+    cls: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  },
+  DISABLED: {
+    label: "Đã tắt",
+    cls: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  },
+  EXHAUSTED: {
+    label: "Hết lượt",
+    cls: "bg-amber-100 text-amber-800 border-amber-200",
+  },
+  UPCOMING: {
+    label: "Sắp diễn ra",
+    cls: "bg-blue-100 text-blue-800 border-blue-200",
+  },
 };
 
 function deriveStatus(coupon) {
   if (!coupon.isActive) return "DISABLED";
-  if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) return "EXHAUSTED";
+  if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit)
+    return "EXHAUSTED";
   const now = new Date();
   const start = coupon.startAt ? new Date(coupon.startAt) : null;
   const end = coupon.endAt ? new Date(coupon.endAt) : null;
@@ -71,8 +90,12 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
       {/* Code + Title */}
       <td className="px-4 py-3">
         <div>
-          <span className="font-mono text-sm font-semibold text-zinc-900">{coupon.code}</span>
-          <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{coupon.title}</p>
+          <span className="font-mono text-sm font-semibold text-zinc-900">
+            {coupon.code}
+          </span>
+          <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">
+            {coupon.title}
+          </p>
         </div>
       </td>
 
@@ -103,7 +126,10 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
       <td className="px-4 py-3">
         <span className="text-sm text-zinc-600">{scopeLabel}</span>
         {coupon.scope !== "ALL" && (
-          <p className="text-xs text-zinc-400 mt-0.5 max-w-[120px] truncate" title={targetIds}>
+          <p
+            className="text-xs text-zinc-400 mt-0.5 max-w-[120px] truncate"
+            title={targetIds}
+          >
             ID: {targetIds}
           </p>
         )}
@@ -117,7 +143,9 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
 
       {/* Usage */}
       <td className="px-4 py-3 text-center text-sm text-zinc-600">
-        <span className="font-semibold text-zinc-900">{coupon.usedCount || 0}</span>
+        <span className="font-semibold text-zinc-900">
+          {coupon.usedCount || 0}
+        </span>
         {coupon.usageLimit != null && (
           <span className="text-zinc-400"> / {coupon.usageLimit}</span>
         )}
@@ -142,8 +170,18 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
             aria-label={`Chỉnh sửa coupon ${coupon.code}`}
             title="Chỉnh sửa"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           </button>
 
@@ -155,16 +193,40 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
                 ? "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                 : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
             }`}
-            aria-label={coupon.isActive ? `Tắt coupon ${coupon.code}` : `Bật coupon ${coupon.code}`}
+            aria-label={
+              coupon.isActive
+                ? `Tắt coupon ${coupon.code}`
+                : `Bật coupon ${coupon.code}`
+            }
             title={coupon.isActive ? "Tắt" : "Bật"}
           >
             {coupon.isActive ? (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 18.364a9 9 0 0012.728 0m-12.728 0L12 12m6.364 6.364L12 12m0 0L5.636 5.636M12 12l6.364-6.364" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5.636 18.364a9 9 0 0012.728 0m-12.728 0L12 12m6.364 6.364L12 12m0 0L5.636 5.636M12 12l6.364-6.364"
+                />
               </svg>
             )}
           </button>
@@ -176,8 +238,18 @@ function CouponListRow({ coupon, onEdit, onToggle, onDelete }) {
             aria-label={`Xoá coupon ${coupon.code}`}
             title="Xoá"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>

@@ -5,10 +5,12 @@ import { authFetch } from "./authService";
 
 export async function getAdminCoupons(params = {}) {
   const query = new URLSearchParams();
-  if (params.page !== undefined && params.page !== null) query.set("page", String(params.page));
+  if (params.page !== undefined && params.page !== null)
+    query.set("page", String(params.page));
   if (params.size) query.set("size", String(params.size));
   if (params.q) query.set("q", params.q);
-  if (params.active !== undefined && params.active !== null) query.set("active", String(params.active));
+  if (params.active !== undefined && params.active !== null)
+    query.set("active", String(params.active));
 
   const qs = query.toString();
   const response = await authFetch(`/admin/coupons${qs ? `?${qs}` : ""}`);
@@ -65,9 +67,7 @@ export async function deleteCouponAdmin(couponId) {
 
 export async function getPublicCoupons(params = {}) {
   const qs = new URLSearchParams(params).toString();
-  const response = await request(
-    `/coupons/public${qs ? `?${qs}` : ""}`
-  );
+  const response = await request(`/coupons/public${qs ? `?${qs}` : ""}`);
   const payload = await parseApiResponse(response);
   return payload?.data || [];
 }

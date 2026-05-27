@@ -89,7 +89,11 @@ function AdminCouponsPage() {
       const code = normalizeText(c.code || "");
       const title = normalizeText(c.title || "");
       const desc = normalizeText(c.description || "");
-      return code.includes(keyword) || title.includes(keyword) || desc.includes(keyword);
+      return (
+        code.includes(keyword) ||
+        title.includes(keyword) ||
+        desc.includes(keyword)
+      );
     });
   }, [coupons, search]);
 
@@ -220,7 +224,9 @@ function AdminCouponsPage() {
           <div className="flex items-center justify-center py-16">
             <div className="flex flex-col items-center gap-3">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
-              <p className="text-sm text-zinc-500">Đang tải danh sách coupon...</p>
+              <p className="text-sm text-zinc-500">
+                Đang tải danh sách coupon...
+              </p>
             </div>
           </div>
         )}
@@ -241,7 +247,11 @@ function AdminCouponsPage() {
                   strokeLinejoin="round"
                   d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
                 />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 6h.008v.008H6V6z"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-zinc-900">
@@ -269,7 +279,11 @@ function AdminCouponsPage() {
         {/* Table */}
         {!loading && filteredCoupons.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm" role="table" aria-label="Danh sách coupon">
+            <table
+              className="w-full text-sm"
+              role="table"
+              aria-label="Danh sách coupon"
+            >
               <thead>
                 <tr className="border-b border-zinc-200 bg-zinc-50/80 text-left text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                   <th className="px-4 py-2.5">Mã / Tiêu đề</th>
