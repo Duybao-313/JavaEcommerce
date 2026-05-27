@@ -11,6 +11,7 @@ const navItems = [
   { to: "/admin/products", label: "Sản phẩm" },
   { to: "/admin/products/review", label: "Duyệt sản phẩm" },
   { to: "/admin/orders", label: "Đơn hàng" },
+  { to: "/admin/coupons", label: "Coupons" },
   { to: "/admin/reviews", label: "Đánh giá" },
   { to: "/admin/shippings", label: "Vận chuyển" },
   { to: "/admin/users", label: "Người dùng" },

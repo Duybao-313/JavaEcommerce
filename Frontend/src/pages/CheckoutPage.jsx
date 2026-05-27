@@ -1,32 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { getCurrentUserDetail } from "../services/authService";
 import { checkout } from "../services/orderService";
-
-const vouchers = [
-  { code: "NONE", label: "Không dùng coupon", type: "none", value: 0 },
-  {
-    code: "SALE20",
-    label: "Giảm 20% (tối đa 200.000đ)",
-    type: "percent",
-    value: 20,
-    max: 200000,
-  },
-  {
-    code: "FREESHIP",
-    label: "Miễn phí vận chuyển (30.000đ)",
-    type: "fixed",
-    value: 30000,
-  },
-  {
-    code: "SAVE50K",
-    label: "Giảm 50.000đ đơn hàng",
-    type: "fixed",
-    value: 50000,
-  },
-];
+import {
+  getPublicCoupons,
+  validateCouponForCart,
+  formatCouponLabel,
+} from "../services/couponService";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("vi-VN", {
@@ -42,15 +24,25 @@ function CheckoutPage() {
   const { items, selectedItems, clearSelectedItems, refreshCart } = useCart();
 
   const [userInfo, setUserInfo] = useState(null);
-  const [voucherCode, setVoucherCode] = useState("NONE");
   const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [couponCodeInput, setCouponCodeInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [address, setAddress] = useState({
     fullName: "",
     phone: "",
     detail: "",
     note: "",
+  });
+
+  // ── Dynamic coupon state ────────────────────────────────────────────
+  const [publicCoupons, setPublicCoupons] = useState([]);
+  const [selectedCouponCode, setSelectedCouponCode] = useState("");
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponValidation, setCouponValidation] = useState({
+    valid: false,
+    discountAmount: 0,
+    reason: null,
+    coupon: null,
   });
 
   useEffect(() => {
@@ -69,6 +61,13 @@ function CheckoutPage() {
       .catch(() => {
         // Silent fail — user can still type manually
       });
+  }, []);
+
+  // Load public coupons on mount
+  useEffect(() => {
+    getPublicCoupons({ active: true })
+      .then(setPublicCoupons)
+      .catch(() => setPublicCoupons([]));
   }, []);
 
   const selectedIdsFromRoute = useMemo(() => {
@@ -96,27 +95,98 @@ function CheckoutPage() {
 
   const shippingFee = subtotal > 0 ? 20000 : 0;
 
-  const selectedVoucher = useMemo(
-    () =>
-      vouchers.find((voucher) => voucher.code === voucherCode) || vouchers[0],
-    [voucherCode],
+  // ── Coupon validation handler ───────────────────────────────────────
+  const handleApplyCoupon = useCallback(
+    async (code) => {
+      if (!code) {
+        setSelectedCouponCode("");
+        setCouponValidation({ valid: false, discountAmount: 0, reason: null, coupon: null });
+        return;
+      }
+
+      setCouponLoading(true);
+      setSelectedCouponCode(code);
+      try {
+        const req = {
+          code,
+          subtotal,
+          shippingFee,
+          items: checkoutItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId || null,
+            quantity: item.quantity,
+            sellerId: item.sellerId || null,
+          })),
+          userId: userInfo?.id || null,
+        };
+        const res = await validateCouponForCart(req);
+        if (res?.valid) {
+          setCouponValidation({
+            valid: true,
+            discountAmount: res.discountAmount || 0,
+            reason: null,
+            coupon: res.coupon || null,
+          });
+          toast.success("Áp dụng coupon thành công");
+        } else {
+          setCouponValidation({
+            valid: false,
+            discountAmount: 0,
+            reason: res?.reason || "Coupon không hợp lệ",
+            coupon: null,
+          });
+          toast.error(res?.reason || "Coupon không hợp lệ");
+        }
+      } catch (err) {
+        setCouponValidation({
+          valid: false,
+          discountAmount: 0,
+          reason: err?.message || "Không thể kiểm tra coupon",
+          coupon: null,
+        });
+        toast.error(err?.message || "Không thể kiểm tra coupon");
+      } finally {
+        setCouponLoading(false);
+      }
+    },
+    [subtotal, shippingFee, checkoutItems, userInfo],
   );
 
-  const discount = useMemo(() => {
-    if (!selectedVoucher || selectedVoucher.type === "none") return 0;
+  // Handle dropdown selection
+  const handleCouponSelect = useCallback(
+    (e) => {
+      const code = e.target.value;
+      setCouponCodeInput("");
+      handleApplyCoupon(code);
+    },
+    [handleApplyCoupon],
+  );
 
-    if (selectedVoucher.type === "fixed") {
-      return Math.min(subtotal, selectedVoucher.value);
-    }
+  // Handle manual code entry
+  const handleCouponCodeSubmit = useCallback(() => {
+    const code = couponCodeInput.trim().toUpperCase();
+    if (!code) return;
+    handleApplyCoupon(code);
+  }, [couponCodeInput, handleApplyCoupon]);
 
-    const percentValue = Math.floor((subtotal * selectedVoucher.value) / 100);
-    if (selectedVoucher.max) {
-      return Math.min(percentValue, selectedVoucher.max);
-    }
-    return percentValue;
-  }, [selectedVoucher, subtotal]);
+  // Clear coupon
+  const handleClearCoupon = useCallback(() => {
+    setSelectedCouponCode("");
+    setCouponCodeInput("");
+    setCouponValidation({ valid: false, discountAmount: 0, reason: null, coupon: null });
+  }, []);
 
+  // ── Derived values ──────────────────────────────────────────────────
+  const discount = couponValidation.valid ? couponValidation.discountAmount : 0;
   const grandTotal = Math.max(0, subtotal + shippingFee - discount);
+
+  // Build coupon dropdown options
+  const couponOptions = useMemo(() => {
+    return publicCoupons.map((c) => ({
+      code: c.code,
+      label: formatCouponLabel(c),
+    }));
+  }, [publicCoupons]);
 
   const handleAddressChange = (event) => {
     const { name, value } = event.target;
@@ -149,7 +219,7 @@ function CheckoutPage() {
         discount: discount,
         paymentMethod: "COD",
         note: address.note?.trim() || "",
-        couponCode: voucherCode !== "NONE" ? voucherCode : null,
+        couponCode: couponValidation.valid ? selectedCouponCode : null,
       };
 
       const result = await checkout(checkoutRequest);
@@ -242,13 +312,14 @@ function CheckoutPage() {
               <label className="text-sm text-zinc-700">
                 Coupon
                 <select
-                  value={voucherCode}
-                  onChange={(event) => setVoucherCode(event.target.value)}
+                  value={selectedCouponCode}
+                  onChange={handleCouponSelect}
                   className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
                 >
-                  {vouchers.map((voucher) => (
-                    <option key={voucher.code} value={voucher.code}>
-                      {voucher.label}
+                  <option value="">Không dùng coupon</option>
+                  {couponOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -259,18 +330,43 @@ function CheckoutPage() {
                 <div className="mt-1 flex gap-2">
                   <input
                     value={couponCodeInput}
-                    onChange={(e) => setCouponCodeInput(e.target.value)}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleCouponCodeSubmit(); }}
                     placeholder="Nhập mã coupon"
-                    className="min-h-[44px] flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                    disabled={couponLoading}
+                    className="min-h-[44px] flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 disabled:bg-zinc-100 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
-                    disabled
-                    className="min-h-[44px] cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400"
+                    onClick={handleCouponCodeSubmit}
+                    disabled={couponLoading || !couponCodeInput.trim()}
+                    className="min-h-[44px] rounded-xl border border-zinc-300 bg-white px-4 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-800 transition-colors duration-180 ease-out-quart hover:border-zinc-900 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400"
                   >
-                    Áp dụng
+                    {couponLoading ? "Đang kiểm tra..." : "Áp dụng"}
                   </button>
                 </div>
+                {/* Coupon status feedback */}
+                {selectedCouponCode && (
+                  <div className="mt-1.5">
+                    {couponValidation.valid ? (
+                      <div className="flex items-center gap-2 text-xs text-emerald-700">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Đã áp dụng: giảm {formatPrice(couponValidation.discountAmount)}</span>
+                        <button
+                          type="button"
+                          onClick={handleClearCoupon}
+                          className="ml-auto rounded px-1.5 py-0.5 text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-colors duration-150"
+                        >
+                          Huỷ
+                        </button>
+                      </div>
+                    ) : couponValidation.reason ? (
+                      <p className="text-xs text-red-600">{couponValidation.reason}</p>
+                    ) : null}
+                  </div>
+                )}
               </label>
 
               <label className="text-sm text-zinc-700">
@@ -349,7 +445,7 @@ function CheckoutPage() {
                 <span>{formatPrice(shippingFee)}</span>
               </div>
               <div className="flex items-center justify-between text-emerald-700">
-                <span>Giảm giá voucher</span>
+                <span>Giảm giá coupon</span>
                 <span>-{formatPrice(discount)}</span>
               </div>
             </div>

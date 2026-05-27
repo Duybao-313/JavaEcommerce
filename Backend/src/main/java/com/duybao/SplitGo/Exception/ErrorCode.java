@@ -72,7 +72,15 @@ public enum ErrorCode {
     STORE_NAME_TOO_LONG(2021, "Tên cửa hàng quá dài (tối đa 255 ký tự)", HttpStatus.BAD_REQUEST),
     STORE_ADDRESS_TOO_LONG(2022, "Địa chỉ cửa hàng quá dài (tối đa 500 ký tự)", HttpStatus.BAD_REQUEST),
     STATUS_REASON_REQUIRED(2023, "Vui lòng cung cấp lý do từ chối / yêu cầu chỉnh sửa (tối thiểu 10 ký tự)", HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED);
+    UNAUTHORIZED(3001, "Không có quyền thực hiện hành động này", HttpStatus.UNAUTHORIZED),
+
+    // Coupon errors
+    COUPON_NOT_FOUND(4000, "Không tìm thấy coupon", HttpStatus.NOT_FOUND),
+    COUPON_CODE_EXISTS(4001, "Mã coupon đã tồn tại", HttpStatus.BAD_REQUEST),
+    COUPON_EXPIRED(4002, "Coupon đã hết hạn", HttpStatus.BAD_REQUEST),
+    COUPON_EXHAUSTED(4003, "Coupon đã hết lượt sử dụng", HttpStatus.BAD_REQUEST),
+    COUPON_MIN_ORDER_NOT_MET(4004, "Giá trị đơn hàng chưa đạt mức tối thiểu", HttpStatus.BAD_REQUEST),
+    COUPON_SCOPE_MISMATCH(4005, "Coupon không áp dụng cho sản phẩm trong giỏ hàng", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
