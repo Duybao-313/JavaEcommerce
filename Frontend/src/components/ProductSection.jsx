@@ -9,6 +9,8 @@ import { getCategories } from "../services/categoryService";
 import { getAuthSession } from "../services/sessionService";
 import WishlistButton from "./WishlistButton";
 import CategoriesStrip from "./CategoriesStrip";
+import SearchFilterBar from "./SearchFilterBar";
+import FilterPanel from "./FilterPanel";
 
 const listVariants = {
   hidden: {},
@@ -69,6 +71,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const pageSize = 12;
+  const FETCH_ALL_SIZE = 500;
 
   const session = getAuthSession();
 
@@ -124,6 +127,22 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     };
   }, [topViewedProducts]);
 
+  // Determine if any client-side filter is active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      (searchTerm && searchTerm.trim().length > 0) ||
+      (selectedCategory && selectedCategory !== "all") ||
+      (stockFilter && stockFilter !== "all") ||
+      (minPrice && Number(minPrice) > 0) ||
+      (maxPrice && Number(maxPrice) > 0)
+    );
+  }, [searchTerm, selectedCategory, stockFilter, minPrice, maxPrice]);
+
+  // Reset to page 0 whenever filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, selectedCategory, stockFilter, minPrice, maxPrice]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -134,18 +153,42 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       try {
         const hasPreselected =
           preselectedCategory != null && preselectedCategory !== "all";
-        const pageData = hasPreselected
-          ? await getProductsByCategory(
+
+        let pageData;
+        if (hasActiveFilters) {
+          // Fetch all products at once for client-side filtering
+          if (hasPreselected) {
+            pageData = await getProductsByCategory(
+              preselectedCategory,
+              0,
+              FETCH_ALL_SIZE,
+            );
+          } else {
+            pageData = await getProducts(0, FETCH_ALL_SIZE);
+          }
+        } else {
+          // Normal server-side pagination
+          if (hasPreselected) {
+            pageData = await getProductsByCategory(
               preselectedCategory,
               currentPage,
               pageSize,
-            )
-          : await getProducts(currentPage, pageSize);
+            );
+          } else {
+            pageData = await getProducts(currentPage, pageSize);
+          }
+        }
 
         if (!cancelled) {
           setProducts(pageData?.content || []);
-          setTotalPages(pageData?.totalPages || 0);
-          setTotalElements(pageData?.totalElements || 0);
+          if (hasActiveFilters) {
+            // For client-side filtering, total comes from filtered results (set later)
+            setTotalElements(pageData?.totalElements || 0);
+            setTotalPages(1); // placeholder, real pagination computed from filteredProducts
+          } else {
+            setTotalPages(pageData?.totalPages || 0);
+            setTotalElements(pageData?.totalElements || 0);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -166,7 +209,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [preselectedCategory, currentPage]);
+  }, [preselectedCategory, currentPage, hasActiveFilters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,12 +279,17 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       );
     });
 
-    if (priceSort === "asc") {
+    // Sort
+    if (priceSort === "asc" || priceSort === "priceAsc") {
       result.sort((a, b) => Number(a?.price || 0) - Number(b?.price || 0));
-    }
-
-    if (priceSort === "desc") {
+    } else if (priceSort === "desc" || priceSort === "priceDesc") {
       result.sort((a, b) => Number(b?.price || 0) - Number(a?.price || 0));
+    } else if (priceSort === "soldDesc") {
+      result.sort(
+        (a, b) => Number(b?.soldCount || 0) - Number(a?.soldCount || 0),
+      );
+    } else if (priceSort === "newest") {
+      result.sort((a, b) => Number(b?.id || 0) - Number(a?.id || 0));
     }
 
     return result;
@@ -254,6 +302,24 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     maxPrice,
     priceSort,
   ]);
+
+  // Client-side pagination when filters are active
+  const pagedProducts = useMemo(() => {
+    if (!hasActiveFilters) return filteredProducts;
+    const start = currentPage * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize, hasActiveFilters]);
+
+  // Compute total pages for client-side filtered results
+  const computedTotalPages = useMemo(() => {
+    if (!hasActiveFilters) return totalPages;
+    return Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  }, [hasActiveFilters, totalPages, filteredProducts.length, pageSize]);
+
+  const computedTotalElements = useMemo(() => {
+    if (!hasActiveFilters) return totalElements;
+    return filteredProducts.length;
+  }, [hasActiveFilters, totalElements, filteredProducts.length]);
 
   const handleAddToCart = async (event, product) => {
     event.stopPropagation();
@@ -493,147 +559,76 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
 
       {!compact && (
         <section className="space-y-4">
+          {/* Section header: title + product count */}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Sản phẩm
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                Danh sách sản phẩm mới nhất
+                Danh sách sản phẩm
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsFilterPanelOpen((prev) => !prev)}
-                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
-              >
-                {isFilterPanelOpen ? "Ẩn bộ lọc" : "Bộ lọc"}
-              </button>
-            </div>
+            {!loading && !error && (
+              <p className="text-xs font-semibold text-zinc-500">
+                <span className="tabular-nums text-zinc-900">
+                  {filteredProducts.length}
+                </span>{" "}
+                sản phẩm
+              </p>
+            )}
           </div>
 
-          {isFilterPanelOpen && (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                <div className="md:col-span-2 lg:col-span-3">
-                  <label
-                    htmlFor="product-search"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Tìm kiếm theo tên sản phẩm
-                  </label>
-                  <input
-                    id="product-search"
-                    type="text"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Nhập tên sản phẩm..."
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  />
-                </div>
+          {/* Search + Filter Bar (always visible) */}
+          <SearchFilterBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            selectedCategory={selectedCategory}
+            stockFilter={stockFilter}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            priceSort={priceSort}
+            onCategoryChange={setSelectedCategory}
+            onStockChange={setStockFilter}
+            onPriceChange={(type, value) => {
+              if (type === "min") setMinPrice(value);
+              else setMaxPrice(value);
+            }}
+            onSortChange={setPriceSort}
+            onClearAll={() => {
+              setSearchTerm("");
+              setSelectedCategory("all");
+              setStockFilter("all");
+              setMinPrice("");
+              setMaxPrice("");
+              setPriceSort("default");
+            }}
+            categories={categories}
+            isFilterOpen={isFilterPanelOpen}
+            onToggleFilter={() => setIsFilterPanelOpen((prev) => !prev)}
+            totalProductCount={filteredProducts.length}
+          />
 
-                <div>
-                  <label
-                    htmlFor="category-filter"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Danh mục
-                  </label>
-                  <select
-                    id="category-filter"
-                    value={selectedCategory}
-                    onChange={(event) =>
-                      setSelectedCategory(event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  >
-                    <option value="all">Tất cả danh mục</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="stock-filter"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Số lượng
-                  </label>
-                  <select
-                    id="stock-filter"
-                    value={stockFilter}
-                    onChange={(event) => setStockFilter(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  >
-                    <option value="all">Tất cả</option>
-                    <option value="inStock">Còn hàng</option>
-                    <option value="outOfStock">Hết hàng</option>
-                    <option value="lowStock">Sắp hết (1-10)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="price-sort"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Giá tiền
-                  </label>
-                  <select
-                    id="price-sort"
-                    value={priceSort}
-                    onChange={(event) => setPriceSort(event.target.value)}
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  >
-                    <option value="default">Mặc định</option>
-                    <option value="asc">Thấp đến cao</option>
-                    <option value="desc">Cao đến thấp</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="min-price"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Giá từ
-                  </label>
-                  <input
-                    id="min-price"
-                    type="number"
-                    min="0"
-                    value={minPrice}
-                    onChange={(event) => setMinPrice(event.target.value)}
-                    placeholder="0"
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="max-price"
-                    className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
-                  >
-                    Giá đến
-                  </label>
-                  <input
-                    id="max-price"
-                    type="number"
-                    min="0"
-                    value={maxPrice}
-                    onChange={(event) => setMaxPrice(event.target.value)}
-                    placeholder="99999999"
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Advanced Filter Panel (expandable) */}
+          <FilterPanel
+            isOpen={isFilterPanelOpen}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            stockFilter={stockFilter}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onCategoryChange={setSelectedCategory}
+            onStockChange={setStockFilter}
+            onMinPriceChange={setMinPrice}
+            onMaxPriceChange={setMaxPrice}
+            onReset={() => {
+              setSelectedCategory("all");
+              setStockFilter("all");
+              setMinPrice("");
+              setMaxPrice("");
+            }}
+            onClose={() => setIsFilterPanelOpen(false)}
+          />
         </section>
       )}
 
@@ -664,14 +659,14 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
           </div>
         )}
 
-      {!loading && !error && filteredProducts.length > 0 && (
+      {!loading && !error && pagedProducts.length > 0 && (
         <motion.div
           variants={listVariants}
           initial="hidden"
           animate="visible"
           className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         >
-          {filteredProducts.map((product) => (
+          {pagedProducts.map((product) => (
             <motion.article
               key={product.id}
               variants={itemVariants}
@@ -724,7 +719,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       )}
 
       {/* Pagination */}
-      {!loading && !error && totalPages > 1 && (
+      {!loading && !error && computedTotalPages > 1 && (
         <div className="mt-8 flex items-center justify-center gap-2">
           <button
             type="button"
@@ -735,13 +730,15 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
             ← Trước
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => {
+          {Array.from({ length: computedTotalPages }, (_, i) => {
             // Show first, last, current, and neighbors
             const showPage =
-              i === 0 || i === totalPages - 1 || Math.abs(i - currentPage) <= 1;
+              i === 0 ||
+              i === computedTotalPages - 1 ||
+              Math.abs(i - currentPage) <= 1;
             if (!showPage) {
               // Show ellipsis only once between ranges
-              if (i === 1 || i === totalPages - 2) {
+              if (i === 1 || i === computedTotalPages - 2) {
                 return (
                   <span key={i} className="px-1 text-xs text-zinc-400">
                     ...
@@ -768,9 +765,9 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
 
           <button
             type="button"
-            disabled={currentPage >= totalPages - 1}
+            disabled={currentPage >= computedTotalPages - 1}
             onClick={() =>
-              setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+              setCurrentPage((p) => Math.min(computedTotalPages - 1, p + 1))
             }
             className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-700 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -778,7 +775,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
           </button>
 
           <span className="ml-3 text-xs text-zinc-500">
-            {totalElements.toLocaleString("vi-VN")} sản phẩm
+            {computedTotalElements.toLocaleString("vi-VN")} sản phẩm
           </span>
         </div>
       )}
