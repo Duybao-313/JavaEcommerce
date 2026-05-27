@@ -15,6 +15,10 @@ public interface CatalogService {
 
     PageResponse<ProductResponse> getProductsBySellerId(Long sellerId, int page, int size);
 
+    PageResponse<ProductResponse> getStoreProducts(Long sellerId, int page, int size, String sort);
+
+    List<ProductResponse> getBestSellers(Long sellerId, int limit);
+
     PageResponse<ProductResponse> getProductsByCategoryId(Long categoryId, int page, int size);
 
     ProductResponse getProductDetail(Long productId);

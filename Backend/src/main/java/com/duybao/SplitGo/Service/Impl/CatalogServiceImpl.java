@@ -126,6 +126,57 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
+    public PageResponse<ProductResponse> getStoreProducts(Long sellerId, int page, int size, String sort) {
+        org.springframework.data.domain.Sort springSort = resolveStoreSort(sort);
+        Page<Product> productPage = productRepository
+                .findBySellerIdAndStatus(sellerId, ProductStatus.ACTIVE,
+                        PageRequest.of(page, size, springSort));
+        List<ProductResponse> content = productPage.getContent().stream()
+                .map(this::toProductResponse)
+                .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public List<ProductResponse> getBestSellers(Long sellerId, int limit) {
+        List<Product> bestSellers = productRepository
+                .findBySellerIdAndStatus(sellerId, ProductStatus.ACTIVE,
+                        PageRequest.of(0, limit, org.springframework.data.domain.Sort.by(
+                                org.springframework.data.domain.Sort.Order.desc("soldCount"))))
+                .getContent();
+        return bestSellers.stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
+
+    /**
+     * Resolves sort string to Spring Sort for store product listing.
+     * Supported: soldDesc (default), newest, priceAsc, priceDesc
+     */
+    private org.springframework.data.domain.Sort resolveStoreSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("soldCount"));
+        }
+        return switch (sort.toLowerCase()) {
+            case "newest" -> org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("createdAt"));
+            case "pricedesc" -> org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("price"));
+            case "priceasc" -> org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.asc("price"));
+            default -> org.springframework.data.domain.Sort.by(
+                    org.springframework.data.domain.Sort.Order.desc("soldCount"));
+        };
+    }
+
+    @Override
     public PageResponse<ProductResponse> getProductsByCategoryId(Long categoryId, int page, int size) {
         Set<Long> categoryIds = new HashSet<>();
         collectCategoryIds(categoryId, categoryIds);

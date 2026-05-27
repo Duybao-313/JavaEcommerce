@@ -106,6 +106,36 @@ public class ProductController {
                 .build();
     }
 
+    // ─── Public Store Endpoints ───
+
+    @GetMapping("/store/{sellerId}")
+    public ApiResponse<PageResponse<ProductResponse>> getPublicStoreProducts(
+            @PathVariable Long sellerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "24") int size,
+            @RequestParam(defaultValue = "soldDesc") String sort) {
+        return ApiResponse.<PageResponse<ProductResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách sản phẩm cửa hàng thành công")
+                .data(catalogService.getStoreProducts(sellerId, page, size, sort))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @GetMapping("/store/{sellerId}/best-sellers")
+    public ApiResponse<List<ProductResponse>> getBestSellers(
+            @PathVariable Long sellerId,
+            @RequestParam(defaultValue = "8") int limit) {
+        return ApiResponse.<List<ProductResponse>>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy danh sách sản phẩm bán chạy thành công")
+                .data(catalogService.getBestSellers(sellerId, limit))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ProductResponse> getProductById(@PathVariable Long id) {
         return ApiResponse.<ProductResponse>builder()
