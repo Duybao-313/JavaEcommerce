@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 
 @Data
 public class CheckoutRequest {
-    @NotBlank
     private String shippingAddress;
+    private Long addressId;
     private String phoneNumber;
     private String recipientName;
     private BigDecimal shippingFee;

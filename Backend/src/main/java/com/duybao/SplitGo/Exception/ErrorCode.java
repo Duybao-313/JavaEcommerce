@@ -61,6 +61,8 @@ public enum ErrorCode {
     WISHLIST_NOT_FOUND(2010, "Không tìm thấy mục yêu thích", HttpStatus.NOT_FOUND),
     WISHLIST_ITEM_EXISTS(2011, "Sản phẩm đã có trong danh sách yêu thích", HttpStatus.BAD_REQUEST),
     ADDRESS_NOT_FOUND(2012, "Không tìm thấy địa chỉ", HttpStatus.NOT_FOUND),
+    MAX_ADDRESSES_REACHED(2030, "Bạn chỉ có thể lưu tối đa 10 địa chỉ", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_LAST_ADDRESS(2031, "Không thể xóa địa chỉ cuối cùng", HttpStatus.BAD_REQUEST),
     SHIPPING_NOT_FOUND(2013, "Không tìm thấy thông tin vận chuyển", HttpStatus.NOT_FOUND),
     SHIPPING_ALREADY_EXISTS(2014, "Thông tin vận chuyển đã tồn tại", HttpStatus.BAD_REQUEST),
     VARIANT_NOT_FOUND(2015, "Không tìm thấy biến thể sản phẩm", HttpStatus.NOT_FOUND),

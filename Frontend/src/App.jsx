@@ -17,6 +17,7 @@ import ReviewsPage from "./pages/ReviewsPage";
 import CategoryPage from "./pages/CategoryPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import WishlistPage from "./pages/WishlistPage";
+import AddressPage from "./pages/AddressPage";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
 import SellerProfilePage from "./pages/SellerProfilePage";
 import SellerLayout, { SellerDashboardHome } from "./pages/SellerDashboardPage";
@@ -84,6 +85,7 @@ function App() {
       <Route path="/orders/:orderId" element={<OrderDetailPage />} />
       <Route path="/store/:sellerId" element={<StorePage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
+      <Route path="/addresses" element={<AddressPage />} />
 
       <Route element={<RoleRoute allowedRoles={["SELLER"]} />}>
         <Route path="/seller" element={<SellerLayout />}>

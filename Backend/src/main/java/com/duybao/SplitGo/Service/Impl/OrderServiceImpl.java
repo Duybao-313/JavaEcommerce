@@ -11,6 +11,7 @@ import com.duybao.SplitGo.Enum.ProductStatus;
 import com.duybao.SplitGo.Enum.ShippingStatus;
 import com.duybao.SplitGo.Exception.AppException;
 import com.duybao.SplitGo.Exception.ErrorCode;
+import com.duybao.SplitGo.Model.Address;
 import com.duybao.SplitGo.Model.Cart;
 import com.duybao.SplitGo.Model.CartItem;
 import com.duybao.SplitGo.Model.Order;
@@ -18,6 +19,7 @@ import com.duybao.SplitGo.Model.OrderItem;
 import com.duybao.SplitGo.Model.PaymentTransaction;
 import com.duybao.SplitGo.Model.Product;
 import com.duybao.SplitGo.Model.User;
+import com.duybao.SplitGo.Repository.AddressRepository;
 import com.duybao.SplitGo.Repository.CartItemRepository;
 import com.duybao.SplitGo.Repository.CartRepository;
 import com.duybao.SplitGo.Repository.OrderItemRepository;
@@ -45,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ShippingRepository shippingRepository;
     private final ReviewRepository reviewRepository;
+    private final AddressRepository addressRepository;
 
     public OrderServiceImpl(
             CartRepository cartRepository,
@@ -55,7 +58,8 @@ public class OrderServiceImpl implements OrderService {
             ProductRepository productRepository,
             UserRepository userRepository,
             ShippingRepository shippingRepository,
-            ReviewRepository reviewRepository) {
+            ReviewRepository reviewRepository,
+            AddressRepository addressRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -65,6 +69,7 @@ public class OrderServiceImpl implements OrderService {
         this.userRepository = userRepository;
         this.shippingRepository = shippingRepository;
         this.reviewRepository = reviewRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Override
@@ -77,15 +82,32 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
         BigDecimal discount = request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO;
+
+        // Resolve shipping address: use addressId (address book) if provided, else fallback to flat string
+        String shippingAddress = request.getShippingAddress();
+        String phoneNumber = request.getPhoneNumber();
+        String recipientName = request.getRecipientName();
+        if (request.getAddressId() != null) {
+            Address addr = addressRepository.findByIdAndUserId(request.getAddressId(), buyerId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
+            shippingAddress = addr.getDetail();
+            phoneNumber = phoneNumber != null ? phoneNumber : addr.getPhone();
+            recipientName = recipientName != null ? recipientName : addr.getRecipientName();
+        }
+
+        if (shippingAddress == null || shippingAddress.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
         Order order = Order.builder()
                 .buyer(buyer)
                 .status(OrderStatus.PENDING)
                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD)
-                .shippingAddress(request.getShippingAddress())
+                .shippingAddress(shippingAddress)
                 .shippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO)
                 .discountAmount(discount)
-                .phone(request.getPhoneNumber())
-                .recipientName(request.getRecipientName())
+                .phone(phoneNumber)
+                .recipientName(recipientName)
                 .orderCode("ORD-" + System.currentTimeMillis())
                 .note(request.getNote())
                 .totalAmount(BigDecimal.ZERO)

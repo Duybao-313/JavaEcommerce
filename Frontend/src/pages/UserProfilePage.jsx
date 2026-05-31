@@ -174,6 +174,12 @@ function UserProfilePage() {
               Đơn hàng
             </Link>
             <Link
+              to="/addresses"
+              className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+            >
+              Sổ địa chỉ
+            </Link>
+            <Link
               to={backToPath}
               className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
             >

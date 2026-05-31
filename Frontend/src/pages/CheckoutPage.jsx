@@ -9,6 +9,7 @@ import {
   validateCouponForCart,
   formatCouponLabel,
 } from "../services/couponService";
+import { getMyAddresses } from "../services/addressService";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("vi-VN", {
@@ -32,6 +33,10 @@ function CheckoutPage() {
     detail: "",
     note: "",
   });
+
+  // ── Saved addresses state ──────────────────────────────────────────
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
 
   // ── Dynamic coupon state ────────────────────────────────────────────
   const [publicCoupons, setPublicCoupons] = useState([]);
@@ -62,6 +67,43 @@ function CheckoutPage() {
         // Silent fail — user can still type manually
       });
   }, []);
+
+  // Load saved addresses for selection
+  useEffect(() => {
+    getMyAddresses()
+      .then((list) => {
+        setSavedAddresses(list);
+        // Auto-select default address if no manual entry yet
+        const defaultAddr = list.find((a) => a.isDefault);
+        if (defaultAddr && !address.detail) {
+          setSelectedAddressId(String(defaultAddr.id));
+          setAddress((prev) => ({
+            ...prev,
+            fullName: defaultAddr.recipientName || prev.fullName,
+            phone: defaultAddr.phone || prev.phone,
+            detail: defaultAddr.detail || prev.detail,
+          }));
+        }
+      })
+      .catch(() => setSavedAddresses([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle saved address selection
+  const handleSavedAddressSelect = (e) => {
+    const id = e.target.value;
+    setSelectedAddressId(id);
+    if (!id) return;
+    const addr = savedAddresses.find((a) => String(a.id) === id);
+    if (addr) {
+      setAddress((prev) => ({
+        ...prev,
+        fullName: addr.recipientName || "",
+        phone: addr.phone || "",
+        detail: addr.detail || "",
+      }));
+    }
+  };
 
   // Load public coupons on mount
   useEffect(() => {
@@ -223,6 +265,7 @@ function CheckoutPage() {
     try {
       const checkoutRequest = {
         shippingAddress: address.detail.trim(),
+        addressId: selectedAddressId ? Number(selectedAddressId) : null,
         phoneNumber: address.phone.trim(),
         recipientName: address.fullName.trim(),
         shippingFee: shippingFee,
@@ -319,6 +362,35 @@ function CheckoutPage() {
             )}
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {/* ── Saved Address Selector ───────────────────────── */}
+              {savedAddresses.length > 0 && (
+                <label className="text-sm text-zinc-700 md:col-span-2">
+                  <span className="inline-flex items-center gap-1">
+                    Chọn địa chỉ đã lưu
+                    <Link
+                      to="/addresses"
+                      className="ml-2 text-xs text-amber-600 hover:text-amber-700 underline underline-offset-2"
+                    >
+                      Quản lý sổ địa chỉ →
+                    </Link>
+                  </span>
+                  <select
+                    value={selectedAddressId}
+                    onChange={handleSavedAddressSelect}
+                    className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                  >
+                    <option value="">Nhập thủ công...</option>
+                    {savedAddresses.map((addr) => (
+                      <option key={addr.id} value={String(addr.id)}>
+                        {addr.isDefault ? "⭐ " : ""}
+                        {addr.recipientName} — {addr.phone} — {addr.detail}
+                        {addr.isDefault ? " (Mặc định)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
               <label className="text-sm text-zinc-700">
                 Coupon
                 <select
