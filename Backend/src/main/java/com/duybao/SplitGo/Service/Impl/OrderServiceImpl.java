@@ -4,6 +4,7 @@ import com.duybao.SplitGo.DTO.Response.ecommerce.OrderItemResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.OrderResponse;
 import com.duybao.SplitGo.DTO.Response.ecommerce.ReviewableItemResponse;
 import com.duybao.SplitGo.DTO.request.ecommerce.CheckoutRequest;
+import com.duybao.SplitGo.Config.SePayConfig;
 import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.PaymentMethod;
 import com.duybao.SplitGo.Enum.PaymentStatus;
@@ -30,6 +31,7 @@ import com.duybao.SplitGo.Repository.ReviewRepository;
 import com.duybao.SplitGo.Repository.ShippingRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.OrderService;
+import com.duybao.SplitGo.Service.SePayService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -48,6 +50,8 @@ public class OrderServiceImpl implements OrderService {
     private final ShippingRepository shippingRepository;
     private final ReviewRepository reviewRepository;
     private final AddressRepository addressRepository;
+    private final SePayService sePayService;
+    private final SePayConfig sePayConfig;
 
     public OrderServiceImpl(
             CartRepository cartRepository,
@@ -59,7 +63,9 @@ public class OrderServiceImpl implements OrderService {
             UserRepository userRepository,
             ShippingRepository shippingRepository,
             ReviewRepository reviewRepository,
-            AddressRepository addressRepository) {
+            AddressRepository addressRepository,
+            SePayService sePayService,
+            SePayConfig sePayConfig) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderRepository = orderRepository;
@@ -70,6 +76,8 @@ public class OrderServiceImpl implements OrderService {
         this.shippingRepository = shippingRepository;
         this.reviewRepository = reviewRepository;
         this.addressRepository = addressRepository;
+        this.sePayService = sePayService;
+        this.sePayConfig = sePayConfig;
     }
 
     @Override
@@ -99,10 +107,14 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
 
+        // SePay orders start as PENDING_PAYMENT; COD orders start as PENDING
+        PaymentMethod paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD;
+        OrderStatus initialStatus = paymentMethod == PaymentMethod.SEPAY ? OrderStatus.PENDING_PAYMENT : OrderStatus.PENDING;
+
         Order order = Order.builder()
                 .buyer(buyer)
-                .status(OrderStatus.PENDING)
-                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD)
+                .status(initialStatus)
+                .paymentMethod(paymentMethod)
                 .shippingAddress(shippingAddress)
                 .shippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO)
                 .discountAmount(discount)
@@ -163,15 +175,25 @@ public class OrderServiceImpl implements OrderService {
 
         paymentTransactionRepository.save(PaymentTransaction.builder()
                 .order(savedOrder)
-                .method(PaymentMethod.COD)
+                .method(paymentMethod)
                 .status(PaymentStatus.PENDING)
                 .amount(totalAmount)
                 .build());
 
-        // Clear cart items via orphanRemoval (Cart has @OneToMany cascade=ALL, orphanRemoval=true)
-        // This is safer than derived deleteAllByCartId which may bypass persistence context
+        // Clear cart items
         cart.getItems().clear();
-        return toOrderResponse(savedOrder);
+
+        // Build response
+        OrderResponse response = toOrderResponse(savedOrder);
+
+        // If SePay, generate form fields for frontend to create dynamic form
+        if (paymentMethod == PaymentMethod.SEPAY) {
+            response.setFormFields(sePayService.createPayment(savedOrder).getFormFields());
+            response.setGatewayUrl(sePayConfig.getBaseUrl());
+            response.setRedirectToGateway(true);
+        }
+
+        return response;
     }
 
     @Override
@@ -254,8 +276,10 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
 
-        // Buyer chỉ được hủy đơn ở trạng thái PENDING hoặc CONFIRMED
-        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
+        // Buyer chỉ được hủy đơn ở trạng thái PENDING, PENDING_PAYMENT hoặc CONFIRMED
+        if (order.getStatus() != OrderStatus.PENDING
+                && order.getStatus() != OrderStatus.PENDING_PAYMENT
+                && order.getStatus() != OrderStatus.CONFIRMED) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
 
@@ -359,6 +383,37 @@ public class OrderServiceImpl implements OrderService {
         });
     }
 
+    @Override
+    public OrderResponse getSePayPaymentForOrder(Long buyerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (!order.getBuyer().getId().equals(buyerId)) {
+            throw new AppException(ErrorCode.FORBIDDEN_RESOURCE);
+        }
+
+        if (order.getPaymentMethod() != PaymentMethod.SEPAY) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+
+        OrderResponse response = toOrderResponse(order);
+        response.setFormFields(sePayService.createPayment(order).getFormFields());
+        response.setGatewayUrl(sePayConfig.getBaseUrl());
+        response.setRedirectToGateway(true);
+        return response;
+    }
+
+    @Override
+    public OrderResponse getOrderByCode(String orderCode) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        return toOrderResponse(order);
+    }
+
     private void validateStatusTransition(OrderStatus currentStatus, OrderStatus targetStatus) {
         if (currentStatus == targetStatus) {
             return;
@@ -366,15 +421,35 @@ public class OrderServiceImpl implements OrderService {
         if (currentStatus == OrderStatus.DELIVERED || currentStatus == OrderStatus.CANCELLED) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
-        if (targetStatus == OrderStatus.PENDING) {
+        if (targetStatus == OrderStatus.PENDING || targetStatus == OrderStatus.PENDING_PAYMENT) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
         if (targetStatus == OrderStatus.CANCELLED) {
             return;
         }
+        // PENDING_PAYMENT can only go to CONFIRMED (payment done) or CANCELLED
+        if (currentStatus == OrderStatus.PENDING_PAYMENT && targetStatus != OrderStatus.CONFIRMED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
         if (targetStatus.ordinal() < currentStatus.ordinal()) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
         }
+    }
+
+    private String resolvePaymentStatus(Order order) {
+        if (order.getPaymentMethod() == PaymentMethod.COD) {
+            return "COD";
+        }
+        // For SePay/online payment: check order status
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+            return "UNPAID";
+        }
+        // Check if payment transaction is PAID
+        boolean paid = paymentTransactionRepository
+                .findByOrderId(order.getId())
+                .stream()
+                .anyMatch(tx -> tx.getStatus() == PaymentStatus.PAID);
+        return paid ? "PAID" : "UNPAID";
     }
 
     private OrderResponse toOrderResponse(Order order) {
@@ -435,6 +510,7 @@ public class OrderServiceImpl implements OrderService {
                 .seller(sellerSummary)
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
+                .paymentStatus(resolvePaymentStatus(order))
                 .shippingAddress(order.getShippingAddress())
                 .phone(order.getPhone())
                 .recipientName(order.getRecipientName())

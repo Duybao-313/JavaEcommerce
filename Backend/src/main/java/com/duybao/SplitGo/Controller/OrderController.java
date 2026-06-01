@@ -70,6 +70,18 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping("/orders/by-code/{orderCode}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN') or hasRole('SELLER')")
+    public ApiResponse<OrderResponse> getOrderByCode(@PathVariable String orderCode) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Lấy chi tiết đơn hàng thành công")
+                .data(orderService.getOrderByCode(orderCode))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @PostMapping("/orders/{orderId}/cancel")
     @PreAuthorize("hasRole('USER')")
     public ApiResponse<OrderResponse> cancelOrder(
@@ -94,6 +106,20 @@ public class OrderController {
                 .code(200)
                 .message("Xác nhận đã nhận hàng thành công")
                 .data(orderService.confirmDelivery(user.getId(), orderId))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping("/orders/{orderId}/pay-sepay")
+    @PreAuthorize("hasRole('USER')")
+    public ApiResponse<OrderResponse> paySePay(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId) {
+        return ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .code(200)
+                .message("Tạo lại dữ liệu thanh toán SePay thành công")
+                .data(orderService.getSePayPaymentForOrder(user.getId(), orderId))
                 .timestamp(LocalDateTime.now())
                 .build();
     }

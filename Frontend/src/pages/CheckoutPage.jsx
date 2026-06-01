@@ -27,6 +27,7 @@ function CheckoutPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sePayLoading, setSePayLoading] = useState(false);
   const [address, setAddress] = useState({
     fullName: "",
     phone: "",
@@ -270,7 +271,7 @@ function CheckoutPage() {
         recipientName: address.fullName.trim(),
         shippingFee: shippingFee,
         discount: discount,
-        paymentMethod: "COD",
+        paymentMethod: paymentMethod,
         note: address.note?.trim() || "",
         couponCode: couponValidation.valid ? selectedCouponCode : null,
       };
@@ -278,6 +279,29 @@ function CheckoutPage() {
       const result = await checkout(checkoutRequest);
 
       if (result) {
+        // If SePay payment, create form and submit to SePay gateway
+        if (result.formFields && result.redirectToGateway) {
+          setSePayLoading(true);
+          // Directly create and submit form to SePay (opens QR page)
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = result.gatewayUrl + "/v1/checkout/init";
+          form.acceptCharset = "UTF-8";
+          Object.entries(result.formFields).forEach(([name, value]) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          // Clean up cart in background
+          clearSelectedItems();
+          refreshCart();
+          return;
+        }
+
         toast.success("Đặt hàng thành công!");
         clearSelectedItems();
         await refreshCart();
@@ -516,16 +540,31 @@ function CheckoutPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                 Hình thức thanh toán
               </p>
-              <div className="mt-3">
-                <label className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
+              <div className="mt-3 flex flex-wrap gap-3">
+                <label className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 cursor-pointer hover:border-zinc-400">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="COD"
                     checked={paymentMethod === "COD"}
-                    readOnly
+                    onChange={() => setPaymentMethod("COD")}
                   />
                   Thanh toán khi nhận hàng (COD)
+                </label>
+                <label className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 cursor-pointer hover:border-zinc-400">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="SEPAY"
+                    checked={paymentMethod === "SEPAY"}
+                    onChange={() => setPaymentMethod("SEPAY")}
+                  />
+                  <span className="flex items-center gap-1.5">
+                    Thanh toán qua SePay
+                    <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                      QR / Thẻ
+                    </span>
+                  </span>
                 </label>
               </div>
             </div>
@@ -571,6 +610,19 @@ function CheckoutPage() {
           </aside>
         </div>
       </div>
+
+      {/* SePay Redirect Loading Overlay */}
+      {sePayLoading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/98">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-200 border-t-zinc-900" />
+          <p className="mt-6 text-lg font-semibold text-zinc-800">
+            Đang chuyển đến cổng thanh toán SePay...
+          </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Vui lòng không đóng trang này
+          </p>
+        </div>
+      )}
     </div>
   );
 }

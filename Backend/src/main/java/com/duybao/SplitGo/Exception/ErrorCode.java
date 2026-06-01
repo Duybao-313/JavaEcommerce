@@ -82,7 +82,13 @@ public enum ErrorCode {
     COUPON_EXPIRED(4002, "Coupon đã hết hạn", HttpStatus.BAD_REQUEST),
     COUPON_EXHAUSTED(4003, "Coupon đã hết lượt sử dụng", HttpStatus.BAD_REQUEST),
     COUPON_MIN_ORDER_NOT_MET(4004, "Giá trị đơn hàng chưa đạt mức tối thiểu", HttpStatus.BAD_REQUEST),
-    COUPON_SCOPE_MISMATCH(4005, "Coupon không áp dụng cho sản phẩm trong giỏ hàng", HttpStatus.BAD_REQUEST);
+    COUPON_SCOPE_MISMATCH(4005, "Coupon không áp dụng cho sản phẩm trong giỏ hàng", HttpStatus.BAD_REQUEST),
+
+    // Payment errors
+    PAYMENT_NOT_FOUND(5001, "Không tìm thấy giao dịch thanh toán", HttpStatus.NOT_FOUND),
+    PAYMENT_ALREADY_PAID(5002, "Giao dịch đã được thanh toán", HttpStatus.BAD_REQUEST),
+    PAYMENT_GATEWAY_ERROR(5003, "Lỗi kết nối cổng thanh toán", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYMENT_SIGNATURE_INVALID(5004, "Chữ ký thanh toán không hợp lệ", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

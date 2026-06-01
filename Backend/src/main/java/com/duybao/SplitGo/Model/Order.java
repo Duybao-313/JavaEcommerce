@@ -51,11 +51,11 @@ public class Order {
     private User seller;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     private OrderStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     private PaymentMethod paymentMethod;
 
     @Column(nullable = false, precision = 19, scale = 2)
@@ -95,9 +95,6 @@ public class Order {
 
     @Column
     private LocalDateTime deliveredAt;
-
-    @Column
-    private OrderStatus orderStatus= OrderStatus.PENDING;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

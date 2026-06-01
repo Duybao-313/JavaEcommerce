@@ -63,17 +63,17 @@ categories ── products
 
 ### 2. `addresses`
 
-| Column           | Type         | Constraints             | Notes                              |
-| ---------------- | ------------ | ----------------------- | ---------------------------------- |
-| `id`             | BIGINT       | PK, AUTO_INCREMENT      |                                    |
-| `user_id`        | BIGINT       | FK → users.id, NOT NULL |                                    |
-| `recipient_name` | VARCHAR(255) | NOT NULL                |                                    |
-| `phone`          | VARCHAR(20)  | NOT NULL                | 10-11 digits                       |
-| `detail`         | VARCHAR(500) | NOT NULL                | Full address detail                |
-| `type`           | ENUM         | NOT NULL                | HOME, OFFICE, OTHER                |
+| Column           | Type         | Constraints             | Notes                               |
+| ---------------- | ------------ | ----------------------- | ----------------------------------- |
+| `id`             | BIGINT       | PK, AUTO_INCREMENT      |                                     |
+| `user_id`        | BIGINT       | FK → users.id, NOT NULL |                                     |
+| `recipient_name` | VARCHAR(255) | NOT NULL                |                                     |
+| `phone`          | VARCHAR(20)  | NOT NULL                | 10-11 digits                        |
+| `detail`         | VARCHAR(500) | NOT NULL                | Full address detail                 |
+| `type`           | ENUM         | NOT NULL                | HOME, OFFICE, OTHER                 |
 | `is_default`     | BOOLEAN      | NOT NULL, DEFAULT false | Only one default per user at a time |
-| `created_at`     | DATETIME     | NOT NULL                |                                    |
-| `updated_at`     | DATETIME     |                         |                                    |
+| `created_at`     | DATETIME     | NOT NULL                |                                     |
+| `updated_at`     | DATETIME     |                         |                                     |
 
 ### 3. `categories`
 
@@ -157,9 +157,8 @@ categories ── products
 | `order_code`       | VARCHAR(255)  | UNIQUE, NOT NULL          | Generated                                      |
 | `buyer_id`         | BIGINT        | FK → users.id, NOT NULL   |                                                |
 | `seller_id`        | BIGINT        | FK → users.id             | Multi-seller support                           |
-| `status`           | ENUM          | NOT NULL, DEFAULT PENDING | PENDING/PROCESSING/SHIPPED/DELIVERED/CANCELLED |
-| `order_status`     | ENUM          | DEFAULT PENDING           | **⚠ DUPLICATE FIELD — see Technical Debt**     |
-| `payment_method`   | ENUM          | NOT NULL, DEFAULT COD     | COD, BANK_TRANSFER, E_WALLET                   |
+| `status`           | ENUM          | NOT NULL, DEFAULT PENDING | PENDING_PAYMENT/PENDING/CONFIRMED/PREPARING/SHIPPING/DELIVERED/CANCELLED |
+| `payment_method`   | ENUM          | NOT NULL, DEFAULT COD     | COD, SEPAY                                     |
 | `total_amount`     | DECIMAL(19,2) | NOT NULL                  |                                                |
 | `discount_amount`  | DECIMAL(19,2) | DEFAULT 0                 |                                                |
 | `shipping_fee`     | DECIMAL(19,2) | DEFAULT 0                 |                                                |
@@ -194,9 +193,12 @@ categories ── products
 | ------------ | ------------- | ------------------------- | ---------------------------- |
 | `id`         | BIGINT        | PK, AUTO_INCREMENT        |                              |
 | `order_id`   | BIGINT        | FK → orders.id, NOT NULL  |                              |
-| `method`     | ENUM          | NOT NULL                  | COD, BANK_TRANSFER, E_WALLET |
-| `status`     | ENUM          | NOT NULL, DEFAULT PENDING | PENDING, SUCCESS, FAILED     |
+| `method`     | ENUM          | NOT NULL                  | COD, SEPAY                   |
+| `status`     | ENUM          | NOT NULL, DEFAULT PENDING | PENDING, PAID, FAILED        |
 | `amount`     | DECIMAL(19,2) | NOT NULL                  |                              |
+| `gateway_ref`| VARCHAR(100)  |                           | SePay transaction ID         |
+| `gateway_url`| VARCHAR(500)  |                           | SePay gateway URL            |
+| `paid_at`    | DATETIME      |                           | When payment completed       |
 | `created_at` | DATETIME      | NOT NULL                  |                              |
 
 ### 11. `reviews`
@@ -277,9 +279,9 @@ categories ── products
 | Enum Class                 | Values                                                   |
 | -------------------------- | -------------------------------------------------------- |
 | `Role`                     | USER, SELLER, ADMIN                                      |
-| `OrderStatus`              | PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED       |
-| `PaymentStatus`            | PENDING, SUCCESS, FAILED                                 |
-| `PaymentMethod`            | COD, BANK_TRANSFER, E_WALLET                             |
+| `OrderStatus`              | PENDING_PAYMENT, PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED |
+| `PaymentStatus`            | PENDING, PAID, FAILED                                    |
+| `PaymentMethod`            | COD, SEPAY                                               |
 | `ProductStatus`            | ACTIVE, INACTIVE                                         |
 | `SellerVerificationStatus` | PENDING, APPROVED, REJECTED                              |
 | `StoreStatus`              | ACTIVE, SUSPENDED                                        |

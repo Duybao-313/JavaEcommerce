@@ -14,3 +14,12 @@ jwt:
   token-duration: 6000
   refresh-duration: 60000
 
+sepay:
+  merchant-id: MERCHANT_TEST
+  secret-key: spsk_test_k5C5kM85D69ZLUMqFzpjC22cDDoBGURs
+  base-url: https://pay.sepay.vn
+  success-url: http://localhost:5173/payments/sepay/success
+  error-url: http://localhost:5173/payments/sepay/error
+  cancel-url: http://localhost:5173/payments/sepay/cancel
+  ipn-url: http://localhost:5173/api/payments/sepay/ipn
+

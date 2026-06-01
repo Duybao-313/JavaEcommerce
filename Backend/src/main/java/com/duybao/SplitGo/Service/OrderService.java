@@ -27,6 +27,10 @@ public interface OrderService {
 
     OrderResponse cancelOrderBySeller(Long sellerId, Long orderId);
 
+    OrderResponse getSePayPaymentForOrder(Long buyerId, Long orderId);
+
+    OrderResponse getOrderByCode(String orderCode);
+
     List<ReviewableItemResponse> getReviewableItems(Long buyerId, Long orderId);
 }
 

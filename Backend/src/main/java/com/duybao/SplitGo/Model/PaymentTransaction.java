@@ -39,7 +39,7 @@ public class PaymentTransaction {
     private Order order;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
@@ -48,6 +48,15 @@ public class PaymentTransaction {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+
+    @Column(length = 100)
+    private String gatewayRef;
+
+    @Column(length = 500)
+    private String gatewayUrl;
+
+    @Column
+    private LocalDateTime paidAt;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

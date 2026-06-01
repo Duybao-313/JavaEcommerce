@@ -29,5 +29,14 @@ logging:
 
 jwt:
   secret: "q9v8G3s2r4Yt1KfVb6s9X2mQp7L0uH8nZ5yR0wVxC1aB7dE4fG6hJkL9mN0oPqR2sT3uVwXyZ+AbCdEfGhIjKlMBaoBaoBao"
-  token-duration: 6000
+  token-duration: 3600000
   refresh-duration: 60000
+
+sepay:
+  merchant-id: ${SEPAY_MERCHANT_ID:SP-LIVE-PD395947}
+  secret-key: ${SEPAY_SECRET_KEY:spsk_live_Djayk8UzDxrEVygkHa3uooGKCSznvwqb}
+  base-url: ${SEPAY_BASE_URL:https://pay.sepay.vn}
+  success-url: ${SEPAY_SUCCESS_URL:https://your-domain.com/payments/sepay/success}
+  error-url: ${SEPAY_ERROR_URL:https://your-domain.com/payments/sepay/error}
+  cancel-url: ${SEPAY_CANCEL_URL:https://your-domain.com/payments/sepay/cancel}
+  ipn-url: ${SEPAY_IPN_URL:https://your-domain.com/api/payments/sepay/ipn}

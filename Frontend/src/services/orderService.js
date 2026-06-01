@@ -24,6 +24,12 @@ export async function getOrderById(orderId) {
   return payload?.data || null;
 }
 
+export async function getOrderByCode(orderCode) {
+  const response = await authFetch(`/orders/by-code/${orderCode}`);
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
 export async function cancelOrder(orderId) {
   const response = await authFetch(`/orders/${orderId}/cancel`, {
     method: "POST",
@@ -46,6 +52,14 @@ export async function getReviewableItems(orderId) {
   return payload?.data || [];
 }
 
+export async function getSePayPaymentForOrder(orderId) {
+  const response = await authFetch(`/orders/${orderId}/pay-sepay`, {
+    method: "POST",
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || null;
+}
+
 // ---- Status mapping (backend → UI) ----
 export const UI_STATUS = {
   PENDING_CONFIRMATION: "Chờ xác nhận",
@@ -56,7 +70,7 @@ export const UI_STATUS = {
 };
 
 export const STATUS_GROUPS = {
-  [UI_STATUS.PENDING_CONFIRMATION]: ["PENDING"],
+  [UI_STATUS.PENDING_CONFIRMATION]: ["PENDING", "PENDING_PAYMENT"],
   [UI_STATUS.SHIPPING]: ["CONFIRMED", "PREPARING", "SHIPPING"],
   [UI_STATUS.RECEIVED]: ["DELIVERED"],
   [UI_STATUS.CANCELLED]: ["CANCELLED"],
@@ -75,13 +89,14 @@ export function mapOrderToUiStatus(orderStatus) {
 
 export function isOrderCancellable(orderStatus) {
   const s = String(orderStatus || "").toUpperCase();
-  return ["PENDING", "CONFIRMED"].includes(s);
+  return ["PENDING", "PENDING_PAYMENT", "CONFIRMED"].includes(s);
 }
 
 // ---- Raw status display (per backend status, not grouped) ----
 export const RAW_STATUS_LABEL = {
+  PENDING_PAYMENT: "Chưa thanh toán",
   PENDING: "Chờ xác nhận",
-  CONFIRMED: "Đã xác nhận",
+  CONFIRMED: "Đã thanh toán",
   PREPARING: "Đang chuẩn bị",
   SHIPPING: "Đang giao",
   DELIVERED: "Đã giao",
@@ -89,8 +104,9 @@ export const RAW_STATUS_LABEL = {
 };
 
 export const RAW_STATUS_ICON = {
+  PENDING_PAYMENT: "💳",
   PENDING: "⏳",
-  CONFIRMED: "✓",
+  CONFIRMED: "💰",
   PREPARING: "📦",
   SHIPPING: "🚚",
   DELIVERED: "✅",
@@ -98,6 +114,7 @@ export const RAW_STATUS_ICON = {
 };
 
 export const RAW_STATUS_CSS = {
+  PENDING_PAYMENT: "orders-status-pending",
   PENDING: "orders-status-pending",
   CONFIRMED: "orders-status-shipping",
   PREPARING: "orders-status-shipping",

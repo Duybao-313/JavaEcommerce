@@ -5,6 +5,8 @@ import {
   cancelOrder,
   confirmDelivery,
   getOrderById,
+  getOrderByCode,
+  getSePayPaymentForOrder,
   isOrderCancellable,
   mapOrderToUiStatus,
   UI_STATUS,
@@ -38,6 +40,10 @@ const STATUS_META = {
     cssClass: "orders-status-pending",
     icon: "⏳",
   },
+  PENDING_PAYMENT: {
+    cssClass: "orders-status-pending",
+    icon: "💳",
+  },
   [UI_STATUS.SHIPPING]: { cssClass: "orders-status-shipping", icon: "📦" },
   [UI_STATUS.DELIVERED]: { cssClass: "orders-status-delivered", icon: "✅" },
   [UI_STATUS.CANCELLED]: { cssClass: "orders-status-cancelled", icon: "❌" },
@@ -51,12 +57,17 @@ export default function OrderDetailPage() {
   const [error, setError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [sePayLoading, setSePayLoading] = useState(false);
 
   const fetchOrder = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getOrderById(orderId);
+      // Handle both numeric ID and order code (ORD-xxx)
+      const isOrderCode = orderId && /^ORD-/.test(orderId);
+      const data = isOrderCode
+        ? await getOrderByCode(orderId)
+        : await getOrderById(orderId);
       setOrder(data);
     } catch (err) {
       setError(err.message || "Không thể tải chi tiết đơn hàng");
@@ -111,8 +122,46 @@ export default function OrderDetailPage() {
     }
   }
 
-  const uiStatus = order ? mapOrderToUiStatus(order.status) : null;
-  const statusMeta = uiStatus ? STATUS_META[uiStatus] : null;
+  async function handleSePayPay() {
+    if (sePayLoading || !order) return;
+    setSePayLoading(true);
+    try {
+      const data = await getSePayPaymentForOrder(order.orderId);
+      if (!data || !data.formFields || !data.gatewayUrl) {
+        toast.error("Không thể tạo lại dữ liệu thanh toán");
+        return;
+      }
+      // Create and submit dynamic form to SePay
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.gatewayUrl + "/v1/checkout/init";
+      form.style.display = "none";
+      Object.entries(data.formFields).forEach(([key, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      toast.error(err.message || "Không thể tạo lại dữ liệu thanh toán");
+      setSePayLoading(false);
+    }
+  }
+
+  const uiStatus = order
+    ? String(order.status || "").toUpperCase() === "PENDING_PAYMENT"
+      ? "Chưa thanh toán"
+      : mapOrderToUiStatus(order.status)
+    : null;
+  const statusMeta =
+    order && String(order.status || "").toUpperCase() === "PENDING_PAYMENT"
+      ? STATUS_META.PENDING_PAYMENT
+      : uiStatus
+        ? STATUS_META[uiStatus]
+        : null;
 
   // ---- Timeline steps ----
   const timelineSteps = useMemo(() => {
@@ -127,6 +176,25 @@ export default function OrderDetailPage() {
           date: order.updatedAt,
           completed: true,
           isCancelled: true,
+        },
+      ];
+    }
+
+    // For PENDING_PAYMENT: show payment pending as step 2
+    if (currentStatus === "PENDING_PAYMENT") {
+      return [
+        {
+          key: "PLACED",
+          label: "Đơn hàng đã đặt",
+          date: order.createdAt,
+          completed: true,
+        },
+        {
+          key: "PENDING_PAYMENT",
+          label: "Chờ thanh toán",
+          date: null,
+          completed: false,
+          active: true,
         },
       ];
     }
@@ -435,6 +503,16 @@ export default function OrderDetailPage() {
           {/* Actions */}
           <section className="orders-detail-section">
             <div className="orders-detail-actions">
+              {String(order.status || "").toUpperCase() === "PENDING_PAYMENT" &&
+                order.paymentMethod === "SEPAY" && (
+                  <button
+                    className="orders-btn-pay orders-btn-pay-block"
+                    disabled={sePayLoading}
+                    onClick={handleSePayPay}
+                  >
+                    {sePayLoading ? "Đang tạo..." : "💳 Thanh toán ngay"}
+                  </button>
+                )}
               {String(order.status || "").toUpperCase() === "SHIPPING" && (
                 <button
                   className="orders-btn-confirm orders-btn-confirm-block"

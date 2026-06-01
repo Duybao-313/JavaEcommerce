@@ -2,9 +2,11 @@ package com.duybao.SplitGo.DTO.Response.ecommerce;
 
 import com.duybao.SplitGo.Enum.OrderStatus;
 import com.duybao.SplitGo.Enum.PaymentMethod;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,6 +21,7 @@ public class OrderResponse {
     private SellerSummary seller;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
+    private String paymentStatus;
     private String shippingAddress;
     private String phone;
     private String recipientName;
@@ -33,6 +36,12 @@ public class OrderResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime shippedAt;
     private LocalDateTime deliveredAt;
+
+    // Payment gateway fields (only populated for online payment like SePay)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String, String> formFields;
+    private String gatewayUrl;
+    private boolean redirectToGateway;
 
     @Data
     @Builder
