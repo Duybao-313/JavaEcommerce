@@ -6,6 +6,7 @@ import { getFacehashProps } from "../utils/facehashTheme";
 import {
   getCurrentUserDetail,
   updateCurrentUser,
+  changePassword,
 } from "../services/authService";
 import { clearAuth, getAuthSession, hasRole } from "../services/sessionService";
 
@@ -22,6 +23,13 @@ function UserProfilePage() {
     phone: "",
     address: "",
   });
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPass: "",
+    newPass1: "",
+    newPass2: "",
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,6 +117,41 @@ function UserProfilePage() {
       address: user?.address || "",
     });
     setIsEditing(false);
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    const { oldPass, newPass1, newPass2 } = passwordForm;
+
+    if (!oldPass || !newPass1 || !newPass2) {
+      toast.error("Vui lòng điền đầy đủ các trường");
+      return;
+    }
+    if (newPass1.length < 6) {
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+    if (newPass1 !== newPass2) {
+      toast.error("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await changePassword({ oldPass, newPass1, newPass2 });
+      toast.success("Đổi mật khẩu thành công");
+      setPasswordForm({ oldPass: "", newPass1: "", newPass2: "" });
+      setShowChangePassword(false);
+    } catch (err) {
+      toast.error(err?.message || "Không thể đổi mật khẩu");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleSubmitUpdate = async (event) => {
@@ -388,8 +431,90 @@ function UserProfilePage() {
               </p>
             </div>
           </div>
-        </section>
 
+          {/* Change Password Section */}
+          <div className="mt-8 border-t border-zinc-200 pt-6">
+            {!showChangePassword ? (
+              <button
+                onClick={() => setShowChangePassword(true)}
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900"
+              >
+                Đổi mật khẩu
+              </button>
+            ) : (
+              <form
+                onSubmit={handleChangePasswordSubmit}
+                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  Đổi mật khẩu
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className="text-sm text-zinc-700">
+                    Mật khẩu cũ
+                    <input
+                      type="password"
+                      name="oldPass"
+                      value={passwordForm.oldPass}
+                      onChange={handlePasswordChange}
+                      className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                      required
+                    />
+                  </label>
+                  <label className="text-sm text-zinc-700 md:col-span-2" />
+                  <label className="text-sm text-zinc-700">
+                    Mật khẩu mới
+                    <input
+                      type="password"
+                      name="newPass1"
+                      value={passwordForm.newPass1}
+                      onChange={handlePasswordChange}
+                      placeholder="Ít nhất 6 ký tự"
+                      className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                      required
+                    />
+                  </label>
+                  <label className="text-sm text-zinc-700">
+                    Xác nhận mật khẩu mới
+                    <input
+                      type="password"
+                      name="newPass2"
+                      value={passwordForm.newPass2}
+                      onChange={handlePasswordChange}
+                      placeholder="Nhập lại mật khẩu mới"
+                      className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900"
+                      required
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={changingPassword}
+                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {changingPassword ? "Đang lưu..." : "Lưu"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowChangePassword(false);
+                      setPasswordForm({
+                        oldPass: "",
+                        newPass1: "",
+                        newPass2: "",
+                      });
+                    }}
+                    disabled={changingPassword}
+                    className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-800 hover:border-zinc-900 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

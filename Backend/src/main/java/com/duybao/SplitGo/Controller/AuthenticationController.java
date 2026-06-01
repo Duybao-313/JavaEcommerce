@@ -108,6 +108,25 @@ public class AuthenticationController {
                 .build();
     }
 
+    @PostMapping("/forgot-password")
+    ApiResponse<String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        var token = authenticationService.forgotPassword(request);
+        return ApiResponse.<String>builder()
+                .success(true)
+                .message("Token đặt lại mật khẩu đã được tạo. Dùng token này để đặt lại mật khẩu.")
+                .data(token)
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    ApiResponse<Void> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+        var res = authenticationService.resetPassword(request);
+        return ApiResponse.<Void>builder()
+                .success(res)
+                .message("Đặt lại mật khẩu thành công")
+                .build();
+    }
+
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ApiResponse<UserDTO> updateAvatar(
             @AuthenticationPrincipal User user, @RequestPart("avatar") MultipartFile avatar) {

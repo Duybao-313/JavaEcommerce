@@ -72,7 +72,19 @@ Paginated responses use `PageResponse<T>`:
 ### `POST /auth/change-password`
 
 - **Auth**: Bearer token
-- **Body**: `{ oldPassword, newPassword, confirmPassword }`
+- **Body**: `{ oldPass, newPass1, newPass2 }`
+- **Response**: `Void`
+
+### `POST /auth/forgot-password`
+
+- **Auth**: None
+- **Body**: `{ email }`
+- **Response**: `String` (reset token — sẽ gửi qua email sau khi tích hợp email service)
+
+### `POST /auth/reset-password`
+
+- **Auth**: None
+- **Body**: `{ token, newPassword, confirmPassword }`
 - **Response**: `Void`
 
 ### `POST /auth/avatar` (multipart)

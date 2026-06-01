@@ -21,12 +21,14 @@
 | Get current user            | ✅     | `/auth/userdetail`                   |
 | Update profile              | ✅     | Full name, phone                     |
 | Change password             | ✅     | Old/new password validation          |
+| Forgot password             | ✅     | Token-based reset flow               |
+| Reset password              | ✅     | Verify token + update password       |
 | Avatar upload               | ✅     | Cloudinary                           |
 | Role-based guards           | ✅     | `@PreAuthorize` on all controllers   |
 | Seller profile CRUD         | ✅     | Store name, logo, banner, bank info  |
 | Public seller profile       | ✅     | `/auth/sellers/{sellerId}`           |
 
-**Remaining**: Email verification, password reset flow, increase JWT duration for production.
+**Remaining**: Email verification, increase JWT duration for production.
 
 ### 1.2 Product Catalog — 95%
 
@@ -174,7 +176,7 @@
 | ---------------------------- | -------- | --------- | ------------------------------------------------------------------------- |
 | **Address Book**             | HIGH     | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
 | **Email Verification**       | MEDIUM   | 2-3 days  | Send verification email, verify endpoint                                  |
-| **Password Reset**           | MEDIUM   | 2-3 days  | Forgot password flow with email token                                     |
+| **Password Reset**           | ✅ DONE  | Completed | Forgot password flow with reset token                                     |
 | **Payment Gateway (SePay)**  | ✅ DONE  | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
 | **Coupon at Checkout**       | MEDIUM   | 1-2 days  | Apply coupon discount during checkout                                     |
 | **Order Status History**     | LOW      | 2-3 days  | Log all status transitions                                                |
@@ -191,6 +193,7 @@
 > **Status**: ✅ Done | Production: `SP-LIVE-PD395947`
 
 **Luồng thanh toán:**
+
 1. User chọn SePay khi checkout → Backend tạo Order (PENDING_PAYMENT) + PaymentTransaction (PENDING)
 2. Backend tạo form thanh toán với chữ ký HMAC-SHA256 → Trả về formFields
 3. Frontend auto-submit form sang `pay.sepay.vn/v1/checkout/init`
@@ -200,24 +203,25 @@
    - SePay redirect browser về success_url (có ?order_invoice_number=...) → Backend callback set status
 6. Backend redirect browser về frontend `/orders/{numericId}?payment=success` ✅
 
-| #      | Task                                      | File                                             | Status |
-| ------ | ----------------------------------------- | ------------------------------------------------ | ------ |
-| PG-01  | Thêm `SEPAY` vào PaymentMethod enum       | `Enum/PaymentMethod.java`                        | ✅     |
-| PG-02  | Mở rộng PaymentTransaction entity         | `Model/PaymentTransaction.java`                  | ✅     |
-| PG-03  | Tạo SePayConfig (merchantId, secretKey)   | `Config/SePayConfig.java`                        | ✅     |
-| PG-04  | Tạo SePayService interface                | `Service/SePayService.java`                      | ✅     |
-| PG-05  | Tạo SePayServiceImpl (sign, verify IPN)   | `Service/Impl/SePayServiceImpl.java`              | ✅     |
-| PG-06  | Tạo SePayController (IPN + callback)      | `Controller/SePayController.java`                | ✅     |
-| PG-07  | Sửa checkout() xử lý SePay flow           | `Service/Impl/OrderServiceImpl.java`             | ✅     |
-| PG-08  | Thêm cấu hình SePay vào application.yaml  | `resources/application.yaml`                     | ✅     |
-| PG-09  | Tạo SePay IPN DTO                         | `DTO/request/payment/SePayIpnRequest.java`       | ✅     |
-| PG-10  | Tạo SePay PaymentResponse DTO             | `DTO/response/payment/SePayPaymentResponse.java` | ✅     |
-| PG-11  | Thêm lựa chọn SePay trong CheckoutPage    | `pages/CheckoutPage.jsx`                         | ✅     |
-| PG-12  | Handle SePay callback redirect            | `SePayController.paymentSuccess()`               | ✅     |
-| PG-13  | Backend endpoint GET /orders/by-code      | `OrderController.getOrderByCode()`               | ✅     |
-| PG-14  | Frontend handle order code param          | `OrderDetailPage.jsx`                            | ✅     |
+| #     | Task                                     | File                                             | Status |
+| ----- | ---------------------------------------- | ------------------------------------------------ | ------ |
+| PG-01 | Thêm `SEPAY` vào PaymentMethod enum      | `Enum/PaymentMethod.java`                        | ✅     |
+| PG-02 | Mở rộng PaymentTransaction entity        | `Model/PaymentTransaction.java`                  | ✅     |
+| PG-03 | Tạo SePayConfig (merchantId, secretKey)  | `Config/SePayConfig.java`                        | ✅     |
+| PG-04 | Tạo SePayService interface               | `Service/SePayService.java`                      | ✅     |
+| PG-05 | Tạo SePayServiceImpl (sign, verify IPN)  | `Service/Impl/SePayServiceImpl.java`             | ✅     |
+| PG-06 | Tạo SePayController (IPN + callback)     | `Controller/SePayController.java`                | ✅     |
+| PG-07 | Sửa checkout() xử lý SePay flow          | `Service/Impl/OrderServiceImpl.java`             | ✅     |
+| PG-08 | Thêm cấu hình SePay vào application.yaml | `resources/application.yaml`                     | ✅     |
+| PG-09 | Tạo SePay IPN DTO                        | `DTO/request/payment/SePayIpnRequest.java`       | ✅     |
+| PG-10 | Tạo SePay PaymentResponse DTO            | `DTO/response/payment/SePayPaymentResponse.java` | ✅     |
+| PG-11 | Thêm lựa chọn SePay trong CheckoutPage   | `pages/CheckoutPage.jsx`                         | ✅     |
+| PG-12 | Handle SePay callback redirect           | `SePayController.paymentSuccess()`               | ✅     |
+| PG-13 | Backend endpoint GET /orders/by-code     | `OrderController.getOrderByCode()`               | ✅     |
+| PG-14 | Frontend handle order code param         | `OrderDetailPage.jsx`                            | ✅     |
 
 **Fixes đã áp dụng:**
+
 - Fix success_url gắn `order_invoice_number` vào query string
 - Fix callback redirect dùng numeric ID thay vì order code
 - Fix duplicate field `orderStatus` trong Order entity
@@ -250,11 +254,11 @@
 
 ### 3.1 Database ↔ Entity Inconsistencies
 
-| #         | Issue                                      | Severity | Location                | Fix                                                                                                                                                                  |
-| --------- | ------------------------------------------ | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TD-01** | **Duplicate `status`/`orderStatus` field** | ✅ FIXED | `Order.java`            | ✅ Removed duplicate `orderStatus` field. Only `status` remains. |
-| **TD-02** | **Address entity not implemented**         | ✅ FIXED | `Model/Address.java`    | ✅ Created `Address` entity, `AddressRepository`, `AddressService`, `AddressController`. Checkout now supports selecting address via `addressId`.                    |
-| **TD-03** | **`InvalidatedToken` has no User FK**      | LOW      | `InvalidatedToken.java` | Uses JWT `id` (jti) as PK without user reference. Can't query tokens by user.                                                                                        |
+| #         | Issue                                      | Severity | Location                | Fix                                                                                                                                               |
+| --------- | ------------------------------------------ | -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TD-01** | **Duplicate `status`/`orderStatus` field** | ✅ FIXED | `Order.java`            | ✅ Removed duplicate `orderStatus` field. Only `status` remains.                                                                                  |
+| **TD-02** | **Address entity not implemented**         | ✅ FIXED | `Model/Address.java`    | ✅ Created `Address` entity, `AddressRepository`, `AddressService`, `AddressController`. Checkout now supports selecting address via `addressId`. |
+| **TD-03** | **`InvalidatedToken` has no User FK**      | LOW      | `InvalidatedToken.java` | Uses JWT `id` (jti) as PK without user reference. Can't query tokens by user.                                                                     |
 
 ### 3.2 API ↔ DTO Inconsistencies
 
@@ -282,27 +286,27 @@
 
 ## 4. Module Completion Summary
 
-| Module              | Completion | Status                           |
-| ------------------- | ---------- | -------------------------------- |
-| Auth & Security     | 95%        | ✅ Complete                      |
-| Product Catalog     | 95%        | ✅ Complete                      |
-| Categories          | 100%       | ✅ Complete                      |
-| Shopping Cart       | 95%        | ✅ Complete                      |
-| Checkout & Orders   | 90%        | ✅ Complete                      |
-| Reviews & Ratings   | 85%        | ✅ Complete                      |
-| Wishlist            | 100%       | ✅ Complete                      |
-| Shipping            | 85%        | ✅ Complete                      |
-| Coupons             | 80%        | ✅ Complete                      |
-| Admin Dashboard     | 90%        | ✅ Complete                      |
-| Image Upload        | 100%       | ✅ Complete                      |
-| Seller Profile      | 85%        | ✅ Complete                      |
-| **Address Book**    | **95%**    | ✅ Complete (Backend + Frontend) |
+| Module                      | Completion | Status                                      |
+| --------------------------- | ---------- | ------------------------------------------- |
+| Auth & Security             | 95%        | ✅ Complete                                 |
+| Product Catalog             | 95%        | ✅ Complete                                 |
+| Categories                  | 100%       | ✅ Complete                                 |
+| Shopping Cart               | 95%        | ✅ Complete                                 |
+| Checkout & Orders           | 90%        | ✅ Complete                                 |
+| Reviews & Ratings           | 85%        | ✅ Complete                                 |
+| Wishlist                    | 100%       | ✅ Complete                                 |
+| Shipping                    | 85%        | ✅ Complete                                 |
+| Coupons                     | 80%        | ✅ Complete                                 |
+| Admin Dashboard             | 90%        | ✅ Complete                                 |
+| Image Upload                | 100%       | ✅ Complete                                 |
+| Seller Profile              | 85%        | ✅ Complete                                 |
+| **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)            |
 | **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback) |
-| **Email System**    | **0%**     | ❌ Missing                       |
-| **Search**          | **20%**    | ❌ Basic only                    |
-| **Testing**         | **15%**    | ❌ Minimal                       |
+| **Email System**            | **0%**     | ❌ Missing                                  |
+| **Search**                  | **20%**    | ❌ Basic only                               |
+| **Testing**                 | **15%**    | ❌ Minimal                                  |
 
-### Overall Completion: **~90%**
+### Overall Completion: **~91%**
 
 ---
 
@@ -320,7 +324,7 @@
 5. ~~[TD-08] Build Address Book UI in frontend~~ ✅ Done
 6. **[TD-03]** Add user FK to InvalidatedToken
 7. Email verification flow
-8. Password reset flow
+8. ~~Password reset flow~~ ✅ Done
 
 ### Medium-term (Month 2-3)
 

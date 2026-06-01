@@ -133,6 +133,12 @@ function LoginPage() {
             </Link>
             <div className="flex items-center gap-3">
               <Link
+                to="/forgot-password"
+                className="text-red-600 font-medium hover:underline"
+              >
+                Quên mật khẩu?
+              </Link>
+              <Link
                 to="/register-seller"
                 className="text-amber-700 font-medium hover:underline"
               >

@@ -2,6 +2,8 @@ import React from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RegisterPage from "./pages/RegisterPage";
 import SellerRegisterPage from "./pages/SellerRegisterPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -77,6 +79,8 @@ function App() {
       <Route path="/categories/:slug" element={<CategoryPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/register-seller" element={<SellerRegisterPage />} />
       <Route path="/me" element={<UserProfilePage />} />

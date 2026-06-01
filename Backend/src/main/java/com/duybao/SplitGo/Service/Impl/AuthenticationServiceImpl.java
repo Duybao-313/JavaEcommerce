@@ -3,6 +3,7 @@ package com.duybao.SplitGo.Service.Impl;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,7 +18,9 @@ import com.duybao.SplitGo.DTO.Response.AuthResponse;
 import com.duybao.SplitGo.DTO.Response.RegisterResponse;
 import com.duybao.SplitGo.DTO.Response.User.UserDTO;
 import com.duybao.SplitGo.DTO.request.ChangePasswordRequest;
+import com.duybao.SplitGo.DTO.request.ForgotPasswordRequest;
 import com.duybao.SplitGo.DTO.request.LogoutRequest;
+import com.duybao.SplitGo.DTO.request.ResetPasswordRequest;
 import com.duybao.SplitGo.DTO.request.UserLoginRequest;
 import com.duybao.SplitGo.DTO.request.UserRegisterRequest;
 import com.duybao.SplitGo.Enum.Role;
@@ -140,8 +143,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.info("token exp");
         }
     }
-    ;
 
+    @Override
     public boolean changePassword(ChangePasswordRequest request, Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         var oldPass = request.getOldPass();
@@ -154,5 +157,49 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userRepository.save(user);
         return true;
     }
-    ;
+
+    @Override
+    public String forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.EMAIL_NOT_FOUND));
+
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // Trả về token trực tiếp (sẽ tích hợp email sau)
+        return token;
+    }
+
+    @Override
+    public boolean resetPassword(ResetPasswordRequest request) {
+        User user = userRepository
+                .findByResetToken(request.getToken())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_RESET_TOKEN));
+
+        if (user.getResetTokenExpiry() == null
+                || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.INVALID_RESET_TOKEN);
+        }
+
+        var newPass = request.getNewPassword();
+        var confirmPass = request.getConfirmPassword();
+
+        if (!newPass.equals(confirmPass)) {
+            throw new AppException(ErrorCode.NEWPASS_NOT_SAME);
+        }
+
+        if (passwordEncoder.matches(newPass, user.getPassword())) {
+            throw new AppException(ErrorCode.SAME_PASSWORD);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPass));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
+
+        return true;
+    }
 }

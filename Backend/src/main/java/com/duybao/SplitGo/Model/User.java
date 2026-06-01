@@ -107,6 +107,12 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean isActive = true;
 
+    // Password Reset Fields
+    @Column(length = 255)
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
