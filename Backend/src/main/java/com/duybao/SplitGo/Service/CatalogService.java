@@ -21,6 +21,9 @@ public interface CatalogService {
 
     PageResponse<ProductResponse> getProductsByCategoryId(Long categoryId, int page, int size);
 
+    /** Full-text search products by keyword (name + description) */
+    PageResponse<ProductResponse> searchProducts(String keyword, int page, int size);
+
     ProductResponse getProductDetail(Long productId);
 
     ProductResponse createProduct(CreateProductRequest request, Long actorId, boolean isAdmin, MultipartFile imageFile);
@@ -34,5 +37,11 @@ public interface CatalogService {
     ProductResponse updateProductStatus(Long productId, String status, String reason, Long actorId, boolean isAdmin);
 
     List<ProductVariantResponse> getVariantsByProductId(Long productId);
+
+    /** Export all products as CSV string */
+    String exportProductsCsv(Long sellerId, boolean isAdmin);
+
+    /** Import products from CSV, returns count of imported products */
+    int importProductsCsv(String csvContent, Long actorId);
 }
 

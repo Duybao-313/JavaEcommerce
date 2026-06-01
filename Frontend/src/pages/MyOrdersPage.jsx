@@ -11,6 +11,7 @@ import {
   cancelOrder,
   confirmDelivery,
   getMyOrders,
+  getSePayPaymentForOrder,
   isOrderCancellable,
   mapOrderToUiStatus,
   UI_STATUS,
@@ -92,6 +93,7 @@ export default function MyOrdersPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
+  const [sePayLoadingId, setSePayLoadingId] = useState(null);
   const searchTimeoutRef = useRef(null);
 
   const tabs = useMemo(
@@ -232,6 +234,37 @@ export default function MyOrdersPage() {
       toast.error(err.message || "Không thể xác nhận nhận hàng");
     } finally {
       setConfirmingId(null);
+    }
+  }
+
+  // ---- SePay Pay Again ----
+  async function handleSePayPay(order) {
+    if (sePayLoadingId) return;
+    setSePayLoadingId(order.orderId);
+    try {
+      const data = await getSePayPaymentForOrder(order.orderId);
+      if (!data || !data.formFields || !data.gatewayUrl) {
+        toast.error("Không thể tạo lại dữ liệu thanh toán");
+        setSePayLoadingId(null);
+        return;
+      }
+      // Create and submit dynamic form
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.gatewayUrl + "/v1/checkout/init";
+      form.style.display = "none";
+      Object.entries(data.formFields).forEach(([key, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      toast.error(err.message || "Không thể tạo lại dữ liệu thanh toán");
+      setSePayLoadingId(null);
     }
   }
 
@@ -447,6 +480,20 @@ export default function MyOrdersPage() {
                         className="orders-card-actions"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        {String(order.status || "").toUpperCase() ===
+                          "PENDING_PAYMENT" &&
+                          order.paymentMethod === "SEPAY" && (
+                          <button
+                            type="button"
+                            className="orders-btn-pay"
+                            disabled={sePayLoadingId === order.orderId}
+                            onClick={() => handleSePayPay(order)}
+                          >
+                            {sePayLoadingId === order.orderId
+                              ? "Đang xử lý..."
+                              : "💳 Thanh toán"}
+                          </button>
+                        )}
                         {String(order.status || "").toUpperCase() ===
                           "SHIPPING" && (
                           <button
@@ -701,6 +748,20 @@ export default function MyOrdersPage() {
 
               {/* Actions */}
               <div className="orders-drawer-actions">
+                {String(selectedOrder.status || "").toUpperCase() ===
+                  "PENDING_PAYMENT" &&
+                  selectedOrder.paymentMethod === "SEPAY" && (
+                  <button
+                    className="orders-btn-pay"
+                    style={{ width: "100%" }}
+                    disabled={sePayLoadingId === selectedOrder.orderId}
+                    onClick={() => handleSePayPay(selectedOrder)}
+                  >
+                    {sePayLoadingId === selectedOrder.orderId
+                      ? "Đang xử lý..."
+                      : "💳 Thanh toán ngay"}
+                  </button>
+                )}
                 {String(selectedOrder.status || "").toUpperCase() ===
                   "SHIPPING" && (
                   <button

@@ -151,26 +151,26 @@ categories ── products
 
 ### 8. `orders`
 
-| Column             | Type          | Constraints               | Notes                                          |
-| ------------------ | ------------- | ------------------------- | ---------------------------------------------- |
-| `id`               | BIGINT        | PK, AUTO_INCREMENT        |                                                |
-| `order_code`       | VARCHAR(255)  | UNIQUE, NOT NULL          | Generated                                      |
-| `buyer_id`         | BIGINT        | FK → users.id, NOT NULL   |                                                |
-| `seller_id`        | BIGINT        | FK → users.id             | Multi-seller support                           |
+| Column             | Type          | Constraints               | Notes                                                                    |
+| ------------------ | ------------- | ------------------------- | ------------------------------------------------------------------------ |
+| `id`               | BIGINT        | PK, AUTO_INCREMENT        |                                                                          |
+| `order_code`       | VARCHAR(255)  | UNIQUE, NOT NULL          | Generated                                                                |
+| `buyer_id`         | BIGINT        | FK → users.id, NOT NULL   |                                                                          |
+| `seller_id`        | BIGINT        | FK → users.id             | Multi-seller support                                                     |
 | `status`           | ENUM          | NOT NULL, DEFAULT PENDING | PENDING_PAYMENT/PENDING/CONFIRMED/PREPARING/SHIPPING/DELIVERED/CANCELLED |
-| `payment_method`   | ENUM          | NOT NULL, DEFAULT COD     | COD, SEPAY                                     |
-| `total_amount`     | DECIMAL(19,2) | NOT NULL                  |                                                |
-| `discount_amount`  | DECIMAL(19,2) | DEFAULT 0                 |                                                |
-| `shipping_fee`     | DECIMAL(19,2) | DEFAULT 0                 |                                                |
-| `final_amount`     | DECIMAL(19,2) |                           | total - discount + shipping                    |
-| `shipping_address` | VARCHAR(500)  | NOT NULL                  |                                                |
-| `phone`            | VARCHAR(50)   | NOT NULL                  |                                                |
-| `recipient_name`   | VARCHAR(255)  |                           |                                                |
-| `note`             | VARCHAR(500)  |                           |                                                |
-| `shipped_at`       | DATETIME      |                           |                                                |
-| `delivered_at`     | DATETIME      |                           |                                                |
-| `created_at`       | DATETIME      | NOT NULL                  |                                                |
-| `updated_at`       | DATETIME      | NOT NULL                  |                                                |
+| `payment_method`   | ENUM          | NOT NULL, DEFAULT COD     | COD, SEPAY                                                               |
+| `total_amount`     | DECIMAL(19,2) | NOT NULL                  |                                                                          |
+| `discount_amount`  | DECIMAL(19,2) | DEFAULT 0                 |                                                                          |
+| `shipping_fee`     | DECIMAL(19,2) | DEFAULT 0                 |                                                                          |
+| `final_amount`     | DECIMAL(19,2) |                           | total - discount + shipping                                              |
+| `shipping_address` | VARCHAR(500)  | NOT NULL                  |                                                                          |
+| `phone`            | VARCHAR(50)   | NOT NULL                  |                                                                          |
+| `recipient_name`   | VARCHAR(255)  |                           |                                                                          |
+| `note`             | VARCHAR(500)  |                           |                                                                          |
+| `shipped_at`       | DATETIME      |                           |                                                                          |
+| `delivered_at`     | DATETIME      |                           |                                                                          |
+| `created_at`       | DATETIME      | NOT NULL                  |                                                                          |
+| `updated_at`       | DATETIME      | NOT NULL                  |                                                                          |
 
 ### 9. `order_items`
 
@@ -189,17 +189,17 @@ categories ── products
 
 ### 10. `payment_transactions`
 
-| Column       | Type          | Constraints               | Notes                        |
-| ------------ | ------------- | ------------------------- | ---------------------------- |
-| `id`         | BIGINT        | PK, AUTO_INCREMENT        |                              |
-| `order_id`   | BIGINT        | FK → orders.id, NOT NULL  |                              |
-| `method`     | ENUM          | NOT NULL                  | COD, SEPAY                   |
-| `status`     | ENUM          | NOT NULL, DEFAULT PENDING | PENDING, PAID, FAILED        |
-| `amount`     | DECIMAL(19,2) | NOT NULL                  |                              |
-| `gateway_ref`| VARCHAR(100)  |                           | SePay transaction ID         |
-| `gateway_url`| VARCHAR(500)  |                           | SePay gateway URL            |
-| `paid_at`    | DATETIME      |                           | When payment completed       |
-| `created_at` | DATETIME      | NOT NULL                  |                              |
+| Column        | Type          | Constraints               | Notes                  |
+| ------------- | ------------- | ------------------------- | ---------------------- |
+| `id`          | BIGINT        | PK, AUTO_INCREMENT        |                        |
+| `order_id`    | BIGINT        | FK → orders.id, NOT NULL  |                        |
+| `method`      | ENUM          | NOT NULL                  | COD, SEPAY             |
+| `status`      | ENUM          | NOT NULL, DEFAULT PENDING | PENDING, PAID, FAILED  |
+| `amount`      | DECIMAL(19,2) | NOT NULL                  |                        |
+| `gateway_ref` | VARCHAR(100)  |                           | SePay transaction ID   |
+| `gateway_url` | VARCHAR(500)  |                           | SePay gateway URL      |
+| `paid_at`     | DATETIME      |                           | When payment completed |
+| `created_at`  | DATETIME      | NOT NULL                  |                        |
 
 ### 11. `reviews`
 
@@ -276,20 +276,20 @@ categories ── products
 
 ## Enums Reference
 
-| Enum Class                 | Values                                                   |
-| -------------------------- | -------------------------------------------------------- |
-| `Role`                     | USER, SELLER, ADMIN                                      |
+| Enum Class                 | Values                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `Role`                     | USER, SELLER, ADMIN                                                            |
 | `OrderStatus`              | PENDING_PAYMENT, PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED |
-| `PaymentStatus`            | PENDING, PAID, FAILED                                    |
-| `PaymentMethod`            | COD, SEPAY                                               |
-| `ProductStatus`            | ACTIVE, INACTIVE                                         |
-| `SellerVerificationStatus` | PENDING, APPROVED, REJECTED                              |
-| `StoreStatus`              | ACTIVE, SUSPENDED                                        |
-| `AddressType`              | HOME, OFFICE, OTHER                                      |
-| `ShippingStatus`           | PENDING, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED |
-| `CouponType`               | PERCENTAGE, FIXED_AMOUNT                                 |
-| `CouponScope`              | ALL, CATEGORY, PRODUCT, SELLER                           |
-| `Carrier`                  | (carrier enum values)                                    |
+| `PaymentStatus`            | PENDING, PAID, FAILED                                                          |
+| `PaymentMethod`            | COD, SEPAY                                                                     |
+| `ProductStatus`            | ACTIVE, INACTIVE                                                               |
+| `SellerVerificationStatus` | PENDING, APPROVED, REJECTED                                                    |
+| `StoreStatus`              | ACTIVE, SUSPENDED                                                              |
+| `AddressType`              | HOME, OFFICE, OTHER                                                            |
+| `ShippingStatus`           | PENDING, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED                       |
+| `CouponType`               | PERCENTAGE, FIXED_AMOUNT                                                       |
+| `CouponScope`              | ALL, CATEGORY, PRODUCT, SELLER                                                 |
+| `Carrier`                  | (carrier enum values)                                                          |
 
 ---
 

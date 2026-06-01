@@ -6,6 +6,8 @@ import {
   getProductsBySeller,
   updateSellerProduct,
   updateSellerProductImage,
+  exportProductsCsv,
+  importProductsCsv,
 } from "../services/productService";
 import { getProductReviews } from "../services/reviewService";
 import { getAuthSession } from "../services/sessionService";
@@ -649,6 +651,50 @@ function SellerProductsPage() {
     setBulkSaving(false);
   };
 
+  // ─── CSV Export / Import ─────────────────────────────────────────
+  const handleExportCsv = async () => {
+    try {
+      const csv = await exportProductsCsv();
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `products_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất file CSV thành công");
+    } catch (err) {
+      toast.error(err?.message || "Không thể xuất CSV");
+    }
+  };
+
+  const handleImportCsv = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv";
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const count = await importProductsCsv(text);
+        toast.success(`Đã nhập ${count} sản phẩm từ CSV`);
+        // Reload
+        const session = getAuthSession();
+        const sellerId = session?.user?.id || session?.id || session?.sellerId;
+        if (sellerId) {
+          const data = await getProductsBySeller(sellerId);
+          setProducts(data?.content || data || []);
+        }
+      } catch (err) {
+        toast.error(err?.message || "Không thể nhập CSV");
+      }
+    };
+    input.click();
+  };
+
   // ─── Options & Variants edit helpers ──────────────────────────────
   const handleEditOptionChange = (index, field, value) => {
     setEditOptions((prev) => {
@@ -775,6 +821,22 @@ function SellerProductsPage() {
               aria-label={isFilterPanelOpen ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
             >
               {isFilterPanelOpen ? "Ẩn bộ lọc" : "Bộ lọc"}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="rounded-full border border-dashed border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+              title="Xuất danh sách sản phẩm ra CSV"
+            >
+              Xuất CSV
+            </button>
+            <button
+              type="button"
+              onClick={handleImportCsv}
+              className="rounded-full border border-dashed border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+              title="Nhập sản phẩm từ file CSV"
+            >
+              Nhập CSV
             </button>
             <Link
               to="/seller/products/create"

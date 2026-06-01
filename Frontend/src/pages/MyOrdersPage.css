@@ -798,6 +798,7 @@
 }
 .orders-btn-detail,
 .orders-btn-cancel,
+.orders-btn-pay,
 .orders-btn-support {
   width: 100%;
   border: none;
@@ -856,6 +857,25 @@
 }
 .orders-btn-support:focus-visible {
   outline: 2px solid var(--ord-border-focus);
+  outline-offset: 2px;
+}
+.orders-btn-pay {
+  background: var(--ord-accent, oklch(0.55 0.18 265));
+  color: #fff;
+  border: 1px solid var(--ord-accent, oklch(0.45 0.16 265));
+}
+.orders-btn-pay:hover:not(:disabled) {
+  background: oklch(0.48 0.16 265);
+}
+.orders-btn-pay:active:not(:disabled) {
+  background: oklch(0.42 0.14 265);
+}
+.orders-btn-pay:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.orders-btn-pay:focus-visible {
+  outline: 2px solid var(--ord-accent, oklch(0.55 0.18 265));
   outline-offset: 2px;
 }
 
@@ -1358,6 +1378,7 @@
   gap: 0.55rem;
 }
 .orders-btn-cancel-block,
+.orders-btn-pay-block,
 .orders-btn-support-block {
   width: 100%;
   border: none;
@@ -1396,6 +1417,22 @@
 }
 .orders-btn-support-block:focus-visible {
   outline: 2px solid var(--ord-border-focus);
+  outline-offset: 2px;
+}
+.orders-btn-pay-block {
+  background: var(--ord-accent, oklch(0.55 0.18 265));
+  color: #fff;
+  border: 1px solid var(--ord-accent, oklch(0.45 0.16 265));
+}
+.orders-btn-pay-block:hover:not(:disabled) {
+  background: oklch(0.48 0.16 265);
+}
+.orders-btn-pay-block:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.orders-btn-pay-block:focus-visible {
+  outline: 2px solid var(--ord-accent, oklch(0.55 0.18 265));
   outline-offset: 2px;
 }
 

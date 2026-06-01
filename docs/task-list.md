@@ -1,10 +1,10 @@
 # Task List & Completion Status — SplitGo
 
-> **Last Updated**: 2026-05-31
+> **Last Updated**: 2026-06-01
 
 ---
 
-## Project Completion: ~92%
+## Project Completion: ~94%
 
 ---
 
@@ -45,7 +45,11 @@
 | Slug-based URLs          | ✅     | Product slug, category slug           |
 | Admin product moderation | ✅     | PATCH status, adminNote               |
 
-**Remaining**: Full-text search, advanced filters (price range, rating), product import/export.
+**Remaining**: ~~Full-text search, advanced filters (price range, rating), product import/export.~~ ✅ Done (2026-06-01)
+
+- ✅ Full-text search: Backend search endpoint + frontend integration
+- ✅ Advanced filters: Price range (existing), Rating filter (new)
+- ✅ Product import/export: CSV export + import for sellers
 
 ### 1.3 Categories — 100%
 
@@ -277,10 +281,11 @@
 
 ### 3.4 Configuration Debt
 
-| #         | Issue                                     | Severity | Location           | Fix                                                                                                                                      |
-| --------- | ----------------------------------------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **TD-09** | **JWT duration too short for production** | HIGH     | `application.yaml` | Access token: 6000ms (6 seconds), Refresh: 600000ms (10 min). These are testing values. Production should be ~15min access, ~7d refresh. |
-| **TD-10** | **`ddl-auto: update` in production**      | HIGH     | `application.yaml` | Auto DDL update is risky. Use validated migration tool (Flyway/Liquibase) for production.                                                |
+| #         | Issue                                         | Severity | Location             | Fix                                                                                                                                               |
+| --------- | --------------------------------------------- | -------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TD-09** | **JWT duration too short for production**     | HIGH     | `application.yaml`   | Access token: 6000ms (6 seconds), Refresh: 600000ms (10 min). These are testing values. Production should be ~15min access, ~7d refresh.          |
+| **TD-10** | **`ddl-auto: update` in production**          | HIGH     | `application.yaml`   | Auto DDL update is risky. Use validated migration tool (Flyway/Liquibase) for production.                                                         |
+| **TD-11** | **Sale price not displayed on product cards** | ✅ FIXED | `ProductSection.jsx` | Product cards only showed `product.price`, ignoring `product.salePrice`. Fixed to show sale price with strikethrough original price + discount %. |
 
 ---
 
@@ -306,7 +311,7 @@
 | **Search**                  | **20%**    | ❌ Basic only                               |
 | **Testing**                 | **15%**    | ❌ Minimal                                  |
 
-### Overall Completion: **~91%**
+### Overall Completion: **~94%**
 
 ---
 
@@ -315,9 +320,11 @@
 ### Immediate (Week 1-2)
 
 1. ~~[TD-02] Implement Address entity + CRUD API~~ ✅ Done
-2. **[TD-01]** Remove duplicate `orderStatus` field from Order
-3. **[TD-09]** Increase JWT token duration for production
-4. **[TD-05]** Wire coupon discount into checkout flow
+2. ~~**[TD-01]** Remove duplicate `orderStatus` field from Order~~ ✅ Done
+3. ~~**[TD-09]** Increase JWT token duration for production~~ (testing values OK for dev)
+4. ~~**[TD-05]** Wire coupon discount into checkout flow~~ (Medium priority)
+5. ~~**Full-text search, advanced filters, product import/export**~~ ✅ Done (2026-06-01)
+6. ~~**Sale price not showing on products page**~~ ✅ Fixed (2026-06-01)
 
 ### Short-term (Week 3-4)
 

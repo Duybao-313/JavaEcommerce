@@ -18,13 +18,31 @@ const ADDRESS_TYPE_LABELS = {
 
 const ADDRESS_TYPE_ICONS = {
   HOME: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   ),
   OFFICE: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
       <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
       <rect x="6" y="12" width="3" height="2" />
@@ -33,7 +51,16 @@ const ADDRESS_TYPE_ICONS = {
     </svg>
   ),
   OTHER: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
@@ -82,7 +109,10 @@ function AddressFormModal({ isOpen, onClose, onSave, editing, maxReached }) {
         isDefault: editing.isDefault || false,
       });
     } else {
-      setForm({ ...INITIAL_FORM, isDefault: maxReached ? false : INITIAL_FORM.isDefault });
+      setForm({
+        ...INITIAL_FORM,
+        isDefault: maxReached ? false : INITIAL_FORM.isDefault,
+      });
     }
   }, [editing, isOpen, maxReached]);
 
@@ -96,7 +126,11 @@ function AddressFormModal({ isOpen, onClose, onSave, editing, maxReached }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.recipientName.trim() || !form.phone.trim() || !form.detail.trim()) {
+    if (
+      !form.recipientName.trim() ||
+      !form.phone.trim() ||
+      !form.detail.trim()
+    ) {
       toast.error("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -142,7 +176,15 @@ function AddressFormModal({ isOpen, onClose, onSave, editing, maxReached }) {
               onClick={onClose}
               className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -329,7 +371,17 @@ export default function AddressPage() {
             className="flex flex-col items-center justify-center rounded-3xl border border-zinc-200 bg-white px-4 py-20 text-center shadow-sm"
           >
             <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-amber-50">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-300">
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-amber-300"
+              >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
@@ -344,7 +396,15 @@ export default function AddressPage() {
               onClick={openAdd}
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -391,7 +451,15 @@ export default function AddressPage() {
                 onClick={openAdd}
                 className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-zinc-700"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
@@ -438,7 +506,8 @@ export default function AddressPage() {
                     </div>
                     <div className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
                       <span className="text-zinc-400">
-                        {ADDRESS_TYPE_ICONS[addr.type] || ADDRESS_TYPE_ICONS.OTHER}
+                        {ADDRESS_TYPE_ICONS[addr.type] ||
+                          ADDRESS_TYPE_ICONS.OTHER}
                       </span>
                       <span>{ADDRESS_TYPE_LABELS[addr.type] || addr.type}</span>
                     </div>
@@ -454,7 +523,16 @@ export default function AddressPage() {
                         className="rounded-lg p-1.5 text-zinc-400 hover:bg-amber-50 hover:text-amber-600 transition-colors"
                         title="Đặt làm mặc định"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                       </button>
@@ -464,7 +542,16 @@ export default function AddressPage() {
                       className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
                       title="Sửa"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
@@ -474,7 +561,16 @@ export default function AddressPage() {
                       className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                       title="Xóa"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
@@ -512,13 +608,24 @@ export default function AddressPage() {
                 className="w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl text-center"
               >
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-500">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="text-red-500"
+                  >
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-zinc-900">Xóa địa chỉ?</h3>
+                <h3 className="text-lg font-semibold text-zinc-900">
+                  Xóa địa chỉ?
+                </h3>
                 <p className="mt-2 text-sm text-zinc-500">
                   Bạn có chắc muốn xóa địa chỉ của{" "}
                   <strong>{deleteConfirm.recipientName}</strong>?

@@ -1,8 +1,14 @@
 import { parseApiResponse, request } from "./apiClient";
 import { authFetch } from "./authService";
 
-export async function getProducts(page = 0, size = 12) {
-  const response = await request(`/products?page=${page}&size=${size}`);
+export async function getProducts(page = 0, size = 12, search = "") {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("size", String(size));
+  if (search && search.trim()) {
+    params.set("search", search.trim());
+  }
+  const response = await request(`/products?${params.toString()}`);
   const payload = await parseApiResponse(response);
   return (
     payload?.data || {
@@ -158,4 +164,22 @@ export async function updateProductStatus(productId, payload) {
   });
   const apiPayload = await parseApiResponse(response);
   return apiPayload?.data || null;
+}
+
+// ─── CSV Export / Import ───────────────────────────────────────────
+
+export async function exportProductsCsv() {
+  const response = await authFetch("/products/export/csv");
+  const payload = await parseApiResponse(response);
+  return payload?.data || "";
+}
+
+export async function importProductsCsv(csvContent) {
+  const response = await authFetch("/products/import/csv", {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: csvContent,
+  });
+  const payload = await parseApiResponse(response);
+  return payload?.data || 0;
 }

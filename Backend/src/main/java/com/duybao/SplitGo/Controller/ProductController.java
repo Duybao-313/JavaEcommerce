@@ -51,11 +51,15 @@ public class ProductController {
     @GetMapping
     public ApiResponse<PageResponse<ProductResponse>> getProducts(
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         PageResponse<ProductResponse> products;
         String message;
-        if (categoryId != null) {
+        if (search != null && !search.trim().isEmpty()) {
+            products = catalogService.searchProducts(search.trim(), page, size);
+            message = "Tìm kiếm sản phẩm thành công";
+        } else if (categoryId != null) {
             products = catalogService.getProductsByCategoryId(categoryId, page, size);
             message = "Lấy danh sách sản phẩm theo danh mục thành công";
         } else {
@@ -147,7 +151,36 @@ public class ProductController {
                 .build();
     }
 
+    // ─── CSV Export / Import ──────────────────────────────────────────
 
+    @GetMapping("/export/csv")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ApiResponse<String> exportProductsCsv(@AuthenticationPrincipal User user) {
+        boolean isAdmin = user.getRole() == Role.ROLE_ADMIN;
+        String csv = catalogService.exportProductsCsv(user.getId(), isAdmin);
+        return ApiResponse.<String>builder()
+                .success(true)
+                .code(200)
+                .message("Xuất CSV thành công")
+                .data(csv)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @PostMapping("/import/csv")
+    @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ApiResponse<Integer> importProductsCsv(
+            @AuthenticationPrincipal User user,
+            @RequestBody String csvContent) {
+        int count = catalogService.importProductsCsv(csvContent, user.getId());
+        return ApiResponse.<Integer>builder()
+                .success(true)
+                .code(201)
+                .message("Đã nhập " + count + " sản phẩm từ CSV")
+                .data(count)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")

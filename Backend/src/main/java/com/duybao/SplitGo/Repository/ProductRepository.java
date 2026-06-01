@@ -34,5 +34,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryIdInAndStatusOrderByCreatedAtDesc(List<Long> categoryIds, ProductStatus status, Pageable pageable);
 
     long countByCategoryId(Long categoryId);
+
+    // Full-text search: search by name OR description containing keyword (case-insensitive)
+    Page<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndStatus(
+            String nameKeyword, String descKeyword, ProductStatus status, Pageable pageable);
+
+    // Search across all products (admin)
+    Page<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            String nameKeyword, String descKeyword, Pageable pageable);
 }
 

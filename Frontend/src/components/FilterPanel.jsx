@@ -50,6 +50,34 @@ function CategoryPills({ categories, selectedId, onChange }) {
   );
 }
 
+/* ── Rating Filter ───────────────────────────────────────────── */
+function RatingFilter({ value = 0, onChange }) {
+  const stars = [5, 4, 3, 2, 1];
+  return (
+    <div className="fp-rating-filter">
+      <button
+        type="button"
+        onClick={() => onChange(0)}
+        className={`fp-rating-btn ${value === 0 ? "fp-rating-btn--active" : ""}`}
+      >
+        Tất cả
+      </button>
+      {stars.map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className={`fp-rating-btn ${value === star ? "fp-rating-btn--active" : ""}`}
+        >
+          {"★".repeat(star)}
+          {"☆".repeat(5 - star)}
+          <span className="fp-rating-label">trở lên</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ── Stock Segmented Control ──────────────────────────────────── */
 const STOCK_OPTIONS = [
   { value: "all", label: "Tất cả" },
@@ -149,8 +177,10 @@ export default function FilterPanel({
   stockFilter,
   minPrice,
   maxPrice,
+  ratingFilter = 0,
   onCategoryChange,
   onStockChange,
+  onRatingChange,
   onMinPriceChange,
   onMaxPriceChange,
   onReset,
@@ -207,6 +237,12 @@ export default function FilterPanel({
               <fieldset className="fp-section">
                 <legend className="fp-section-title">Tình trạng</legend>
                 <StockSegmented value={stockFilter} onChange={onStockChange} />
+              </fieldset>
+
+              {/* Rating */}
+              <fieldset className="fp-section">
+                <legend className="fp-section-title">Đánh giá</legend>
+                <RatingFilter value={ratingFilter} onChange={onRatingChange} />
               </fieldset>
             </div>
 
@@ -348,6 +384,43 @@ export default function FilterPanel({
             .fp-segmented-btn--active {
               background: oklch(0.62 0.18 55);
               color: #fff;
+            }
+
+            /* ── Rating filter ─────────────────────────────── */
+            .fp-rating-filter {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.375rem;
+            }
+            .fp-rating-btn {
+              display: inline-flex;
+              align-items: center;
+              gap: 0.25rem;
+              height: 2rem;
+              padding: 0 0.75rem;
+              border: 1px solid oklch(0.88 0.01 90);
+              border-radius: 999px;
+              background: oklch(0.99 0.002 85);
+              font-size: 0.75rem;
+              font-weight: 500;
+              color: oklch(0.35 0.01 270);
+              cursor: pointer;
+              transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+              white-space: nowrap;
+            }
+            .fp-rating-btn:hover {
+              border-color: oklch(0.7 0.17 85);
+              color: oklch(0.55 0.15 75);
+            }
+            .fp-rating-btn--active {
+              border-color: oklch(0.7 0.17 85);
+              background: oklch(0.7 0.17 85 / 0.12);
+              color: oklch(0.55 0.16 75);
+              font-weight: 700;
+            }
+            .fp-rating-label {
+              font-size: 0.625rem;
+              color: oklch(0.55 0.01 260);
             }
 
             /* ── Price range ───────────────────────────────── */

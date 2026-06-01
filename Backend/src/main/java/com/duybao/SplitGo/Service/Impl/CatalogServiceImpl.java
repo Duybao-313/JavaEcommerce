@@ -155,6 +155,27 @@ public class CatalogServiceImpl implements CatalogService {
                 .toList();
     }
 
+    @Override
+    public PageResponse<ProductResponse> searchProducts(String keyword, int page, int size) {
+        String trimmed = keyword != null ? keyword.trim() : "";
+        if (trimmed.isEmpty()) {
+            return getPublicProducts(page, size);
+        }
+        Page<Product> productPage = productRepository
+                .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseAndStatus(
+                        trimmed, trimmed, ProductStatus.ACTIVE, PageRequest.of(page, size));
+        List<ProductResponse> content = productPage.getContent().stream()
+                .map(this::toProductResponse)
+                .toList();
+        return PageResponse.<ProductResponse>builder()
+                .content(content)
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .build();
+    }
+
     /**
      * Resolves sort string to Spring Sort for store product listing.
      * Supported: soldDesc (default), newest, priceAsc, priceDesc
@@ -651,6 +672,139 @@ public class CatalogServiceImpl implements CatalogService {
                     .build());
         }
         return result;
+    }
+
+    // ─── CSV Export / Import ───────────────────────────────────────────
+
+    @Override
+    public String exportProductsCsv(Long sellerId, boolean isAdmin) {
+        List<Product> products;
+        if (isAdmin) {
+            products = productRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            products = productRepository.findBySellerIdOrderByCreatedAtDesc(sellerId);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        // CSV header with BOM for Excel UTF-8 compatibility
+        sb.append('\uFEFF');
+        sb.append("ID,Tên sản phẩm,Mô tả,Giá gốc,Giá khuyến mãi,Tồn kho,SKU,Danh mục,Trạng thái,Lượt xem,Đã bán,Ngày tạo\n");
+
+        for (Product p : products) {
+            sb.append(escapeCsv(p.getId()));
+            sb.append(escapeCsv(p.getName()));
+            sb.append(escapeCsv(p.getDescription()));
+            sb.append(escapeCsv(p.getPrice()));
+            sb.append(escapeCsv(p.getSalePrice()));
+            sb.append(escapeCsv(p.getStock()));
+            sb.append(escapeCsv(p.getSku()));
+            sb.append(escapeCsv(p.getCategory() != null ? p.getCategory().getName() : ""));
+            sb.append(escapeCsv(p.getStatus() != null ? p.getStatus().name() : ""));
+            sb.append(escapeCsv(p.getViewCount()));
+            sb.append(escapeCsv(p.getSoldCount()));
+            sb.append(escapeCsv(p.getCreatedAt()));
+            sb.append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    @Transactional
+    public int importProductsCsv(String csvContent, Long actorId) {
+        User seller = userRepository.findById(actorId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        String[] lines = csvContent.split("\\R");
+        if (lines.length < 2) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "CSV file is empty or has no data rows");
+        }
+
+        int imported = 0;
+        // Skip header (line 0), start from line 1
+        for (int i = 1; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.isEmpty()) continue;
+
+            String[] fields = parseCsvLine(line);
+            if (fields.length < 4) continue; // need at least name, description, price, stock
+
+            try {
+                String name = fields[1].trim();
+                String description = fields.length > 2 ? fields[2].trim() : "";
+                String priceStr = fields.length > 3 ? fields[3].trim() : "0";
+                String salePriceStr = fields.length > 4 ? fields[4].trim() : "";
+                String stockStr = fields.length > 5 ? fields[5].trim() : "0";
+                String sku = fields.length > 6 ? fields[6].trim() : "";
+
+                if (name.isEmpty()) continue;
+
+                java.math.BigDecimal price = new java.math.BigDecimal(priceStr.isEmpty() ? "0" : priceStr);
+                java.math.BigDecimal salePrice = salePriceStr.isEmpty() ? null : new java.math.BigDecimal(salePriceStr);
+                int stock = Integer.parseInt(stockStr.isEmpty() ? "0" : stockStr);
+
+                Product product = Product.builder()
+                        .name(name)
+                        .description(description)
+                        .price(price)
+                        .salePrice(salePrice)
+                        .stock(stock)
+                        .sku(sku.isEmpty() ? null : sku)
+                        .isFeatured(false)
+                        .status(ProductStatus.PENDING_REVIEW)
+                        .seller(seller)
+                        .build();
+
+                productRepository.save(product);
+                imported++;
+            } catch (Exception e) {
+                // Skip bad rows, continue with next
+            }
+        }
+
+        return imported;
+    }
+
+    private String escapeCsv(Object value) {
+        if (value == null) return ",";
+        String str = String.valueOf(value);
+        if (str.contains(",") || str.contains("\"") || str.contains("\n")) {
+            str = "\"" + str.replace("\"", "\"\"") + "\"";
+        }
+        return str + ",";
+    }
+
+    private String[] parseCsvLine(String line) {
+        java.util.List<String> fields = new java.util.ArrayList<>();
+        boolean inQuotes = false;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (inQuotes) {
+                if (c == '"') {
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        sb.append('"');
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                if (c == '"') {
+                    inQuotes = true;
+                } else if (c == ',') {
+                    fields.add(sb.toString());
+                    sb.setLength(0);
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+        fields.add(sb.toString());
+        return fields.toArray(new String[0]);
     }
 }
 

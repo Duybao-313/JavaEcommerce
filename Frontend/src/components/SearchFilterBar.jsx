@@ -102,9 +102,11 @@ export default function SearchFilterBar({
   stockFilter,
   minPrice,
   maxPrice,
+  ratingFilter = 0,
   priceSort,
   onCategoryChange,
   onStockChange,
+  onRatingChange,
   onPriceChange,
   onSortChange,
   onClearAll,
@@ -112,6 +114,9 @@ export default function SearchFilterBar({
   isFilterOpen,
   onToggleFilter,
   totalProductCount = 0,
+  sellerMode = false,
+  onExportCsv,
+  onImportCsv,
 }) {
   const inputRef = useRef(null);
 
@@ -164,6 +169,13 @@ export default function SearchFilterBar({
       key: "maxPrice",
       label: getFilterLabel("maxPrice", maxPrice),
       onRemove: () => onPriceChange("max", ""),
+    });
+  }
+  if (ratingFilter && ratingFilter > 0) {
+    activeChips.push({
+      key: "rating",
+      label: `Đánh giá từ ${ratingFilter}★ trở lên`,
+      onRemove: () => onRatingChange(0),
     });
   }
 
@@ -310,6 +322,54 @@ export default function SearchFilterBar({
           {/* Clear all */}
           <button type="button" onClick={onClearAll} className="sfb-clear-all">
             Xoá tất cả
+          </button>
+        </div>
+      )}
+
+      {/* ── Row 3: Import/Export (seller only) ───────────────── */}
+      {sellerMode && onExportCsv && onImportCsv && (
+        <div className="sfb-io-row">
+          <button
+            type="button"
+            onClick={onExportCsv}
+            className="sfb-io-btn"
+            title="Xuất danh sách sản phẩm ra CSV"
+          >
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>Xuất CSV</span>
+          </button>
+          <button
+            type="button"
+            onClick={onImportCsv}
+            className="sfb-io-btn"
+            title="Nhập sản phẩm từ file CSV"
+          >
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            <span>Nhập CSV</span>
           </button>
         </div>
       )}
@@ -627,6 +687,35 @@ export default function SearchFilterBar({
         }
         .sfb-clear-all:hover {
           color: oklch(0.55 0.18 55);
+        }
+
+        /* ── Import/Export ─────────────────────────────────── */
+        .sfb-io-row {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+        .sfb-io-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          height: 2rem;
+          padding: 0 0.75rem;
+          border: 1px dashed oklch(0.82 0.01 90);
+          border-radius: 0.5rem;
+          background: oklch(0.99 0.002 85);
+          font-size: 0.6875rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: oklch(0.45 0.01 270);
+          cursor: pointer;
+          transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+        }
+        .sfb-io-btn:hover {
+          border-color: oklch(0.62 0.18 55);
+          color: oklch(0.5 0.16 55);
+          background: oklch(0.62 0.18 55 / 0.06);
         }
 
         /* ── Responsive: stack on narrow screens ────────────── */

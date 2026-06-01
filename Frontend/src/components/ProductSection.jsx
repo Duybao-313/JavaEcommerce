@@ -1,12 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { addToCart } from "../services/cartService";
-import { getProducts, getProductsByCategory } from "../services/productService";
+import {
+  getProducts,
+  getProductsByCategory,
+  exportProductsCsv,
+  importProductsCsv,
+} from "../services/productService";
 import { getCategories } from "../services/categoryService";
-import { getAuthSession } from "../services/sessionService";
+import { getAuthSession, isSellerSession } from "../services/sessionService";
 import WishlistButton from "./WishlistButton";
 import CategoriesStrip from "./CategoriesStrip";
 import SearchFilterBar from "./SearchFilterBar";
@@ -39,6 +44,31 @@ function formatPrice(value) {
   }).format(value || 0);
 }
 
+/** Get the effective display price: salePrice if available, else base price */
+function getEffectivePrice(product) {
+  const sale = product?.salePrice;
+  if (
+    sale != null &&
+    Number(sale) > 0 &&
+    Number(sale) < Number(product?.price || 0)
+  ) {
+    return Number(sale);
+  }
+  return Number(product?.price || 0);
+}
+
+/** Check if product has a valid sale price lower than base price */
+function hasSalePrice(product) {
+  const sale = product?.salePrice;
+  const base = product?.price;
+  return (
+    sale != null &&
+    Number(sale) > 0 &&
+    Number(base) > 0 &&
+    Number(sale) < Number(base)
+  );
+}
+
 function normalizeText(value) {
   return String(value || "")
     .normalize("NFD")
@@ -62,6 +92,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [priceSort, setPriceSort] = useState("default");
+  const [ratingFilter, setRatingFilter] = useState(0); // 0 = all, 1-5 = min rating
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [topSellingIndex, setTopSellingIndex] = useState(0);
   const [topViewedIndex, setTopViewedIndex] = useState(0);
@@ -74,6 +105,11 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
   const FETCH_ALL_SIZE = 500;
 
   const session = getAuthSession();
+  const sellerMode = isSellerSession(session);
+
+  // Debounce search for backend calls
+  const searchTimerRef = useRef(null);
+  const [backendSearch, setBackendSearch] = useState("");
 
   // Sync preselected category from parent (e.g. CategoryPage)
   // When preselectedCategory is set, server-side filtering is already active
@@ -134,14 +170,40 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       (selectedCategory && selectedCategory !== "all") ||
       (stockFilter && stockFilter !== "all") ||
       (minPrice && Number(minPrice) > 0) ||
-      (maxPrice && Number(maxPrice) > 0)
+      (maxPrice && Number(maxPrice) > 0) ||
+      (ratingFilter && ratingFilter > 0)
     );
-  }, [searchTerm, selectedCategory, stockFilter, minPrice, maxPrice]);
+  }, [
+    searchTerm,
+    selectedCategory,
+    stockFilter,
+    minPrice,
+    maxPrice,
+    ratingFilter,
+  ]);
 
   // Reset to page 0 whenever filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, selectedCategory, stockFilter, minPrice, maxPrice]);
+  }, [
+    searchTerm,
+    selectedCategory,
+    stockFilter,
+    minPrice,
+    maxPrice,
+    ratingFilter,
+  ]);
+
+  // Debounce search to backend
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setBackendSearch(searchTerm?.trim() || "");
+    }, 400);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchTerm]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,9 +215,13 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
       try {
         const hasPreselected =
           preselectedCategory != null && preselectedCategory !== "all";
+        const useBackendSearch = backendSearch && backendSearch.length > 0;
 
         let pageData;
-        if (hasActiveFilters) {
+        if (useBackendSearch) {
+          // Use backend full-text search
+          pageData = await getProducts(currentPage, pageSize, backendSearch);
+        } else if (hasActiveFilters) {
           // Fetch all products at once for client-side filtering
           if (hasPreselected) {
             pageData = await getProductsByCategory(
@@ -181,10 +247,10 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
 
         if (!cancelled) {
           setProducts(pageData?.content || []);
-          if (hasActiveFilters) {
-            // For client-side filtering, total comes from filtered results (set later)
+          if (hasActiveFilters || useBackendSearch) {
+            // For client-side filtering or backend search, total comes from filtered results
             setTotalElements(pageData?.totalElements || 0);
-            setTotalPages(1); // placeholder, real pagination computed from filteredProducts
+            setTotalPages(1);
           } else {
             setTotalPages(pageData?.totalPages || 0);
             setTotalElements(pageData?.totalElements || 0);
@@ -209,7 +275,20 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     return () => {
       cancelled = true;
     };
-  }, [preselectedCategory, currentPage, hasActiveFilters]);
+  }, [preselectedCategory, currentPage, hasActiveFilters, backendSearch]);
+
+  // Shared sort helper
+  function applySort(arr, sort) {
+    if (sort === "asc" || sort === "priceAsc") {
+      arr.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
+    } else if (sort === "desc" || sort === "priceDesc") {
+      arr.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
+    } else if (sort === "soldDesc") {
+      arr.sort((a, b) => Number(b?.soldCount || 0) - Number(a?.soldCount || 0));
+    } else if (sort === "newest") {
+      arr.sort((a, b) => Number(b?.id || 0) - Number(a?.id || 0));
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -243,6 +322,43 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
   }, []);
 
   const filteredProducts = useMemo(() => {
+    // If using backend search, skip client-side filtering
+    if (backendSearch && backendSearch.length > 0) {
+      let result = [...products];
+      // Still apply client-side filters on top of backend search results
+      if (selectedCategory !== "all") {
+        result = result.filter(
+          (p) =>
+            String(p?.category?.id || p?.categoryId || "") === selectedCategory,
+        );
+      }
+      if (stockFilter !== "all") {
+        result = result.filter((p) => {
+          const stock = Number(p?.stock || 0);
+          if (stockFilter === "inStock") return stock > 0;
+          if (stockFilter === "outOfStock") return stock <= 0;
+          if (stockFilter === "lowStock") return stock > 0 && stock <= 10;
+          return true;
+        });
+      }
+      const min = Number(minPrice);
+      const max = Number(maxPrice);
+      if (Number.isFinite(min) && min > 0) {
+        result = result.filter((p) => getEffectivePrice(p) >= min);
+      }
+      if (Number.isFinite(max) && max > 0) {
+        result = result.filter((p) => getEffectivePrice(p) <= max);
+      }
+      if (ratingFilter > 0) {
+        result = result.filter(
+          (p) => (Number(p?.avgRating) || 0) >= ratingFilter,
+        );
+      }
+      // Sort
+      applySort(result, priceSort);
+      return result;
+    }
+
     const keyword = normalizeText(searchTerm);
     const min = Number(minPrice);
     const max = Number(maxPrice);
@@ -266,40 +382,36 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
         (stockFilter === "outOfStock" && stock <= 0) ||
         (stockFilter === "lowStock" && stock > 0 && stock <= 10);
 
-      const price = Number(product?.price || 0);
-      const matchMinPrice = !hasMin || price >= min;
-      const matchMaxPrice = !hasMax || price <= max;
+      const effectivePrice = getEffectivePrice(product);
+      const matchMinPrice = !hasMin || effectivePrice >= min;
+      const matchMaxPrice = !hasMax || effectivePrice <= max;
+
+      const matchRating =
+        ratingFilter <= 0 || (Number(product?.avgRating) || 0) >= ratingFilter;
 
       return (
         matchName &&
         matchCategory &&
         matchStock &&
         matchMinPrice &&
-        matchMaxPrice
+        matchMaxPrice &&
+        matchRating
       );
     });
 
     // Sort
-    if (priceSort === "asc" || priceSort === "priceAsc") {
-      result.sort((a, b) => Number(a?.price || 0) - Number(b?.price || 0));
-    } else if (priceSort === "desc" || priceSort === "priceDesc") {
-      result.sort((a, b) => Number(b?.price || 0) - Number(a?.price || 0));
-    } else if (priceSort === "soldDesc") {
-      result.sort(
-        (a, b) => Number(b?.soldCount || 0) - Number(a?.soldCount || 0),
-      );
-    } else if (priceSort === "newest") {
-      result.sort((a, b) => Number(b?.id || 0) - Number(a?.id || 0));
-    }
+    applySort(result, priceSort);
 
     return result;
   }, [
     products,
     searchTerm,
+    backendSearch,
     selectedCategory,
     stockFilter,
     minPrice,
     maxPrice,
+    ratingFilter,
     priceSort,
   ]);
 
@@ -355,6 +467,46 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
     } catch (error) {
       toast.error(error?.message || "Không thể thêm vào giỏ hàng");
     }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const csv = await exportProductsCsv();
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `products_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất file CSV thành công");
+    } catch (err) {
+      toast.error(err?.message || "Không thể xuất CSV");
+    }
+  };
+
+  const handleImportCsv = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv";
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const count = await importProductsCsv(text);
+        toast.success(`Đã nhập ${count} sản phẩm từ CSV`);
+        // Reload products
+        setCurrentPage(0);
+        const pageData = await getProducts(0, FETCH_ALL_SIZE);
+        setProducts(pageData?.content || []);
+      } catch (err) {
+        toast.error(err?.message || "Không thể nhập CSV");
+      }
+    };
+    input.click();
   };
 
   return (
@@ -436,8 +588,21 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
                           </span>
                         </p>
                         <p className="mt-1 text-sm font-semibold text-zinc-900">
-                          {formatPrice(
-                            topSellingProducts[topSellingIndex]?.price,
+                          <span>
+                            {formatPrice(
+                              getEffectivePrice(
+                                topSellingProducts[topSellingIndex],
+                              ),
+                            )}
+                          </span>
+                          {hasSalePrice(
+                            topSellingProducts[topSellingIndex],
+                          ) && (
+                            <span className="ml-2 text-xs text-zinc-400 line-through">
+                              {formatPrice(
+                                topSellingProducts[topSellingIndex].price,
+                              )}
+                            </span>
                           )}
                         </p>
                       </motion.article>
@@ -518,8 +683,19 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
                           </span>
                         </p>
                         <p className="mt-1 text-sm font-semibold text-zinc-900">
-                          {formatPrice(
-                            topViewedProducts[topViewedIndex]?.price,
+                          <span>
+                            {formatPrice(
+                              getEffectivePrice(
+                                topViewedProducts[topViewedIndex],
+                              ),
+                            )}
+                          </span>
+                          {hasSalePrice(topViewedProducts[topViewedIndex]) && (
+                            <span className="ml-2 text-xs text-zinc-400 line-through">
+                              {formatPrice(
+                                topViewedProducts[topViewedIndex].price,
+                              )}
+                            </span>
                           )}
                         </p>
                       </motion.article>
@@ -587,9 +763,11 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
             stockFilter={stockFilter}
             minPrice={minPrice}
             maxPrice={maxPrice}
+            ratingFilter={ratingFilter}
             priceSort={priceSort}
             onCategoryChange={setSelectedCategory}
             onStockChange={setStockFilter}
+            onRatingChange={setRatingFilter}
             onPriceChange={(type, value) => {
               if (type === "min") setMinPrice(value);
               else setMaxPrice(value);
@@ -601,12 +779,16 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
               setStockFilter("all");
               setMinPrice("");
               setMaxPrice("");
+              setRatingFilter(0);
               setPriceSort("default");
             }}
             categories={categories}
             isFilterOpen={isFilterPanelOpen}
             onToggleFilter={() => setIsFilterPanelOpen((prev) => !prev)}
             totalProductCount={filteredProducts.length}
+            sellerMode={sellerMode}
+            onExportCsv={handleExportCsv}
+            onImportCsv={handleImportCsv}
           />
 
           {/* Advanced Filter Panel (expandable) */}
@@ -617,8 +799,10 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
             stockFilter={stockFilter}
             minPrice={minPrice}
             maxPrice={maxPrice}
+            ratingFilter={ratingFilter}
             onCategoryChange={setSelectedCategory}
             onStockChange={setStockFilter}
+            onRatingChange={setRatingFilter}
             onMinPriceChange={setMinPrice}
             onMaxPriceChange={setMaxPrice}
             onReset={() => {
@@ -626,6 +810,7 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
               setStockFilter("all");
               setMinPrice("");
               setMaxPrice("");
+              setRatingFilter(0);
             }}
             onClose={() => setIsFilterPanelOpen(false)}
           />
@@ -698,9 +883,27 @@ function ProductSection({ preselectedCategory, compact = false } = {}) {
                 </p>
 
                 <div className="mt-4 flex items-center justify-between gap-2">
-                  <p className="text-xl font-semibold text-zinc-900">
-                    {formatPrice(product.price)}
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-xl font-semibold text-zinc-900">
+                      {formatPrice(getEffectivePrice(product))}
+                    </p>
+                    {hasSalePrice(product) && (
+                      <p className="text-sm text-zinc-400 line-through">
+                        {formatPrice(product.price)}
+                      </p>
+                    )}
+                  </div>
+                  {hasSalePrice(product) && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600">
+                      -
+                      {Math.round(
+                        (1 -
+                          Number(product.salePrice) / Number(product.price)) *
+                          100,
+                      )}
+                      %
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={(event) => handleAddToCart(event, product)}
