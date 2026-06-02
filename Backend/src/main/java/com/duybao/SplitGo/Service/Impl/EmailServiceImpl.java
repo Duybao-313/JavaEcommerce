@@ -28,6 +28,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    @Value("${spring.mail.username}")
+    private String mailFrom;
+
     @Override
     @Async("emailExecutor")
     public void sendVerificationEmail(String to, String userName, String token) {
@@ -69,7 +72,7 @@ public class EmailServiceImpl implements EmailService {
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
-        helper.setFrom("${spring.mail.username}");
+        helper.setFrom(mailFrom);
         mailSender.send(message);
     }
 }

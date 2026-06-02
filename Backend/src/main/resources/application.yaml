@@ -12,16 +12,18 @@ spring:
       ddl-auto: update
     show-sql: true
   mail:
-    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:duybaocadoi2005@gmail.com}
+    password: ${MAIL_PASSWORD:REPLACED}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.ssl.trust: smtp.gmail.com
       mail.smtp.connectiontimeout: 5000
-      mail.smtp.timeout: 5000
-      mail.smtp.writetimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   thymeleaf:
     cache: false
     prefix: classpath:/templates/
