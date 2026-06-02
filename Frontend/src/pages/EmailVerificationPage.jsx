@@ -12,7 +12,9 @@ function EmailVerificationPage() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("Thiếu token xác thực. Vui lòng kiểm tra lại link trong email.");
+      setMessage(
+        "Thiếu token xác thực. Vui lòng kiểm tra lại link trong email.",
+      );
       return;
     }
 
@@ -24,7 +26,10 @@ function EmailVerificationPage() {
         toast.success("Xác thực email thành công");
       } catch (err) {
         setStatus("error");
-        setMessage(err?.message || "Không thể xác thực email. Token không hợp lệ hoặc đã hết hạn.");
+        setMessage(
+          err?.message ||
+            "Không thể xác thực email. Token không hợp lệ hoặc đã hết hạn.",
+        );
       }
     }
 
@@ -52,8 +57,18 @@ function EmailVerificationPage() {
           {status === "success" && (
             <div className="mt-8 space-y-4">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="h-8 w-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
               <p className="text-lg font-semibold text-green-700">{message}</p>
@@ -69,8 +84,18 @@ function EmailVerificationPage() {
           {status === "error" && (
             <div className="mt-8 space-y-4">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-                <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-8 w-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </div>
               <p className="text-lg font-semibold text-red-700">{message}</p>

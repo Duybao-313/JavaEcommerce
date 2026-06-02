@@ -160,7 +160,9 @@ function UserProfilePage() {
     setResendingVerification(true);
     try {
       await resendVerificationEmail();
-      toast.success("Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.");
+      toast.success(
+        "Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.",
+      );
     } catch (err) {
       toast.error(err?.message || "Không thể gửi lại email xác thực");
     } finally {

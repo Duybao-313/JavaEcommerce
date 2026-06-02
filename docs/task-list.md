@@ -224,21 +224,21 @@
 
 ## 2. Missing / Incomplete Modules ❌
 
-| Module                                  | Priority       | Effort    | Description                                                               |
-| --------------------------------------- | -------------- | --------- | ------------------------------------------------------------------------- |
-| **Address Book**                        | HIGH           | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
-| **Email Verification**       | ✅ DONE  | Completed | Brevo REST API + Thymeleaf + @Async — Xem section 1.12 |
-| **Password Reset**                      | ✅ DONE        | Completed | Forgot password flow with reset token                                     |
-| **Payment Gateway (SePay)**             | ✅ DONE        | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
-| **Coupon at Checkout**                  | MEDIUM         | 1-2 days  | Apply coupon discount during checkout                                     |
-| **Order Status History**                | LOW            | 2-3 days  | Log all status transitions                                                |
-| **Email Notifications**                 | LOW            | 3-5 days  | Order confirmation, status updates                                        |
-| **Search Engine**                       | LOW            | 3-5 days  | Full-text product search (Elasticsearch/MySQL FTS)                        |
-| **Analytics Dashboard**                 | LOW            | 5-7 days  | Sales reports, user stats, charts                                         |
-| **Return/Refund**                       | LOW            | 5-7 days  | Return request, approval, refund flow                                     |
-| **Chat/Messaging**                      | LOW            | 7-10 days | Buyer-seller real-time chat                                               |
-| **Unit & Integration Tests**            | MEDIUM         | 5-7 days  | Backend test coverage, E2E tests                                          |
-| **Performance Optimization**            | LOW            | 3-5 days  | Caching, query optimization, lazy loading                                 |
+| Module                       | Priority | Effort    | Description                                                               |
+| ---------------------------- | -------- | --------- | ------------------------------------------------------------------------- |
+| **Address Book**             | HIGH     | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
+| **Email Verification**       | ✅ DONE  | Completed | Brevo REST API + Thymeleaf + @Async — Xem section 1.12                    |
+| **Password Reset**           | ✅ DONE  | Completed | Forgot password flow with reset token                                     |
+| **Payment Gateway (SePay)**  | ✅ DONE  | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
+| **Coupon at Checkout**       | MEDIUM   | 1-2 days  | Apply coupon discount during checkout                                     |
+| **Order Status History**     | LOW      | 2-3 days  | Log all status transitions                                                |
+| **Email Notifications**      | LOW      | 3-5 days  | Order confirmation, status updates                                        |
+| **Search Engine**            | LOW      | 3-5 days  | Full-text product search (Elasticsearch/MySQL FTS)                        |
+| **Analytics Dashboard**      | LOW      | 5-7 days  | Sales reports, user stats, charts                                         |
+| **Return/Refund**            | LOW      | 5-7 days  | Return request, approval, refund flow                                     |
+| **Chat/Messaging**           | LOW      | 7-10 days | Buyer-seller real-time chat                                               |
+| **Unit & Integration Tests** | MEDIUM   | 5-7 days  | Backend test coverage, E2E tests                                          |
+| **Performance Optimization** | LOW      | 3-5 days  | Caching, query optimization, lazy loading                                 |
 
 ### 2.2 Payment Gateway (SePay) — ✅ COMPLETED
 
@@ -338,25 +338,25 @@
 
 ## 4. Module Completion Summary
 
-| Module                      | Completion | Status                                            |
-| --------------------------- | ---------- | ------------------------------------------------- |
-| Auth & Security             | 95%        | ✅ Complete                                       |
-| Product Catalog             | 95%        | ✅ Complete                                       |
-| Categories                  | 100%       | ✅ Complete                                       |
-| Shopping Cart               | 95%        | ✅ Complete                                       |
-| Checkout & Orders           | 90%        | ✅ Complete                                       |
-| Reviews & Ratings           | 85%        | ✅ Complete                                       |
-| Wishlist                    | 100%       | ✅ Complete                                       |
-| Shipping                    | 85%        | ✅ Complete                                       |
-| Coupons                     | 80%        | ✅ Complete                                       |
-| Admin Dashboard             | 90%        | ✅ Complete                                       |
-| Image Upload                | 100%       | ✅ Complete                                       |
-| Seller Profile              | 85%        | ✅ Complete                                       |
-| **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)                  |
-| **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback)       |
+| Module                      | Completion | Status                                                     |
+| --------------------------- | ---------- | ---------------------------------------------------------- |
+| Auth & Security             | 95%        | ✅ Complete                                                |
+| Product Catalog             | 95%        | ✅ Complete                                                |
+| Categories                  | 100%       | ✅ Complete                                                |
+| Shopping Cart               | 95%        | ✅ Complete                                                |
+| Checkout & Orders           | 90%        | ✅ Complete                                                |
+| Reviews & Ratings           | 85%        | ✅ Complete                                                |
+| Wishlist                    | 100%       | ✅ Complete                                                |
+| Shipping                    | 85%        | ✅ Complete                                                |
+| Coupons                     | 80%        | ✅ Complete                                                |
+| Admin Dashboard             | 90%        | ✅ Complete                                                |
+| Image Upload                | 100%       | ✅ Complete                                                |
+| Seller Profile              | 85%        | ✅ Complete                                                |
+| **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)                           |
+| **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback)                |
 | **Email System**            | **65%**    | ✅ Email Verification + Password Reset Email + Gmail OAuth |
-| **Search**                  | **20%**    | ❌ Basic only                                     |
-| **Testing**                 | **15%**    | ❌ Minimal                                        |
+| **Search**                  | **20%**    | ❌ Basic only                                              |
+| **Testing**                 | **15%**    | ❌ Minimal                                                 |
 
 ### Overall Completion: **~93%**
 

@@ -213,19 +213,19 @@ export async function resetPassword(payload) {
   return parseApiResponse(response);
 }
 export async function verifyEmail(token) {
-  const response = await request('/auth/verify-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await request("/auth/verify-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
-  })
+  });
 
-  return parseApiResponse(response)
+  return parseApiResponse(response);
 }
 
 export async function resendVerificationEmail() {
-  const response = await authFetch('/auth/resend-verification', {
-    method: 'POST',
-  })
+  const response = await authFetch("/auth/resend-verification", {
+    method: "POST",
+  });
 
-  return parseApiResponse(response)
+  return parseApiResponse(response);
 }

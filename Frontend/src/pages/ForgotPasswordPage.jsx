@@ -19,7 +19,9 @@ function ForgotPasswordPage() {
     try {
       await forgotPassword(email.trim());
       setEmailSent(true);
-      toast.success("Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.");
+      toast.success(
+        "Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.",
+      );
     } catch (err) {
       toast.error(err?.message || "Không thể xử lý yêu cầu");
     } finally {
@@ -82,12 +84,10 @@ function ForgotPasswordPage() {
           ) : (
             <div className="mt-8 space-y-4">
               <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                <p className="font-semibold">
-                  Email đã được gửi
-                </p>
+                <p className="font-semibold">Email đã được gửi</p>
                 <p className="mt-2">
-                  Vui lòng kiểm tra hộp thư và làm theo hướng dẫn để đặt lại mật khẩu.
-                  Link đặt lại mật khẩu sẽ hết hạn sau 15 phút.
+                  Vui lòng kiểm tra hộp thư và làm theo hướng dẫn để đặt lại mật
+                  khẩu. Link đặt lại mật khẩu sẽ hết hạn sau 15 phút.
                 </p>
               </div>
               <Link
