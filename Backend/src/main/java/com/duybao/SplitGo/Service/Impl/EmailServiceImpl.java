@@ -30,6 +30,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${brevo.sender-email}")
     private String senderEmail;
 
+    @Value("${brevo.api-key}")
+    private String brevoApiKey;
+
     public EmailServiceImpl(SpringTemplateEngine templateEngine) {
         this.templateEngine = templateEngine;
         this.restTemplate = new RestTemplate();
@@ -72,15 +75,14 @@ public class EmailServiceImpl implements EmailService {
 
     @SuppressWarnings("unchecked")
     private void sendViaBrevoApi(String to, String subject, String htmlContent) {
-        String apiKey = System.getenv("BREVO_API_KEY");
-        if (apiKey == null || apiKey.isBlank()) {
-            log.warn("BREVO_API_KEY not set, skipping email to {}", to);
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+            log.warn("Brevo API key not set, skipping email to {}", to);
             return;
         }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("api-key", apiKey);
+        headers.set("api-key", brevoApiKey);
 
         Map<String, Object> body = Map.of(
                 "sender", Map.of("email", senderEmail, "name", "SplitGo"),

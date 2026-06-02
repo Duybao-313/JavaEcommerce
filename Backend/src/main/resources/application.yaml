@@ -45,6 +45,6 @@ app:
 
 # Brevo Email API
 brevo:
-  api-key: ${BREVO_API_KEY:}
+  api-key: ${BREVO_API_KEY:REPLACED}
   sender-email: ${BREVO_SENDER:duybaocadoi2005@gmail.com}
   sender-name: SplitGo
