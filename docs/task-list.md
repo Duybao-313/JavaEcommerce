@@ -28,61 +28,59 @@
 | Seller profile CRUD         | ✅     | Store name, logo, banner, bank info  |
 | Public seller profile       | ✅     | `/auth/sellers/{sellerId}`           |
 
-**Remaining**: Email verification, increase JWT duration for production.
+### 1.12 Email Integration — ✅ Complete
 
-### 1.12 Email Integration — 🔨 In Progress
-
-> **Tech Stack**: JavaMailSender + Thymeleaf + @Async + Brevo SMTP
+> **Tech Stack**: Brevo REST API + Thymeleaf + @Async
 
 #### 1.12.1 Config & Dependencies
 
-| #     | Task                                    | File                              | Status |
-| ----- | --------------------------------------- | --------------------------------- | ------ |
-| CF-01 | Thêm `spring-boot-starter-mail`         | `pom.xml`                         | ✅     |
-| CF-02 | Thêm `spring-boot-starter-thymeleaf`    | `pom.xml`                         | ✅     |
-| CF-03 | Cấu hình SMTP + base-url               | `application.yaml`                | ✅     |
-| CF-04 | Tạo AsyncConfig (@EnableAsync)          | `Config/AsyncConfig.java`         | ✅     |
+| #     | Task                                 | File                      | Status |
+| ----- | ------------------------------------ | ------------------------- | ------ |
+| CF-01 | Thêm `spring-boot-starter-mail`      | `pom.xml`                 | ✅     |
+| CF-02 | Thêm `spring-boot-starter-thymeleaf` | `pom.xml`                 | ✅     |
+| CF-03 | Cấu hình SMTP + base-url             | `application.yaml`        | ✅     |
+| CF-04 | Tạo AsyncConfig (@EnableAsync)       | `Config/AsyncConfig.java` | ✅     |
 
 #### 1.12.2 Email Service
 
-| #     | Task                                    | File                              | Status |
-| ----- | --------------------------------------- | --------------------------------- | ------ |
-| EM-01 | Tạo EmailService interface              | `Service/EmailService.java`       | ✅     |
-| EM-02 | Tạo EmailServiceImpl (@Async)           | `Service/Impl/EmailServiceImpl.java` | ✅  |
-| EM-03 | Tạo Thymeleaf template verify-email     | `templates/email/verify-email.html` | ✅   |
-| EM-04 | Tạo Thymeleaf template reset-password   | `templates/email/reset-password.html` | ✅ |
+| #     | Task                                  | File                                  | Status |
+| ----- | ------------------------------------- | ------------------------------------- | ------ |
+| EM-01 | Tạo EmailService interface            | `Service/EmailService.java`           | ✅     |
+| EM-02 | Tạo EmailServiceImpl (@Async)         | `Service/Impl/EmailServiceImpl.java`  | ✅     |
+| EM-03 | Tạo Thymeleaf template verify-email   | `templates/email/verify-email.html`   | ✅     |
+| EM-04 | Tạo Thymeleaf template reset-password | `templates/email/reset-password.html` | ✅     |
 
 #### 1.12.3 Email Verification
 
-| #     | Task                                    | File                              | Status |
-| ----- | --------------------------------------- | --------------------------------- | ------ |
-| VT-01 | Thêm `verificationToken` vào User       | `Model/User.java`                 | ✅     |
-| VT-02 | Tạo VerifyEmailRequest DTO              | `DTO/request/VerifyEmailRequest.java` | ✅  |
-| VT-03 | Thêm ErrorCodes mới                     | `Exception/ErrorCode.java`        | ✅     |
-| VT-04 | Thêm verifyEmail() vào AuthService      | `Service/AuthenticationService.java` | ✅  |
-| VT-05 | Implement verify + resend logic         | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
-| VT-06 | Thêm POST /auth/verify-email            | `Controller/AuthenticationController.java` | ✅ |
-| VT-07 | Thêm POST /auth/resend-verification     | `Controller/AuthenticationController.java` | ✅ |
-| VT-08 | Sửa UserRegister() gửi email sau đăng ký | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
-| VT-09 | Thêm findByVerificationToken()           | `Repository/UserRepository.java`  | ✅     |
+| #     | Task                                     | File                                          | Status |
+| ----- | ---------------------------------------- | --------------------------------------------- | ------ |
+| VT-01 | Thêm `verificationToken` vào User        | `Model/User.java`                             | ✅     |
+| VT-02 | Tạo VerifyEmailRequest DTO               | `DTO/request/VerifyEmailRequest.java`         | ✅     |
+| VT-03 | Thêm ErrorCodes mới                      | `Exception/ErrorCode.java`                    | ✅     |
+| VT-04 | Thêm verifyEmail() vào AuthService       | `Service/AuthenticationService.java`          | ✅     |
+| VT-05 | Implement verify + resend logic          | `Service/Impl/AuthenticationServiceImpl.java` | ✅     |
+| VT-06 | Thêm POST /auth/verify-email             | `Controller/AuthenticationController.java`    | ✅     |
+| VT-07 | Thêm POST /auth/resend-verification      | `Controller/AuthenticationController.java`    | ✅     |
+| VT-08 | Sửa UserRegister() gửi email sau đăng ký | `Service/Impl/AuthenticationServiceImpl.java` | ✅     |
+| VT-09 | Thêm findByVerificationToken()           | `Repository/UserRepository.java`              | ✅     |
 
 #### 1.12.4 Forgot Password — Cập nhật gửi Email
 
-| #     | Task                                    | File                              | Status |
-| ----- | --------------------------------------- | --------------------------------- | ------ |
-| FP-01 | Sửa forgotPassword() gửi email          | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
-| FP-02 | Sửa controller trả message thay vì token | `Controller/AuthenticationController.java` | ✅ |
-| FP-03 | Cập nhật ForgotPasswordPage UI          | `pages/ForgotPasswordPage.jsx`    | ✅     |
+| #     | Task                                     | File                                          | Status |
+| ----- | ---------------------------------------- | --------------------------------------------- | ------ |
+| FP-01 | Sửa forgotPassword() gửi email           | `Service/Impl/AuthenticationServiceImpl.java` | ✅     |
+| FP-02 | Sửa controller trả message thay vì token | `Controller/AuthenticationController.java`    | ✅     |
+| FP-03 | Cập nhật ForgotPasswordPage UI           | `pages/ForgotPasswordPage.jsx`                | ✅     |
 
 #### 1.12.5 Frontend
 
-| #     | Task                                    | File                              | Status |
-| ----- | --------------------------------------- | --------------------------------- | ------ |
-| FE-01 | Tạo EmailVerificationPage               | `pages/EmailVerificationPage.jsx` | ✅     |
-| FE-02 | Thêm route /verify-email                | `App.jsx`                         | ✅     |
-| FE-03 | Thêm verifyEmail() vào authService      | `services/authService.js`         | ✅     |
-| FE-04 | Thêm banner xác thực email vào Profile  | `pages/UserProfilePage.jsx`       | ✅     |
-| FE-05 | Thêm nút "Gửi lại email xác thực"       | `pages/UserProfilePage.jsx`       | ✅     |
+| #     | Task                                   | File                              | Status |
+| ----- | -------------------------------------- | --------------------------------- | ------ |
+| FE-01 | Tạo EmailVerificationPage              | `pages/EmailVerificationPage.jsx` | ✅     |
+| FE-02 | Thêm route /verify-email               | `App.jsx`                         | ✅     |
+| FE-03 | Thêm verifyEmail() vào authService     | `services/authService.js`         | ✅     |
+| FE-04 | Thêm banner xác thực email vào Profile | `pages/UserProfilePage.jsx`       | ✅     |
+| FE-05 | Thêm nút "Gửi lại email xác thực"      | `pages/UserProfilePage.jsx`       | ✅     |
 
 ### 1.2 Product Catalog — 95%
 
@@ -226,21 +224,21 @@
 
 ## 2. Missing / Incomplete Modules ❌
 
-| Module                       | Priority | Effort    | Description                                                               |
-| ---------------------------- | -------- | --------- | ------------------------------------------------------------------------- |
-| **Address Book**             | HIGH     | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
-| **Email Verification (JavaMailSender)** | 🔨 IN PROGRESS | 4-6 giờ | Spring Boot Mail + Thymeleaf + @Async + Brevo SMTP — Xem section 1.12 |
-| **Password Reset**           | ✅ DONE  | Completed | Forgot password flow with reset token                                     |
-| **Payment Gateway (SePay)**  | ✅ DONE  | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
-| **Coupon at Checkout**       | MEDIUM   | 1-2 days  | Apply coupon discount during checkout                                     |
-| **Order Status History**     | LOW      | 2-3 days  | Log all status transitions                                                |
-| **Email Notifications**      | LOW      | 3-5 days  | Order confirmation, status updates                                        |
-| **Search Engine**            | LOW      | 3-5 days  | Full-text product search (Elasticsearch/MySQL FTS)                        |
-| **Analytics Dashboard**      | LOW      | 5-7 days  | Sales reports, user stats, charts                                         |
-| **Return/Refund**            | LOW      | 5-7 days  | Return request, approval, refund flow                                     |
-| **Chat/Messaging**           | LOW      | 7-10 days | Buyer-seller real-time chat                                               |
-| **Unit & Integration Tests** | MEDIUM   | 5-7 days  | Backend test coverage, E2E tests                                          |
-| **Performance Optimization** | LOW      | 3-5 days  | Caching, query optimization, lazy loading                                 |
+| Module                                  | Priority       | Effort    | Description                                                               |
+| --------------------------------------- | -------------- | --------- | ------------------------------------------------------------------------- |
+| **Address Book**                        | HIGH           | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
+| **Email Verification**       | ✅ DONE  | Completed | Brevo REST API + Thymeleaf + @Async — Xem section 1.12 |
+| **Password Reset**                      | ✅ DONE        | Completed | Forgot password flow with reset token                                     |
+| **Payment Gateway (SePay)**             | ✅ DONE        | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
+| **Coupon at Checkout**                  | MEDIUM         | 1-2 days  | Apply coupon discount during checkout                                     |
+| **Order Status History**                | LOW            | 2-3 days  | Log all status transitions                                                |
+| **Email Notifications**                 | LOW            | 3-5 days  | Order confirmation, status updates                                        |
+| **Search Engine**                       | LOW            | 3-5 days  | Full-text product search (Elasticsearch/MySQL FTS)                        |
+| **Analytics Dashboard**                 | LOW            | 5-7 days  | Sales reports, user stats, charts                                         |
+| **Return/Refund**                       | LOW            | 5-7 days  | Return request, approval, refund flow                                     |
+| **Chat/Messaging**                      | LOW            | 7-10 days | Buyer-seller real-time chat                                               |
+| **Unit & Integration Tests**            | MEDIUM         | 5-7 days  | Backend test coverage, E2E tests                                          |
+| **Performance Optimization**            | LOW            | 3-5 days  | Caching, query optimization, lazy loading                                 |
 
 ### 2.2 Payment Gateway (SePay) — ✅ COMPLETED
 
@@ -340,27 +338,27 @@
 
 ## 4. Module Completion Summary
 
-| Module                      | Completion | Status                                      |
-| --------------------------- | ---------- | ------------------------------------------- |
-| Auth & Security             | 95%        | ✅ Complete                                 |
-| Product Catalog             | 95%        | ✅ Complete                                 |
-| Categories                  | 100%       | ✅ Complete                                 |
-| Shopping Cart               | 95%        | ✅ Complete                                 |
-| Checkout & Orders           | 90%        | ✅ Complete                                 |
-| Reviews & Ratings           | 85%        | ✅ Complete                                 |
-| Wishlist                    | 100%       | ✅ Complete                                 |
-| Shipping                    | 85%        | ✅ Complete                                 |
-| Coupons                     | 80%        | ✅ Complete                                 |
-| Admin Dashboard             | 90%        | ✅ Complete                                 |
-| Image Upload                | 100%       | ✅ Complete                                 |
-| Seller Profile              | 85%        | ✅ Complete                                 |
-| **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)            |
-| **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback) |
-| **Email System**            | **60%**    | ✅ Email Verification + Password Reset Email done |
-| **Search**                  | **20%**    | ❌ Basic only                               |
-| **Testing**                 | **15%**    | ❌ Minimal                                  |
+| Module                      | Completion | Status                                            |
+| --------------------------- | ---------- | ------------------------------------------------- |
+| Auth & Security             | 95%        | ✅ Complete                                       |
+| Product Catalog             | 95%        | ✅ Complete                                       |
+| Categories                  | 100%       | ✅ Complete                                       |
+| Shopping Cart               | 95%        | ✅ Complete                                       |
+| Checkout & Orders           | 90%        | ✅ Complete                                       |
+| Reviews & Ratings           | 85%        | ✅ Complete                                       |
+| Wishlist                    | 100%       | ✅ Complete                                       |
+| Shipping                    | 85%        | ✅ Complete                                       |
+| Coupons                     | 80%        | ✅ Complete                                       |
+| Admin Dashboard             | 90%        | ✅ Complete                                       |
+| Image Upload                | 100%       | ✅ Complete                                       |
+| Seller Profile              | 85%        | ✅ Complete                                       |
+| **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)                  |
+| **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback)       |
+| **Email System**            | **65%**    | ✅ Email Verification + Password Reset Email + Gmail OAuth |
+| **Search**                  | **20%**    | ❌ Basic only                                     |
+| **Testing**                 | **15%**    | ❌ Minimal                                        |
 
-### Overall Completion: **~92%**
+### Overall Completion: **~93%**
 
 ---
 
@@ -377,7 +375,7 @@
 
 5. ~~[TD-08] Build Address Book UI in frontend~~ ✅ Done
 6. **[TD-03]** Add user FK to InvalidatedToken
-7. ~~Email verification flow~~ 🔨 In Progress — Xem section 1.12
+7. ~~Email verification flow~~ ✅ Done — Xem section 1.12
 8. ~~Password reset flow~~ ✅ Done
 
 ### Medium-term (Month 2-3)
