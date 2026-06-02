@@ -1,0 +1,18 @@
+# Backend
+Backend/target/
+Backend/.mvn/
+*.log
+
+# Frontend
+Frontend/node_modules/
+Frontend/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Secrets - KHONG COMMIT
+.env
+*.env
+.env.*
