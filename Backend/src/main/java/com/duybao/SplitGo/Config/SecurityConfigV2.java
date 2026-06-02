@@ -38,7 +38,7 @@ public class SecurityConfigV2 {
                 .cors(c -> c.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/auth/login", "/auth/register", "/auth/refresh","/auth/forgot-password","/auth/reset-password", "/auth/sellers/**", "/products/**","/categories","/reviews/product/*/summary","/reviews/product/*/approved","/coupons/public","/coupons/code/**","/coupons/validate","/payments/sepay/**")
+                        .requestMatchers("/auth/login", "/auth/register", "/auth/refresh","/auth/forgot-password","/auth/reset-password","/auth/verify-email", "/auth/sellers/**", "/products/**","/categories","/reviews/product/*/summary","/reviews/product/*/approved","/coupons/public","/coupons/code/**","/coupons/validate","/payments/sepay/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated())
