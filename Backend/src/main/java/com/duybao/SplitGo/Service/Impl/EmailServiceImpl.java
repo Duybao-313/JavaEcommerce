@@ -1,35 +1,39 @@
 package com.duybao.SplitGo.Service.Impl;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.util.List;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import com.duybao.SplitGo.Service.EmailService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
     private final SpringTemplateEngine templateEngine;
 
     @Value("${app.base-url}")
     private String baseUrl;
 
-    @Value("${spring.mail.username}")
-    private String mailFrom;
+    @Value("${brevo.sender-email}")
+    private String senderEmail;
+
+    public EmailServiceImpl(SpringTemplateEngine templateEngine) {
+        this.templateEngine = templateEngine;
+        this.restTemplate = new RestTemplate();
+    }
 
     @Override
     @Async("emailExecutor")
@@ -41,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("verifyLink", verifyLink);
 
             String htmlContent = templateEngine.process("email/verify-email", context);
-            sendHtmlEmail(to, "Xác thực email SplitGo", htmlContent);
+            sendViaBrevoApi(to, "Xác thực email SplitGo", htmlContent);
             log.info("Verification email sent to {}", to);
         } catch (Exception e) {
             log.error("Failed to send verification email to {}: {}", to, e.getMessage());
@@ -59,20 +63,37 @@ public class EmailServiceImpl implements EmailService {
             context.setVariable("expiryMinutes", 15);
 
             String htmlContent = templateEngine.process("email/reset-password", context);
-            sendHtmlEmail(to, "Đặt lại mật khẩu SplitGo", htmlContent);
+            sendViaBrevoApi(to, "Đặt lại mật khẩu SplitGo", htmlContent);
             log.info("Password reset email sent to {}", to);
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }
     }
 
-    private void sendHtmlEmail(String to, String subject, String htmlContent) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-        helper.setFrom(mailFrom);
-        mailSender.send(message);
+    @SuppressWarnings("unchecked")
+    private void sendViaBrevoApi(String to, String subject, String htmlContent) {
+        String apiKey = System.getenv("BREVO_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("BREVO_API_KEY not set, skipping email to {}", to);
+            return;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", apiKey);
+
+        Map<String, Object> body = Map.of(
+                "sender", Map.of("email", senderEmail, "name", "SplitGo"),
+                "to", List.of(Map.of("email", to)),
+                "subject", subject,
+                "htmlContent", htmlContent);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForObject("https://api.brevo.com/v3/smtp/email", request, String.class);
+        } catch (Exception e) {
+            log.error("Brevo API error for {}: {}", to, e.getMessage());
+        }
     }
 }
