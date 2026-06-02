@@ -57,7 +57,5 @@ public class UserDTO {
     public void maskSensitiveFields() {
         this.bankAccount = null;
         this.bankName = null;
-        this.emailVerified = null;
-        this.phoneVerified = null;
     }
 }
