@@ -38,51 +38,51 @@
 
 | #     | Task                                    | File                              | Status |
 | ----- | --------------------------------------- | --------------------------------- | ------ |
-| CF-01 | Thêm `spring-boot-starter-mail`         | `pom.xml`                         | ⬜     |
-| CF-02 | Thêm `spring-boot-starter-thymeleaf`    | `pom.xml`                         | ⬜     |
-| CF-03 | Cấu hình SMTP + base-url               | `application.yaml`                | ⬜     |
-| CF-04 | Tạo AsyncConfig (@EnableAsync)          | `Config/AsyncConfig.java`         | ⬜     |
+| CF-01 | Thêm `spring-boot-starter-mail`         | `pom.xml`                         | ✅     |
+| CF-02 | Thêm `spring-boot-starter-thymeleaf`    | `pom.xml`                         | ✅     |
+| CF-03 | Cấu hình SMTP + base-url               | `application.yaml`                | ✅     |
+| CF-04 | Tạo AsyncConfig (@EnableAsync)          | `Config/AsyncConfig.java`         | ✅     |
 
 #### 1.12.2 Email Service
 
 | #     | Task                                    | File                              | Status |
 | ----- | --------------------------------------- | --------------------------------- | ------ |
-| EM-01 | Tạo EmailService interface              | `Service/EmailService.java`       | ⬜     |
-| EM-02 | Tạo EmailServiceImpl (@Async)           | `Service/Impl/EmailServiceImpl.java` | ⬜  |
-| EM-03 | Tạo Thymeleaf template verify-email     | `templates/email/verify-email.html` | ⬜   |
-| EM-04 | Tạo Thymeleaf template reset-password   | `templates/email/reset-password.html` | ⬜ |
+| EM-01 | Tạo EmailService interface              | `Service/EmailService.java`       | ✅     |
+| EM-02 | Tạo EmailServiceImpl (@Async)           | `Service/Impl/EmailServiceImpl.java` | ✅  |
+| EM-03 | Tạo Thymeleaf template verify-email     | `templates/email/verify-email.html` | ✅   |
+| EM-04 | Tạo Thymeleaf template reset-password   | `templates/email/reset-password.html` | ✅ |
 
 #### 1.12.3 Email Verification
 
 | #     | Task                                    | File                              | Status |
 | ----- | --------------------------------------- | --------------------------------- | ------ |
-| VT-01 | Thêm `verificationToken` vào User       | `Model/User.java`                 | ⬜     |
-| VT-02 | Tạo VerifyEmailRequest DTO              | `DTO/request/VerifyEmailRequest.java` | ⬜  |
-| VT-03 | Thêm ErrorCodes mới                     | `Exception/ErrorCode.java`        | ⬜     |
-| VT-04 | Thêm verifyEmail() vào AuthService      | `Service/AuthenticationService.java` | ⬜  |
-| VT-05 | Implement verify + resend logic         | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
-| VT-06 | Thêm POST /auth/verify-email            | `Controller/AuthenticationController.java` | ⬜ |
-| VT-07 | Thêm POST /auth/resend-verification     | `Controller/AuthenticationController.java` | ⬜ |
-| VT-08 | Sửa UserRegister() gửi email sau đăng ký | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
-| VT-09 | Thêm findByVerificationToken()           | `Repository/UserRepository.java`  | ⬜     |
+| VT-01 | Thêm `verificationToken` vào User       | `Model/User.java`                 | ✅     |
+| VT-02 | Tạo VerifyEmailRequest DTO              | `DTO/request/VerifyEmailRequest.java` | ✅  |
+| VT-03 | Thêm ErrorCodes mới                     | `Exception/ErrorCode.java`        | ✅     |
+| VT-04 | Thêm verifyEmail() vào AuthService      | `Service/AuthenticationService.java` | ✅  |
+| VT-05 | Implement verify + resend logic         | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
+| VT-06 | Thêm POST /auth/verify-email            | `Controller/AuthenticationController.java` | ✅ |
+| VT-07 | Thêm POST /auth/resend-verification     | `Controller/AuthenticationController.java` | ✅ |
+| VT-08 | Sửa UserRegister() gửi email sau đăng ký | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
+| VT-09 | Thêm findByVerificationToken()           | `Repository/UserRepository.java`  | ✅     |
 
 #### 1.12.4 Forgot Password — Cập nhật gửi Email
 
 | #     | Task                                    | File                              | Status |
 | ----- | --------------------------------------- | --------------------------------- | ------ |
-| FP-01 | Sửa forgotPassword() gửi email          | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
-| FP-02 | Sửa controller trả message thay vì token | `Controller/AuthenticationController.java` | ⬜ |
-| FP-03 | Cập nhật ForgotPasswordPage UI          | `pages/ForgotPasswordPage.jsx`    | ⬜     |
+| FP-01 | Sửa forgotPassword() gửi email          | `Service/Impl/AuthenticationServiceImpl.java` | ✅ |
+| FP-02 | Sửa controller trả message thay vì token | `Controller/AuthenticationController.java` | ✅ |
+| FP-03 | Cập nhật ForgotPasswordPage UI          | `pages/ForgotPasswordPage.jsx`    | ✅     |
 
 #### 1.12.5 Frontend
 
 | #     | Task                                    | File                              | Status |
 | ----- | --------------------------------------- | --------------------------------- | ------ |
-| FE-01 | Tạo EmailVerificationPage               | `pages/EmailVerificationPage.jsx` | ⬜     |
-| FE-02 | Thêm route /verify-email                | `App.jsx`                         | ⬜     |
-| FE-03 | Thêm verifyEmail() vào authService      | `services/authService.js`         | ⬜     |
-| FE-04 | Thêm banner xác thực email vào Profile  | `pages/UserProfilePage.jsx`       | ⬜     |
-| FE-05 | Thêm nút "Gửi lại email xác thực"       | `pages/UserProfilePage.jsx`       | ⬜     |
+| FE-01 | Tạo EmailVerificationPage               | `pages/EmailVerificationPage.jsx` | ✅     |
+| FE-02 | Thêm route /verify-email                | `App.jsx`                         | ✅     |
+| FE-03 | Thêm verifyEmail() vào authService      | `services/authService.js`         | ✅     |
+| FE-04 | Thêm banner xác thực email vào Profile  | `pages/UserProfilePage.jsx`       | ✅     |
+| FE-05 | Thêm nút "Gửi lại email xác thực"       | `pages/UserProfilePage.jsx`       | ✅     |
 
 ### 1.2 Product Catalog — 95%
 
@@ -356,11 +356,11 @@
 | Seller Profile              | 85%        | ✅ Complete                                 |
 | **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)            |
 | **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback) |
-| **Email System**            | **20%**    | 🔨 In Progress — Xem section 1.12          |
+| **Email System**            | **60%**    | ✅ Email Verification + Password Reset Email done |
 | **Search**                  | **20%**    | ❌ Basic only                               |
 | **Testing**                 | **15%**    | ❌ Minimal                                  |
 
-### Overall Completion: **~91%**
+### Overall Completion: **~92%**
 
 ---
 

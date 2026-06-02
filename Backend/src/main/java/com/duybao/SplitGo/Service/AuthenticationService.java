@@ -27,4 +27,8 @@ public interface AuthenticationService {
     public String forgotPassword(ForgotPasswordRequest request);
 
     public boolean resetPassword(ResetPasswordRequest request);
+
+    public void verifyEmail(String token);
+
+    public void resendVerificationEmail(Long userId);
 }

@@ -113,6 +113,10 @@ public class User implements UserDetails {
 
     private LocalDateTime resetTokenExpiry;
 
+    // Email Verification
+    @Column(length = 255)
+    private String verificationToken;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

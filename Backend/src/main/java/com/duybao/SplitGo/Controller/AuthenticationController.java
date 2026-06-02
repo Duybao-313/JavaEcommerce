@@ -109,12 +109,11 @@ public class AuthenticationController {
     }
 
     @PostMapping("/forgot-password")
-    ApiResponse<String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
-        var token = authenticationService.forgotPassword(request);
-        return ApiResponse.<String>builder()
+    ApiResponse<Void> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        authenticationService.forgotPassword(request);
+        return ApiResponse.<Void>builder()
                 .success(true)
-                .message("Token đặt lại mật khẩu đã được tạo. Dùng token này để đặt lại mật khẩu.")
-                .data(token)
+                .message("Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.")
                 .build();
     }
 
@@ -124,6 +123,24 @@ public class AuthenticationController {
         return ApiResponse.<Void>builder()
                 .success(res)
                 .message("Đặt lại mật khẩu thành công")
+                .build();
+    }
+
+    @PostMapping("/verify-email")
+    ApiResponse<Void> verifyEmail(@RequestBody @Valid VerifyEmailRequest request) {
+        authenticationService.verifyEmail(request.getToken());
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Xác thực email thành công")
+                .build();
+    }
+
+    @PostMapping("/resend-verification")
+    ApiResponse<Void> resendVerification(@AuthenticationPrincipal User user) {
+        authenticationService.resendVerificationEmail(user.getId());
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.")
                 .build();
     }
 

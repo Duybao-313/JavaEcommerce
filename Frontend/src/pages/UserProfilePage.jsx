@@ -7,6 +7,7 @@ import {
   getCurrentUserDetail,
   updateCurrentUser,
   changePassword,
+  resendVerificationEmail,
 } from "../services/authService";
 import { clearAuth, getAuthSession, hasRole } from "../services/sessionService";
 
@@ -30,6 +31,7 @@ function UserProfilePage() {
     newPass2: "",
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -154,6 +156,18 @@ function UserProfilePage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    try {
+      await resendVerificationEmail();
+      toast.success("Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.");
+    } catch (err) {
+      toast.error(err?.message || "Không thể gửi lại email xác thực");
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   const handleSubmitUpdate = async (event) => {
     event.preventDefault();
 
@@ -257,6 +271,24 @@ function UserProfilePage() {
           <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <p className="font-semibold">Vui lòng cập nhật thông tin</p>
             <p className="mt-1">Thiếu: {missingFields.join(", ")}</p>
+          </div>
+        )}
+
+        {!loading && user?.emailVerified === false && (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="font-semibold">Email chưa được xác thực</p>
+              <p className="mt-1">
+                Vui lòng kiểm tra hộp thư và xác thực email để bảo vệ tài khoản.
+              </p>
+            </div>
+            <button
+              onClick={handleResendVerification}
+              disabled={resendingVerification}
+              className="rounded-full border border-amber-400 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800 hover:border-amber-600 disabled:opacity-50"
+            >
+              {resendingVerification ? "Đang gửi..." : "Gửi lại email"}
+            </button>
           </div>
         )}
 

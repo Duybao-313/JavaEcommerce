@@ -34,6 +34,7 @@ import com.duybao.SplitGo.Model.User;
 import com.duybao.SplitGo.Repository.InvalidatedTokenRepository;
 import com.duybao.SplitGo.Repository.UserRepository;
 import com.duybao.SplitGo.Service.AuthenticationService;
+import com.duybao.SplitGo.Service.EmailService;
 import com.duybao.SplitGo.Service.JwtService;
 import com.nimbusds.jose.JOSEException;
 
@@ -54,6 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final EmailService emailService;
 
     @Override
     public RegisterResponse UserRegister(UserRegisterRequest a) {
@@ -96,7 +98,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
+
+        // Generate email verification token
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+
         userRepository.save(user);
+
+        // Send verification email (async, không block)
+        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), verificationToken);
+
         return RegisterResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -169,7 +180,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
 
-        // Trả về token trực tiếp (sẽ tích hợp email sau)
+        // Send password reset email (async)
+        String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
+        emailService.sendPasswordResetEmail(user.getEmail(), userName, token);
+
         return token;
     }
 
@@ -201,5 +215,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userRepository.save(user);
 
         return true;
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        User user = userRepository
+                .findByVerificationToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.VERIFICATION_TOKEN_INVALID));
+
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resendVerificationEmail(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        String token = UUID.randomUUID().toString();
+        user.setVerificationToken(token);
+        userRepository.save(user);
+
+        String userName = user.getFullName() != null ? user.getFullName() : user.getUsername();
+        emailService.sendVerificationEmail(user.getEmail(), userName, token);
     }
 }

@@ -48,6 +48,8 @@ public enum ErrorCode {
     PASSWORD_TOO_LONG(1023, "Mật khẩu quá dài", HttpStatus.BAD_REQUEST),
     INVALID_RESET_TOKEN(1033, "Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
     EMAIL_NOT_FOUND(1034, "Không tìm thấy tài khoản với email này", HttpStatus.NOT_FOUND),
+    VERIFICATION_TOKEN_INVALID(1035, "Token xác thực email không hợp lệ", HttpStatus.BAD_REQUEST),
+    EMAIL_ALREADY_VERIFIED(1036, "Email đã được xác thực", HttpStatus.BAD_REQUEST),
     BUDGET_UPDATE_FAILED(1023, "Cập nhật hạn mức thất bại", HttpStatus.EXPECTATION_FAILED),
     NOTIFICATION_NOT_FOUND_OR_FORBIDDEN(1024, "Không có thông báo", HttpStatus.FORBIDDEN),
     PRODUCT_NOT_FOUND(2000, "Không tìm thấy sản phẩm", HttpStatus.NOT_FOUND),

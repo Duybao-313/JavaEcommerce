@@ -6,7 +6,7 @@ import { forgotPassword } from "../services/authService";
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetToken, setResetToken] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -17,9 +17,9 @@ function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      const result = await forgotPassword(email.trim());
-      setResetToken(result?.data || null);
-      toast.success(result?.message || "Token đặt lại mật khẩu đã được tạo");
+      await forgotPassword(email.trim());
+      setEmailSent(true);
+      toast.success("Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.");
     } catch (err) {
       toast.error(err?.message || "Không thể xử lý yêu cầu");
     } finally {
@@ -41,7 +41,7 @@ function ForgotPasswordPage() {
             Nhập email đã đăng ký để nhận link đặt lại mật khẩu.
           </p>
 
-          {!resetToken ? (
+          {!emailSent ? (
             <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label
@@ -83,22 +83,16 @@ function ForgotPasswordPage() {
             <div className="mt-8 space-y-4">
               <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                 <p className="font-semibold">
-                  Token đặt lại mật khẩu đã được tạo
+                  Email đã được gửi
                 </p>
-                <p className="mt-2 break-all font-mono text-xs">{resetToken}</p>
+                <p className="mt-2">
+                  Vui lòng kiểm tra hộp thư và làm theo hướng dẫn để đặt lại mật khẩu.
+                  Link đặt lại mật khẩu sẽ hết hạn sau 15 phút.
+                </p>
               </div>
-              <p className="text-sm text-zinc-600">
-                Sử dụng token này để đặt lại mật khẩu tại trang bên dưới:
-              </p>
-              <Link
-                to={`/reset-password?token=${resetToken}`}
-                className="block w-full rounded-full bg-zinc-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-zinc-700"
-              >
-                Đặt lại mật khẩu ngay
-              </Link>
               <Link
                 to="/login"
-                className="block text-center text-sm font-semibold text-zinc-900 hover:underline"
+                className="block w-full rounded-full bg-zinc-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-zinc-700"
               >
                 Quay lại đăng nhập
               </Link>
