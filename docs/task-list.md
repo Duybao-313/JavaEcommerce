@@ -1,10 +1,10 @@
 # Task List & Completion Status — SplitGo
 
-> **Last Updated**: 2026-06-01
+> **Last Updated**: 2026-06-03
 
 ---
 
-## Project Completion: ~94%
+## Project Completion: ~92%
 
 ---
 
@@ -30,6 +30,60 @@
 
 **Remaining**: Email verification, increase JWT duration for production.
 
+### 1.12 Email Integration — 🔨 In Progress
+
+> **Tech Stack**: JavaMailSender + Thymeleaf + @Async + Brevo SMTP
+
+#### 1.12.1 Config & Dependencies
+
+| #     | Task                                    | File                              | Status |
+| ----- | --------------------------------------- | --------------------------------- | ------ |
+| CF-01 | Thêm `spring-boot-starter-mail`         | `pom.xml`                         | ⬜     |
+| CF-02 | Thêm `spring-boot-starter-thymeleaf`    | `pom.xml`                         | ⬜     |
+| CF-03 | Cấu hình SMTP + base-url               | `application.yaml`                | ⬜     |
+| CF-04 | Tạo AsyncConfig (@EnableAsync)          | `Config/AsyncConfig.java`         | ⬜     |
+
+#### 1.12.2 Email Service
+
+| #     | Task                                    | File                              | Status |
+| ----- | --------------------------------------- | --------------------------------- | ------ |
+| EM-01 | Tạo EmailService interface              | `Service/EmailService.java`       | ⬜     |
+| EM-02 | Tạo EmailServiceImpl (@Async)           | `Service/Impl/EmailServiceImpl.java` | ⬜  |
+| EM-03 | Tạo Thymeleaf template verify-email     | `templates/email/verify-email.html` | ⬜   |
+| EM-04 | Tạo Thymeleaf template reset-password   | `templates/email/reset-password.html` | ⬜ |
+
+#### 1.12.3 Email Verification
+
+| #     | Task                                    | File                              | Status |
+| ----- | --------------------------------------- | --------------------------------- | ------ |
+| VT-01 | Thêm `verificationToken` vào User       | `Model/User.java`                 | ⬜     |
+| VT-02 | Tạo VerifyEmailRequest DTO              | `DTO/request/VerifyEmailRequest.java` | ⬜  |
+| VT-03 | Thêm ErrorCodes mới                     | `Exception/ErrorCode.java`        | ⬜     |
+| VT-04 | Thêm verifyEmail() vào AuthService      | `Service/AuthenticationService.java` | ⬜  |
+| VT-05 | Implement verify + resend logic         | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
+| VT-06 | Thêm POST /auth/verify-email            | `Controller/AuthenticationController.java` | ⬜ |
+| VT-07 | Thêm POST /auth/resend-verification     | `Controller/AuthenticationController.java` | ⬜ |
+| VT-08 | Sửa UserRegister() gửi email sau đăng ký | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
+| VT-09 | Thêm findByVerificationToken()           | `Repository/UserRepository.java`  | ⬜     |
+
+#### 1.12.4 Forgot Password — Cập nhật gửi Email
+
+| #     | Task                                    | File                              | Status |
+| ----- | --------------------------------------- | --------------------------------- | ------ |
+| FP-01 | Sửa forgotPassword() gửi email          | `Service/Impl/AuthenticationServiceImpl.java` | ⬜ |
+| FP-02 | Sửa controller trả message thay vì token | `Controller/AuthenticationController.java` | ⬜ |
+| FP-03 | Cập nhật ForgotPasswordPage UI          | `pages/ForgotPasswordPage.jsx`    | ⬜     |
+
+#### 1.12.5 Frontend
+
+| #     | Task                                    | File                              | Status |
+| ----- | --------------------------------------- | --------------------------------- | ------ |
+| FE-01 | Tạo EmailVerificationPage               | `pages/EmailVerificationPage.jsx` | ⬜     |
+| FE-02 | Thêm route /verify-email                | `App.jsx`                         | ⬜     |
+| FE-03 | Thêm verifyEmail() vào authService      | `services/authService.js`         | ⬜     |
+| FE-04 | Thêm banner xác thực email vào Profile  | `pages/UserProfilePage.jsx`       | ⬜     |
+| FE-05 | Thêm nút "Gửi lại email xác thực"       | `pages/UserProfilePage.jsx`       | ⬜     |
+
 ### 1.2 Product Catalog — 95%
 
 | Task                     | Status | Notes                                 |
@@ -45,11 +99,7 @@
 | Slug-based URLs          | ✅     | Product slug, category slug           |
 | Admin product moderation | ✅     | PATCH status, adminNote               |
 
-**Remaining**: ~~Full-text search, advanced filters (price range, rating), product import/export.~~ ✅ Done (2026-06-01)
-
-- ✅ Full-text search: Backend search endpoint + frontend integration
-- ✅ Advanced filters: Price range (existing), Rating filter (new)
-- ✅ Product import/export: CSV export + import for sellers
+**Remaining**: Full-text search, advanced filters (price range, rating), product import/export.
 
 ### 1.3 Categories — 100%
 
@@ -179,7 +229,7 @@
 | Module                       | Priority | Effort    | Description                                                               |
 | ---------------------------- | -------- | --------- | ------------------------------------------------------------------------- |
 | **Address Book**             | HIGH     | 3-5 days  | Address entity ✅ DTOs, ❌ Entity/Repo/Service/Controller, ❌ Frontend UI |
-| **Email Verification**       | MEDIUM   | 2-3 days  | Send verification email, verify endpoint                                  |
+| **Email Verification (JavaMailSender)** | 🔨 IN PROGRESS | 4-6 giờ | Spring Boot Mail + Thymeleaf + @Async + Brevo SMTP — Xem section 1.12 |
 | **Password Reset**           | ✅ DONE  | Completed | Forgot password flow with reset token                                     |
 | **Payment Gateway (SePay)**  | ✅ DONE  | Completed | SePay VietQR, IPN webhook, callback, status sync, frontend integration    |
 | **Coupon at Checkout**       | MEDIUM   | 1-2 days  | Apply coupon discount during checkout                                     |
@@ -281,11 +331,10 @@
 
 ### 3.4 Configuration Debt
 
-| #         | Issue                                         | Severity | Location             | Fix                                                                                                                                               |
-| --------- | --------------------------------------------- | -------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TD-09** | **JWT duration too short for production**     | HIGH     | `application.yaml`   | Access token: 6000ms (6 seconds), Refresh: 600000ms (10 min). These are testing values. Production should be ~15min access, ~7d refresh.          |
-| **TD-10** | **`ddl-auto: update` in production**          | HIGH     | `application.yaml`   | Auto DDL update is risky. Use validated migration tool (Flyway/Liquibase) for production.                                                         |
-| **TD-11** | **Sale price not displayed on product cards** | ✅ FIXED | `ProductSection.jsx` | Product cards only showed `product.price`, ignoring `product.salePrice`. Fixed to show sale price with strikethrough original price + discount %. |
+| #         | Issue                                     | Severity | Location           | Fix                                                                                                                                      |
+| --------- | ----------------------------------------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **TD-09** | **JWT duration too short for production** | HIGH     | `application.yaml` | Access token: 6000ms (6 seconds), Refresh: 600000ms (10 min). These are testing values. Production should be ~15min access, ~7d refresh. |
+| **TD-10** | **`ddl-auto: update` in production**      | HIGH     | `application.yaml` | Auto DDL update is risky. Use validated migration tool (Flyway/Liquibase) for production.                                                |
 
 ---
 
@@ -307,11 +356,11 @@
 | Seller Profile              | 85%        | ✅ Complete                                 |
 | **Address Book**            | **95%**    | ✅ Complete (Backend + Frontend)            |
 | **Payment Gateway (SePay)** | **95%**    | ✅ Complete (Backend + Frontend + Callback) |
-| **Email System**            | **0%**     | ❌ Missing                                  |
+| **Email System**            | **20%**    | 🔨 In Progress — Xem section 1.12          |
 | **Search**                  | **20%**    | ❌ Basic only                               |
 | **Testing**                 | **15%**    | ❌ Minimal                                  |
 
-### Overall Completion: **~94%**
+### Overall Completion: **~91%**
 
 ---
 
@@ -320,17 +369,15 @@
 ### Immediate (Week 1-2)
 
 1. ~~[TD-02] Implement Address entity + CRUD API~~ ✅ Done
-2. ~~**[TD-01]** Remove duplicate `orderStatus` field from Order~~ ✅ Done
-3. ~~**[TD-09]** Increase JWT token duration for production~~ (testing values OK for dev)
-4. ~~**[TD-05]** Wire coupon discount into checkout flow~~ (Medium priority)
-5. ~~**Full-text search, advanced filters, product import/export**~~ ✅ Done (2026-06-01)
-6. ~~**Sale price not showing on products page**~~ ✅ Fixed (2026-06-01)
+2. **[TD-01]** Remove duplicate `orderStatus` field from Order
+3. **[TD-09]** Increase JWT token duration for production
+4. **[TD-05]** Wire coupon discount into checkout flow
 
 ### Short-term (Week 3-4)
 
 5. ~~[TD-08] Build Address Book UI in frontend~~ ✅ Done
 6. **[TD-03]** Add user FK to InvalidatedToken
-7. Email verification flow
+7. ~~Email verification flow~~ 🔨 In Progress — Xem section 1.12
 8. ~~Password reset flow~~ ✅ Done
 
 ### Medium-term (Month 2-3)

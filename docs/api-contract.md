@@ -79,13 +79,24 @@ Paginated responses use `PageResponse<T>`:
 
 - **Auth**: None
 - **Body**: `{ email }`
-- **Response**: `String` (reset token — sẽ gửi qua email sau khi tích hợp email service)
+- **Response**: `{ success: true, message: "Email đặt lại mật khẩu đã được gửi" }`
 
 ### `POST /auth/reset-password`
 
 - **Auth**: None
 - **Body**: `{ token, newPassword, confirmPassword }`
 - **Response**: `Void`
+
+### `POST /auth/verify-email`
+
+- **Auth**: None
+- **Params**: `token` (verification token)
+- **Response**: `Void` — sets `emailVerified = true`
+
+### `POST /auth/resend-verification`
+
+- **Auth**: Bearer token
+- **Response**: `Void` — gửi lại email xác thực
 
 ### `POST /auth/avatar` (multipart)
 
